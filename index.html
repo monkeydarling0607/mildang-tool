@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>밀당레터 제작 툴</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f7f7f5;
+  --text:#111;--text2:#555;--text3:#999;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.28);
+  --teal-bg:#E1F5EE;--teal-text:#085041;--teal-bd:#5DCAA5;
+  --amber-bg:#FAEEDA;--amber-text:#633806;
+  --blue-bg:#E6F1FB;--blue-text:#0C447C;
+  --coral-bg:#FAECE7;--coral-text:#712B13;--coral-bd:#F0997B;
+  --gray-bg:#F1EFE8;--gray-text:#5F5E5A;
+  --radius:8px;--radius-lg:12px
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--text);font-size:14px;line-height:1.5;background:var(--bg)}
+.wrap{max-width:860px;margin:0 auto;padding:1.25rem 1rem 4rem}
+.tab-nav{display:flex;gap:3px;flex-wrap:wrap;border-bottom:0.5px solid var(--border);padding-bottom:.7rem;margin-bottom:1.75rem}
+.tb{font-size:12px;font-weight:500;padding:5px 10px;border-radius:var(--radius);border:0.5px solid transparent;background:transparent;color:var(--text3);cursor:pointer;white-space:nowrap;font-family:inherit;transition:background .12s,color .12s}
+.tb:hover:not(.locked){background:var(--bg2);color:var(--text)}
+.tb.active{border-color:var(--border2);color:var(--text)}
+.tb.done{border-color:var(--teal-bd);color:var(--teal-text)}
+.tb.locked{opacity:.35;cursor:default;pointer-events:none}
+.panel{display:none}.panel.active{display:block}
+.ph{display:flex;align-items:center;gap:7px;margin-bottom:3px}
+.ph-title{font-size:15px;font-weight:500}
+.ph-sub{font-size:13px;color:var(--text2);margin-bottom:1.4rem;line-height:1.55}
+.fl{font-size:11px;font-weight:500;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+@media(max-width:600px){.fg3{grid-template-columns:1fr}}
+.fi{width:100%;font-size:13px;color:var(--text);background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:7px 10px;outline:none;transition:border-color .15s;font-family:inherit}
+.fi:focus{border-color:var(--border2)}
+.fi::placeholder{color:var(--text3)}
+textarea.fi{resize:vertical;line-height:1.5}
+.btn-row{display:flex;align-items:center;gap:8px;margin-top:1.25rem;flex-wrap:wrap}
+.btn-main{font-size:13px;font-weight:500;padding:8px 16px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;font-family:inherit;transition:background .1s}
+.btn-main:hover:not(:disabled){background:var(--bg2)}
+.btn-main:disabled{opacity:.38;cursor:not-allowed}
+.btn-next{font-size:13px;font-weight:500;padding:8px 16px;border-radius:var(--radius);border:0.5px solid var(--teal-bd);background:var(--teal-bg);color:var(--teal-text);cursor:pointer;font-family:inherit;transition:background .1s}
+.btn-next:hover:not(:disabled){background:#9FE1CB}
+.btn-next:disabled{opacity:.35;cursor:not-allowed;border-color:var(--border);background:transparent;color:var(--text3)}
+.divider{border:none;border-top:0.5px solid var(--border);margin:1.25rem 0}
+.slbl{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:9px}
+.skel{padding:1.5rem;border:0.5px dashed var(--border);border-radius:var(--radius-lg);text-align:center}
+.skel p{font-size:13px;color:var(--text3);line-height:1.7}
+.carry{background:var(--blue-bg);border:0.5px solid rgba(55,138,221,.22);border-radius:var(--radius);padding:8px 12px;font-size:12px;color:var(--blue-text);margin-bottom:1.25rem;line-height:1.6}
+.carry b{font-weight:500;display:block;margin-bottom:2px}
+.rc{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:.85rem 1.1rem;margin-bottom:8px}
+.rc-hd{display:flex;align-items:center;gap:7px;margin-bottom:7px;flex-wrap:wrap}
+.rc-body{font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap}
+.tag{font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.tg{background:var(--teal-bg);color:var(--teal-text)}
+.ta{background:var(--amber-bg);color:var(--amber-text)}
+.tb2{background:var(--blue-bg);color:var(--blue-text)}
+.tgr{background:var(--gray-bg);color:var(--gray-text)}
+.sel-grid{display:flex;flex-direction:column;gap:8px}
+.sc{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:.85rem 1.1rem;cursor:pointer;position:relative;transition:border-color .15s,background .15s}
+.sc:hover{border-color:var(--border2)}
+.sc.on{border-color:var(--teal-bd);background:var(--teal-bg)}
+.sc.on .sc-t{color:var(--teal-text)}
+.sc-t{font-size:13px;font-weight:500;color:var(--text);line-height:1.5;margin-bottom:5px}
+.sc-b{font-size:13px;color:var(--text2);line-height:1.7}
+.sc-meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:5px}
+.sc-mi{font-size:11px;color:var(--text3)}
+.sc-mi b{color:var(--text2);font-weight:500}
+.ck{position:absolute;top:.85rem;right:1rem;width:16px;height:16px;border-radius:50%;border:0.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent;background:var(--bg)}
+.sc.on .ck{background:var(--teal-bd);border-color:var(--teal-bd);color:#fff}
+.loading-pulse{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text3);padding:1.25rem 0}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:pulse 1.2s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,80%,100%{opacity:.2}40%{opacity:1}}
+.err-box{padding:10px 12px;background:var(--coral-bg);border:0.5px solid var(--coral-bd);border-radius:var(--radius);font-size:13px;color:var(--coral-text);line-height:1.55}
+.call-badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;background:var(--amber-bg);color:var(--amber-text);display:inline-block;margin-bottom:10px}
+.btn-sm{font-size:12px;font-weight:500;padding:0 12px;height:30px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;transition:background .1s}
+.btn-sm:hover{background:var(--bg2)}
+.final-sec{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:.85rem 1.1rem;margin-bottom:8px}
+.final-sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.final-sec-lbl{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
+.final-sec-body{font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap}
+
+/* 탭1 전용 */
+.paste-area-wrap{position:relative;margin-bottom:10px}
+.paste-area{min-height:120px;max-height:240px}
+.paste-clear{position:absolute;top:8px;right:8px;font-size:11px;padding:2px 8px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg);color:var(--text3);cursor:pointer;display:none}
+.paste-area-wrap.has-content .paste-clear{display:block}
+.extract-row{display:flex;gap:8px;align-items:center;margin-bottom:1.25rem}
+.extract-badge{font-size:11px;padding:2px 8px;border-radius:99px;font-weight:500}
+.eb-empty{background:var(--gray-bg);color:var(--gray-text)}
+.eb-ready{background:var(--teal-bg);color:var(--teal-text)}
+.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
+@media(max-width:600px){.analysis-grid{grid-template-columns:1fr}}
+.analysis-item{background:var(--bg2);border-radius:var(--radius);padding:10px 12px}
+.analysis-item-label{font-size:11px;font-weight:500;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
+.analysis-item-value{font-size:13px;color:var(--text);line-height:1.55}
+.bdg-wrap{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.bdg{font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;background:var(--gray-bg);color:var(--gray-text)}
+.bdg.w{background:var(--coral-bg);color:var(--coral-text)}
+.direction-box{background:var(--teal-bg);border:0.5px solid rgba(93,202,165,.4);border-radius:var(--radius-lg);padding:.85rem 1.1rem;margin-top:8px}
+.direction-box-label{font-size:11px;font-weight:500;color:var(--teal-text);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.direction-box-body{font-size:13px;color:var(--teal-text);line-height:1.65}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="tab-nav" id="tabNav">
+  <button class="tb active" onclick="goTab(0)">1 직전 분석</button>
+  <button class="tb locked" onclick="goTab(1)">2 주제 선정</button>
+  <button class="tb locked" onclick="goTab(2)">3 사연 모음</button>
+  <button class="tb locked" onclick="goTab(3)">4 꿀팁</button>
+  <button class="tb locked" onclick="goTab(4)">5 세무 퀴즈</button>
+  <button class="tb locked" onclick="goTab(5)">6 뉴스 브리핑</button>
+  <button class="tb locked" onclick="goTab(6)">7 오프닝 멘트</button>
+  <button class="tb locked" onclick="goTab(7)">8 리마인드 멘트</button>
+  <button class="tb locked" onclick="goTab(8)">9 카카오 제목</button>
+</div>
+
+<!-- ══════════════════════════════
+     TAB 1 — 직전 회차 분석
+══════════════════════════════ -->
+<div class="panel active" id="p0">
+  <div class="ph"><span class="ph-title">직전 회차 분석</span></div>
+  <p class="ph-sub">직전 회차 HTML을 붙여넣으면 제목·주제·패턴을 자동 추출합니다. CTR·공유수와 함께 이번 회차 추천 방향까지 자동 생성됩니다.</p>
+
+  <!-- 성과 수치 -->
+  <div class="fg3">
+    <div><div class="fl">CTR (%)</div><input class="fi" id="t1ctr" type="number" step="0.1" min="0" max="100" placeholder="예: 3.2"></div>
+    <div><div class="fl">공유수</div><input class="fi" id="t1share" type="number" min="0" placeholder="예: 0"></div>
+    <div><div class="fl">비고</div><input class="fi" id="t1note" placeholder="예: 캐러셀 피드형 전환"></div>
+  </div>
+
+  <!-- HTML 붙여넣기 -->
+  <div class="fl" style="margin-top:4px">직전 회차 HTML 붙여넣기</div>
+  <div class="paste-area-wrap" id="pasteWrap">
+    <textarea class="fi paste-area" id="t1html"
+      placeholder="직전 회차 뉴스레터 HTML 전체를 여기에 붙여넣으세요.&#10;제목·주제·키워드·오프닝·CTA 패턴이 자동으로 추출됩니다."
+      oninput="onPasteInput()"></textarea>
+    <button class="paste-clear" onclick="clearPaste()">지우기</button>
+  </div>
+
+  <!-- 추출 상태 -->
+  <div class="extract-row">
+    <span class="extract-badge eb-empty" id="extractBadge">HTML 대기 중</span>
+    <span style="font-size:12px;color:var(--text3)" id="extractHint">HTML을 붙여넣으면 자동 추출됩니다</span>
+  </div>
+
+  <!-- 참고용 URL -->
+  <div class="fl">직전 회차 URL <span style="font-weight:400;text-transform:none;color:var(--text3)">(선택 — 참고용)</span></div>
+  <input class="fi" id="t1url" type="text" placeholder="https://..." style="margin-bottom:1.25rem">
+
+  <div class="btn-row">
+    <button class="btn-main" id="btn-analyze" onclick="runTab1()">분석 생성</button>
+    <button class="btn-next" id="next0" disabled onclick="completeTab(0,1)">다음 →</button>
+  </div>
+
+  <!-- 분석 결과 -->
+  <div style="margin-top:1.5rem">
+    <div class="divider"></div>
+    <div class="slbl">분석 결과</div>
+    <div class="skel" id="t1skel">
+      <p>아직 분석 전입니다</p>
+      <p>HTML 붙여넣기 후 분석 생성을 눌러주세요</p>
+    </div>
+    <div id="t1result" style="display:none"></div>
+  </div>
+</div>
+
+<!-- TAB 2 -->
+<div class="panel" id="p1">
+  <div class="ph"><span class="ph-title">주제 선정</span></div>
+  <p class="ph-sub">주제·사연·오프닝·리마인드·제목을 한 번에 생성합니다. 주제 선택 후 각 탭에서 확인하세요.</p>
+  <div class="carry" id="t2carry"></div>
+  <div class="call-badge">1차 호출 — 주제 / 사연 / 오프닝 / 리마인드 / 제목</div>
+  <div class="btn-row" style="margin-top:8px;margin-bottom:1rem">
+    <button class="btn-main" id="btn-call1" onclick="call1()">생성</button>
+    <button class="btn-main" id="btn-regen1" style="display:none" onclick="call1()">재생성</button>
+  </div>
+  <div id="t2area"><div class="skel"><p>생성 버튼을 눌러주세요</p><p>주제·사연·오프닝·리마인드·제목이 한 번에 생성됩니다</p></div></div>
+  <div class="btn-row"><button class="btn-next" id="next1" disabled onclick="completeTab(1,2)">다음 →</button></div>
+</div>
+
+<!-- TAB 3 -->
+<div class="panel" id="p2">
+  <div class="ph"><span class="ph-title">사연 모음</span></div>
+  <p class="ph-sub">1차 생성 결과에서 사연 3개를 보여줍니다. 1개를 선택하세요.</p>
+  <div class="carry" id="t3carry"></div>
+  <div id="t3area"><div class="skel"><p>탭 2에서 생성 후 확인해주세요</p></div></div>
+  <div class="btn-row"><button class="btn-next" id="next2" disabled onclick="completeTab(2,3)">다음 →</button></div>
+</div>
+
+<!-- TAB 4 -->
+<div class="panel" id="p3">
+  <div class="ph"><span class="ph-title">꿀팁</span></div>
+  <p class="ph-sub">선택 주제·사연 기반으로 꿀팁과 세무 퀴즈를 한 번에 생성합니다.</p>
+  <div class="carry" id="t4carry"></div>
+  <div class="call-badge">2차 호출 — 꿀팁 / 세무퀴즈</div>
+  <div class="btn-row" style="margin-top:8px;margin-bottom:1rem">
+    <button class="btn-main" id="btn-call2" onclick="call2()">생성</button>
+    <button class="btn-main" id="btn-regen2" style="display:none" onclick="call2()">재생성</button>
+  </div>
+  <div id="t4area"><div class="skel"><p>생성 버튼을 눌러주세요</p></div></div>
+  <div class="btn-row"><button class="btn-next" id="next3" disabled onclick="completeTab(3,4)">다음 →</button></div>
+</div>
+
+<!-- TAB 5 -->
+<div class="panel" id="p4">
+  <div class="ph"><span class="ph-title">세무 퀴즈</span></div>
+  <p class="ph-sub">2차 생성 결과에서 퀴즈를 보여줍니다.</p>
+  <div class="carry" id="t5carry"></div>
+  <div id="t5area"><div class="skel"><p>탭 4에서 생성 후 확인해주세요</p></div></div>
+  <div class="btn-row"><button class="btn-next" id="next4" disabled onclick="completeTab(4,5)">다음 →</button></div>
+</div>
+
+<!-- TAB 6 -->
+<div class="panel" id="p5">
+  <div class="ph"><span class="ph-title">뉴스 한입 브리핑</span></div>
+  <p class="ph-sub">주제 연관 뉴스 후보를 생성합니다. 최대 2개 선택하세요.</p>
+  <div class="carry" id="t6carry"></div>
+  <div class="call-badge">3차 호출 — 뉴스 브리핑</div>
+  <div class="btn-row" style="margin-top:8px;margin-bottom:1rem">
+    <button class="btn-main" id="btn-call3" onclick="call3()">생성</button>
+    <button class="btn-main" id="btn-regen3" style="display:none" onclick="call3()">재생성</button>
+  </div>
+  <div id="t6area"><div class="skel"><p>생성 버튼을 눌러주세요</p></div></div>
+  <div class="btn-row"><button class="btn-next" id="next5" disabled onclick="newsComplete()">다음 →</button></div>
+</div>
+
+<!-- TAB 7 -->
+<div class="panel" id="p6">
+  <div class="ph"><span class="ph-title">오프닝 멘트</span></div>
+  <p class="ph-sub">1차 생성 결과에서 오프닝 3개를 보여줍니다. 1개를 선택하세요.</p>
+  <div class="carry" id="t7carry"></div>
+  <div id="t7area"><div class="skel"><p>탭 2에서 생성 후 확인해주세요</p></div></div>
+  <div class="btn-row"><button class="btn-next" id="next6" disabled onclick="completeTab(6,7)">다음 →</button></div>
+</div>
+
+<!-- TAB 8 -->
+<div class="panel" id="p7">
+  <div class="ph"><span class="ph-title">리마인드 멘트</span></div>
+  <p class="ph-sub">1차 생성 결과에서 리마인드 멘트 3개를 보여줍니다. 1개를 선택하세요.</p>
+  <div class="carry" id="t8carry"></div>
+  <div id="t8area"><div class="skel"><p>탭 2에서 생성 후 확인해주세요</p></div></div>
+  <div class="btn-row"><button class="btn-next" id="next7" disabled onclick="completeTab(7,8)">다음 →</button></div>
+</div>
+
+<!-- TAB 9 -->
+<div class="panel" id="p8">
+  <div class="ph"><span class="ph-title">카카오 플친 제목</span></div>
+  <p class="ph-sub">1차 생성 결과에서 제목 5개를 보여줍니다. 1개를 선택하세요.</p>
+  <div class="carry" id="t9carry"></div>
+  <div id="t9area"><div class="skel"><p>탭 2에서 생성 후 확인해주세요</p></div></div>
+  <div class="btn-row"><button class="btn-next" id="next8" disabled onclick="showFinal()">최종 초안 보기 →</button></div>
+  <div id="finalArea" style="display:none;margin-top:2rem">
+    <div class="divider"></div>
+    <div class="slbl">최종 밀당레터 초안</div>
+    <div id="finalContent"></div>
+    <div class="btn-row"><button class="btn-main" onclick="copyAll()">전체 복사</button></div>
+  </div>
+</div>
+
+</div><!-- /.wrap -->
+
+<script>
+/* ══════════════════════════════════════
+   상태
+══════════════════════════════════════ */
+var S = {
+  ctr:0, share:0, note:'',
+  /* 탭1 분석 결과 — HTML 자동 추출 */
+  analysis: null,   /* { title, topic, keywords[], opening_pattern, cta_pattern, avoid[] } */
+  recType: '',
+  /* 이후 탭 상태 */
+  call1Data:null, call2Data:null, call3Data:null,
+  subject:null, story:null, opening:null, remind:null, title:null,
+  news:[], selNewsIdx:[]
+};
+
+var API_ENDPOINT = '/api/generate';
+
+/* ── 탭 제어 ── */
+function tbs(){ return document.querySelectorAll('.tb'); }
+function pnls(){ return document.querySelectorAll('.panel'); }
+
+function goTab(i){
+  if(tbs()[i].classList.contains('locked')) return;
+  tbs().forEach(function(b,idx){ b.classList.toggle('active', idx===i); });
+  pnls().forEach(function(p,idx){ p.classList.toggle('active', idx===i); });
+  updateCarry(i);
+  renderTabFromState(i);
+}
+function unlockTab(i){ tbs()[i].classList.remove('locked'); }
+function completeTab(cur, nxt){ tbs()[cur].classList.add('done'); unlockTab(nxt); goTab(nxt); }
+function setBtn(id, dis){ var b=document.getElementById(id); if(b) b.disabled=dis; }
+
+function loading(){
+  return '<div class="loading-pulse"><div class="dot"></div><div class="dot"></div><div class="dot"></div>'
+    +'<span style="margin-left:6px">생성 중...</span></div>';
+}
+function errBox(msg){
+  return '<div class="err-box">생성 실패: '+escHtml(msg)
+    +'<br><span style="font-size:12px">네트워크 상태를 확인하거나 재시도해주세요</span></div>';
+}
+function escHtml(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function updateCarry(i){
+  var ids={1:'t2carry',2:'t3carry',3:'t4carry',4:'t5carry',5:'t6carry',6:'t7carry',7:'t8carry',8:'t9carry'};
+  var el=document.getElementById(ids[i]); if(!el) return;
+  var parts=['CTR '+S.ctr.toFixed(1)+'%'];
+  if(S.analysis && S.analysis.topic) parts.push('직전주제: '+S.analysis.topic);
+  if(S.subject) parts.push('선택주제: '+S.subject.title);
+  if(S.story)   parts.push('사연톤: '+S.story.tone);
+  el.innerHTML='<b>앞 탭 반영값</b>'+parts.join('  ·  ');
+}
+
+/* ══════════════════════════════════════
+   TAB 1 — HTML 붙여넣기 & 자동 분석
+══════════════════════════════════════ */
+
+/* textarea 입력 감지 → 상태 배지 업데이트 */
+function onPasteInput(){
+  var val = document.getElementById('t1html').value.trim();
+  var wrap = document.getElementById('pasteWrap');
+  var badge = document.getElementById('extractBadge');
+  var hint  = document.getElementById('extractHint');
+  if(val.length > 50){
+    wrap.classList.add('has-content');
+    badge.className = 'extract-badge eb-ready';
+    badge.textContent = 'HTML 감지됨';
+    hint.textContent = '분석 생성 버튼을 눌러주세요';
+  } else {
+    wrap.classList.remove('has-content');
+    badge.className = 'extract-badge eb-empty';
+    badge.textContent = 'HTML 대기 중';
+    hint.textContent = 'HTML을 붙여넣으면 자동 추출됩니다';
+  }
+}
+
+function clearPaste(){
+  document.getElementById('t1html').value = '';
+  onPasteInput();
+}
+
+/* HTML → 텍스트 변환 (브라우저 파서 활용) */
+function htmlToText(html){
+  var tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  /* script / style 제거 */
+  ['script','style'].forEach(function(tag){
+    Array.from(tmp.querySelectorAll(tag)).forEach(function(el){ el.remove(); });
+  });
+  return (tmp.innerText || tmp.textContent || '').replace(/\s+/g,' ').trim();
+}
+
+/* 탭1 분석 생성 — 백엔드 호출 */
+async function runTab1(){
+  var ctrVal = document.getElementById('t1ctr').value.trim();
+  if(!ctrVal){ alert('CTR을 입력해주세요'); return; }
+
+  S.ctr   = Math.max(0, parseFloat(ctrVal)||0);
+  S.share = Math.max(0, parseInt(document.getElementById('t1share').value)||0);
+  S.note  = document.getElementById('t1note').value.trim();
+  S.recType = S.ctr>=4?'나해당형·반전형':S.ctr>=3?'공감형·헷갈림형':'공감형·현실질문형';
+
+  var rawHtml  = document.getElementById('t1html').value.trim();
+  var bodyText = rawHtml ? htmlToText(rawHtml) : '';
+
+  /* HTML 없어도 진행 (수치만으로 분석) */
+  document.getElementById('t1skel').style.display  = 'none';
+  document.getElementById('t1result').style.display = 'none';
+  document.getElementById('t1result').innerHTML = loading();
+  document.getElementById('t1result').style.display = 'block';
+  setBtn('btn-analyze', true);
+  setBtn('next0', true);
+
+  try {
+    var result = await callBackend('analyze', {
+      ctr:      S.ctr,
+      share:    S.share,
+      note:     S.note,
+      recType:  S.recType,
+      bodyText: bodyText.slice(0, 4000)   /* 토큰 절약: 최대 4000자 */
+    });
+    S.analysis = result;
+    renderTab1Result(result);
+    setBtn('next0', false);
+  } catch(e){
+    document.getElementById('t1result').innerHTML = errBox(e.message);
+  } finally {
+    setBtn('btn-analyze', false);
+  }
+}
+
+function renderTab1Result(r){
+  if(!r){ document.getElementById('t1result').innerHTML = errBox('분석 결과 없음'); return; }
+
+  /* 키워드 배지 */
+  var kwHtml = (Array.isArray(r.keywords) ? r.keywords : []).map(function(k){
+    return '<span class="bdg">'+escHtml(k)+'</span>';
+  }).join('');
+
+  /* 피해야 할 소재 */
+  var avoidHtml = (Array.isArray(r.avoid) ? r.avoid : []).map(function(a){
+    return '<span class="bdg w">'+escHtml(a)+'</span>';
+  }).join('');
+
+  var grid = [
+    { label:'직전 회차 제목',   value: escHtml(r.title  || '추출 불가') },
+    { label:'핵심 주제',        value: escHtml(r.topic  || '추출 불가') },
+    { label:'반복 키워드',      value: kwHtml || '<span class="bdg">없음</span>' },
+    { label:'오프닝 패턴',      value: escHtml(r.opening_pattern || '추출 불가') },
+    { label:'CTA 패턴',         value: escHtml(r.cta_pattern     || '추출 불가') },
+    { label:'피해야 할 중복 소재', value: avoidHtml || '<span class="bdg">없음</span>' },
+  ];
+
+  var gridHtml = '<div class="analysis-grid">'
+    + grid.map(function(item){
+        return '<div class="analysis-item">'
+          +'<div class="analysis-item-label">'+item.label+'</div>'
+          +'<div class="analysis-item-value">'+item.value+'</div>'
+          +'</div>';
+      }).join('')
+    + '</div>';
+
+  /* 이번 회차 추천 방향 */
+  var dirHtml = '<div class="direction-box">'
+    +'<div class="direction-box-label">이번 회차 추천 방향</div>'
+    +'<div class="direction-box-body">'+escHtml(r.direction || '방향 분석 결과 없음')+'</div>'
+    +'</div>';
+
+  /* CTR 요약 */
+  var cl = S.ctr>=4?'tg':'ta';
+  var ll = S.ctr>=4?'고클릭':S.ctr>=3?'평균':'저클릭';
+  var ctrHtml = '<div class="rc" style="margin-bottom:8px">'
+    +'<div class="rc-hd">'
+    +'<span class="tag '+cl+'">CTR '+S.ctr.toFixed(1)+'% · '+ll+'</span>'
+    +(S.note?'<span class="tag tgr">'+escHtml(S.note)+'</span>':'')
+    +'<span class="tag tb2">공유 '+S.share+'건</span>'
+    +'</div>'
+    +'<div class="rc-body">권장 유형: <b>'+S.recType+'</b></div>'
+    +'</div>';
+
+  document.getElementById('t1result').innerHTML = ctrHtml + gridHtml + dirHtml;
+}
+
+/* ══════════════════════════════════════
+   백엔드 호출
+══════════════════════════════════════ */
+async function callBackend(type, payload){
+  var res = await fetch(API_ENDPOINT, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ type:type, payload:payload })
+  });
+  if(!res.ok){
+    var body='';
+    try{ var j=await res.json(); body=j.error||JSON.stringify(j); }
+    catch(_){ body=await res.text(); }
+    throw new Error('서버 오류 '+res.status+': '+body);
+  }
+  var data = await res.json();
+  if(data.error) throw new Error(data.error);
+  if(!data.result) throw new Error('서버 응답에 result 없음');
+  return data.result;
+}
+
+/* ══════════════════════════════════════
+   1차 호출: 주제·사연·오프닝·리마인드·제목
+══════════════════════════════════════ */
+async function call1(){
+  resetAll();
+  document.getElementById('t2area').innerHTML = loading();
+  setBtn('btn-call1', true); setBtn('next1', true);
+  try{
+    var result = await callBackend('call1', {
+      ctr:      S.ctr,
+      share:    S.share,
+      note:     S.note,
+      recType:  S.recType,
+      /* 분석 결과 자동 반영 */
+      prevTitle:    S.analysis ? S.analysis.title           : '',
+      prevTopic:    S.analysis ? S.analysis.topic           : '',
+      prevKeywords: S.analysis ? (S.analysis.keywords||[]).join(', ') : '',
+      avoid:        S.analysis ? (S.analysis.avoid||[]).join(', ')    : '',
+      openingPattern: S.analysis ? S.analysis.opening_pattern : '',
+      ctaPattern:     S.analysis ? S.analysis.cta_pattern     : ''
+    });
+    S.call1Data = result;
+    renderTab2FromState();
+    document.getElementById('btn-call1').style.display = 'none';
+    document.getElementById('btn-regen1').style.display = '';
+  } catch(e){
+    document.getElementById('t2area').innerHTML = errBox(e.message);
+  } finally {
+    setBtn('btn-call1', false);
+  }
+}
+
+function resetAll(){
+  S.call1Data=null; S.call2Data=null; S.call3Data=null;
+  S.subject=null; S.story=null; S.opening=null; S.remind=null; S.title=null;
+  S.news=[]; S.selNewsIdx=[];
+  ['next1','next2','next3','next4','next5','next6','next7','next8'].forEach(function(id){ setBtn(id,true); });
+  ['t3area','t4area','t5area','t6area','t7area','t8area','t9area'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.innerHTML='<div class="skel"><p>앞 탭에서 생성 후 확인해주세요</p></div>';
+  });
+  document.getElementById('btn-regen2').style.display='none'; document.getElementById('btn-call2').style.display='';
+  document.getElementById('btn-regen3').style.display='none'; document.getElementById('btn-call3').style.display='';
+  document.getElementById('finalArea').style.display='none';
+}
+
+function resetDownstreamOfSubject(){
+  S.story=null; S.opening=null; S.remind=null; S.title=null;
+  ['next2','next6','next7','next8'].forEach(function(id){ setBtn(id,true); });
+}
+function resetDownstreamOfStory(){
+  S.opening=null; setBtn('next6',true);
+}
+
+/* ── TAB 2 ── */
+function renderTab2FromState(){
+  var data=S.call1Data;
+  if(!data||!Array.isArray(data.subjects)||!data.subjects.length){
+    document.getElementById('t2area').innerHTML=errBox('주제 데이터가 없습니다. 재생성해주세요.'); return;
+  }
+  document.getElementById('t2area').innerHTML='<div class="sel-grid">'
+    +data.subjects.map(function(s,i){
+      var isOn=S.subject&&S.subject.title===s.title;
+      return '<div class="sc'+(isOn?' on':'')+'" id="sc'+i+'" onclick="selectSubject('+i+')">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:5px">'
+        +'<div class="sc-t">'+escHtml(s.title)+'</div>'
+        +'<span class="tag tgr" style="flex-shrink:0;font-size:10px">'+escHtml(s.type)+'</span></div>'
+        +'<div class="sc-b" style="margin-bottom:5px">'+escHtml(s.desc)+'</div>'
+        +'<div class="sc-meta">'
+        +'<span class="sc-mi"><b>왜 좋음</b>  '+escHtml(s.why)+'</span>'
+        +'<span class="sc-mi"><b>타깃</b>  '+escHtml(s.target)+'</span></div>'
+        +'<div class="ck">✓</div></div>';
+    }).join('')+'</div>';
+}
+function selectSubject(i){
+  if(!S.call1Data||!S.call1Data.subjects[i]) return;
+  document.querySelectorAll('#t2area .sc').forEach(function(c){c.classList.remove('on');});
+  document.getElementById('sc'+i).classList.add('on');
+  S.subject=S.call1Data.subjects[i]; setBtn('next1',false);
+  resetDownstreamOfSubject();
+  renderTab3FromState(); renderTab7FromState(); renderTab8FromState(); renderTab9FromState();
+}
+
+/* ── TAB 3 ── */
+function renderTab3FromState(){
+  var data=S.call1Data;
+  if(!data||!Array.isArray(data.stories)){
+    document.getElementById('t3area').innerHTML='<div class="skel"><p>탭 2에서 먼저 생성해주세요</p></div>'; return;
+  }
+  document.getElementById('t3area').innerHTML='<div class="sel-grid">'
+    +data.stories.map(function(s,i){
+      var isOn=S.story&&S.story.tone===s.tone;
+      return '<div class="sc'+(isOn?' on':'')+'" id="stc'+i+'" onclick="selectStory('+i+')">'
+        +'<div style="margin-bottom:6px"><span class="tag tgr">'+escHtml(s.tone)+'</span></div>'
+        +'<div class="sc-b">'+escHtml(s.text)+'</div>'
+        +'<div class="ck">✓</div></div>';
+    }).join('')+'</div>';
+}
+function selectStory(i){
+  if(!S.call1Data||!S.call1Data.stories[i]) return;
+  document.querySelectorAll('#t3area .sc').forEach(function(c){c.classList.remove('on');});
+  document.getElementById('stc'+i).classList.add('on');
+  S.story=S.call1Data.stories[i]; setBtn('next2',false);
+  resetDownstreamOfStory(); renderTab7FromState();
+}
+
+/* ── 2차 호출 ── */
+async function call2(){
+  if(!S.subject){alert('탭 2에서 주제를 먼저 선택해주세요');return;}
+  S.call2Data=null;
+  document.getElementById('t4area').innerHTML=loading();
+  document.getElementById('t5area').innerHTML='<div class="skel"><p>탭 4 생성 후 확인해주세요</p></div>';
+  setBtn('next3',true); setBtn('next4',true); setBtn('btn-call2',true);
+  try{
+    var result=await callBackend('call2',{
+      subjectTitle:S.subject.title, subjectType:S.subject.type,
+      storyText:S.story?S.story.text:'', ctr:S.ctr
+    });
+    S.call2Data=result;
+    renderTab4FromState(); renderTab5FromState();
+    setBtn('next3',false); setBtn('next4',false);
+    document.getElementById('btn-call2').style.display='none';
+    document.getElementById('btn-regen2').style.display='';
+  } catch(e){
+    document.getElementById('t4area').innerHTML=errBox(e.message);
+  } finally { setBtn('btn-call2',false); }
+}
+function renderTab4FromState(){
+  var data=S.call2Data; if(!data||!Array.isArray(data.tips)) return;
+  var cls=['tg','tb2','tgr'];
+  document.getElementById('t4area').innerHTML=data.tips.map(function(t,i){
+    return '<div class="rc"><div class="rc-hd"><span class="tag '+cls[i]+'">'+escHtml(t.label)+'</span></div>'
+      +'<div class="rc-body">'+escHtml(t.body)+'</div></div>';
+  }).join('');
+}
+function renderTab5FromState(){
+  var data=S.call2Data;
+  if(!data||!data.quiz_ox){
+    document.getElementById('t5area').innerHTML='<div class="skel"><p>탭 4에서 생성 후 확인해주세요</p></div>'; return;
+  }
+  var ox=data.quiz_ox, mc=data.quiz_mc||{};
+  var mcAns=typeof mc.answer==='number'?mc.answer:parseInt(mc.answer)||0;
+  var oxAns=String(ox.answer||'X').toUpperCase();
+  var mcOpts=Array.isArray(mc.options)?mc.options:[];
+  document.getElementById('t5area').innerHTML=
+    '<div class="rc"><div class="rc-hd"><span class="tag ta">O / X 퀴즈</span></div>'
+    +'<div class="rc-body" style="font-weight:500;margin-bottom:10px">'+escHtml(ox.question)+'</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:6px">'
+    +'<button class="btn-sm" onclick="chkOX(this,\''+oxAns+'\',\'O\')">O</button>'
+    +'<button class="btn-sm" onclick="chkOX(this,\''+oxAns+'\',\'X\')">X</button>'
+    +'</div><div id="ox-res" style="display:none;font-size:12px;color:var(--text2);padding-top:8px;border-top:0.5px solid var(--border)">'
+    +'<b>정답: '+oxAns+'</b>  '+escHtml(ox.explanation)+'</div></div>'
+    +(mc.question?'<div class="rc"><div class="rc-hd"><span class="tag tb2">4지선다 퀴즈</span></div>'
+    +'<div class="rc-body" style="font-weight:500;margin-bottom:10px">'+escHtml(mc.question)+'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px" id="q2opts">'
+    +mcOpts.map(function(o,i){
+      return '<button class="btn-sm" style="text-align:left;padding:7px 10px;width:100%"'
+        +' onclick="chkMC('+i+','+mcAns+',\''+escHtml(mc.explanation).replace(/'/g,"&#39;")+'\')">'
+        +(i+1)+'. '+escHtml(o)+'</button>';
+    }).join('')
+    +'</div><div id="q2-res" style="display:none;font-size:12px;color:var(--text2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)">'
+    +'<b>정답: '+(mcAns+1)+'번</b>  '+escHtml(mc.explanation)+'</div></div>':'');
+}
+function chkOX(btn,correct,chosen){
+  var el=document.getElementById('ox-res');
+  if(el){el.style.display='block';el.style.color=chosen===correct?'var(--teal-text)':'var(--coral-text)';}
+}
+function chkMC(i,correct,ex){
+  document.querySelectorAll('#q2opts button').forEach(function(b,idx){
+    b.style.borderColor=idx===correct?'var(--teal-bd)':idx===i&&i!==correct?'var(--coral-bd)':'';
+    b.style.background=idx===correct?'var(--teal-bg)':idx===i&&i!==correct?'var(--coral-bg)':'';
+  });
+  var el=document.getElementById('q2-res'); if(el) el.style.display='block';
+}
+
+/* ── 3차 호출 ── */
+async function call3(){
+  S.call3Data=null; S.selNewsIdx=[]; S.news=[];
+  document.getElementById('next5').disabled=true;
+  document.getElementById('t6area').innerHTML=loading();
+  setBtn('btn-call3',true);
+  try{
+    var result=await callBackend('call3',{
+      subjectTitle:S.subject?S.subject.title:'',
+      subjectType:S.subject?S.subject.type:''
+    });
+    S.call3Data=result; renderTab6FromState();
+    document.getElementById('btn-call3').style.display='none';
+    document.getElementById('btn-regen3').style.display='';
+  } catch(e){
+    document.getElementById('t6area').innerHTML=errBox(e.message);
+  } finally { setBtn('btn-call3',false); }
+}
+function renderTab6FromState(){
+  var data=S.call3Data; if(!data||!Array.isArray(data.news)) return;
+  S.selNewsIdx=[]; S.news=[]; document.getElementById('next5').disabled=true;
+  document.getElementById('t6area').innerHTML='<div class="sel-grid">'
+    +data.news.slice(0,10).map(function(n,i){
+      return '<div class="sc" id="nc'+i+'" onclick="toggleNews('+i+')">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+        +'<div style="flex:1">'
+        +'<div style="font-size:13px;font-weight:500;margin-bottom:3px">'+escHtml(n.title)+'</div>'
+        +'<div style="font-size:11px;color:var(--text3);margin-bottom:6px">'+escHtml(n.date)+'</div>'
+        +'<div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:4px">'+escHtml(n.summary)+'</div>'
+        +'<div style="font-size:11px;color:var(--text3)"><b style="color:var(--text2);font-weight:500">왜 좋음</b>  '+escHtml(n.why)+'</div>'
+        +'</div><div class="ck">✓</div></div></div>';
+    }).join('')+'</div>';
+}
+function toggleNews(i){
+  var idx=S.selNewsIdx.indexOf(i);
+  if(idx>-1){S.selNewsIdx.splice(idx,1);document.getElementById('nc'+i).classList.remove('on');}
+  else{if(S.selNewsIdx.length>=2){alert('최대 2개 선택 가능합니다');return;}S.selNewsIdx.push(i);document.getElementById('nc'+i).classList.add('on');}
+  document.getElementById('next5').disabled=S.selNewsIdx.length===0;
+}
+function newsComplete(){ S.news=S.selNewsIdx.map(function(i){return S.call3Data.news[i];}); completeTab(5,6); }
+
+/* ── TAB 7/8/9 ── */
+function renderTab7FromState(){
+  var data=S.call1Data;
+  if(!data||!Array.isArray(data.openings)){document.getElementById('t7area').innerHTML='<div class="skel"><p>탭 2에서 먼저 생성해주세요</p></div>';return;}
+  document.getElementById('t7area').innerHTML='<div class="sel-grid">'
+    +data.openings.map(function(o,i){
+      var isOn=S.opening&&S.opening.tone===o.tone;
+      return '<div class="sc'+(isOn?' on':'')+'" id="opc'+i+'" onclick="selectOpening('+i+')">'
+        +'<div style="margin-bottom:6px"><span class="tag tgr">'+escHtml(o.tone)+'</span></div>'
+        +'<div class="sc-b">'+escHtml(o.text)+'</div><div class="ck">✓</div></div>';
+    }).join('')+'</div>';
+}
+function selectOpening(i){
+  if(!S.call1Data||!S.call1Data.openings[i]) return;
+  document.querySelectorAll('#t7area .sc').forEach(function(c){c.classList.remove('on');});
+  document.getElementById('opc'+i).classList.add('on');
+  S.opening=S.call1Data.openings[i]; setBtn('next6',false);
+}
+
+function renderTab8FromState(){
+  var data=S.call1Data;
+  if(!data||!Array.isArray(data.reminds)){document.getElementById('t8area').innerHTML='<div class="skel"><p>탭 2에서 먼저 생성해주세요</p></div>';return;}
+  document.getElementById('t8area').innerHTML='<div class="sel-grid">'
+    +data.reminds.map(function(r,i){
+      var isOn=S.remind===r;
+      return '<div class="sc'+(isOn?' on':'')+'" id="rmc'+i+'" onclick="selectRemind('+i+')">'
+        +'<div style="margin-bottom:6px"><span class="tag ta">멘트 '+(i+1)+'</span></div>'
+        +'<div class="sc-b">'+escHtml(r)+'</div><div class="ck">✓</div></div>';
+    }).join('')+'</div>';
+}
+function selectRemind(i){
+  if(!S.call1Data||S.call1Data.reminds[i]===undefined) return;
+  document.querySelectorAll('#t8area .sc').forEach(function(c){c.classList.remove('on');});
+  document.getElementById('rmc'+i).classList.add('on');
+  S.remind=S.call1Data.reminds[i]; setBtn('next7',false);
+}
+
+function renderTab9FromState(){
+  var data=S.call1Data;
+  if(!data||!Array.isArray(data.titles)){document.getElementById('t9area').innerHTML='<div class="skel"><p>탭 2에서 먼저 생성해주세요</p></div>';return;}
+  document.getElementById('t9area').innerHTML='<div class="sel-grid">'
+    +data.titles.map(function(t,i){
+      var isOn=S.title===t.title;
+      return '<div class="sc'+(isOn?' on':'')+'" id="ttc'+i+'" onclick="selectTitle('+i+')">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:5px">'
+        +'<div class="sc-t">'+escHtml(t.title)+'</div>'
+        +'<span class="tag tgr" style="flex-shrink:0;font-size:10px">'+escHtml(t.type)+'</span></div>'
+        +'<div style="font-size:11px;color:var(--text3)">'+(t.title.length<=22?'22자 이내 · 카톡 최적':t.title.length+'자 · 축약 권장')+'</div>'
+        +'<div class="ck">✓</div></div>';
+    }).join('')+'</div>';
+}
+function selectTitle(i){
+  if(!S.call1Data||!S.call1Data.titles[i]) return;
+  document.querySelectorAll('#t9area .sc').forEach(function(c){c.classList.remove('on');});
+  document.getElementById('ttc'+i).classList.add('on');
+  S.title=S.call1Data.titles[i].title; setBtn('next8',false);
+}
+
+function renderTabFromState(i){
+  if(i===1&&S.call1Data) renderTab2FromState();
+  if(i===2&&S.call1Data) renderTab3FromState();
+  if(i===3&&S.call2Data) renderTab4FromState();
+  if(i===4&&S.call2Data) renderTab5FromState();
+  if(i===5&&S.call3Data) renderTab6FromState();
+  if(i===6&&S.call1Data) renderTab7FromState();
+  if(i===7&&S.call1Data) renderTab8FromState();
+  if(i===8&&S.call1Data) renderTab9FromState();
+}
+
+/* ── 최종 초안 ── */
+function showFinal(){
+  document.getElementById('finalArea').style.display='block';
+  var tips=(S.call2Data&&Array.isArray(S.call2Data.tips))
+    ?S.call2Data.tips.map(function(t){return '['+t.label+']\n'+t.body;}).join('\n\n'):'미생성';
+  var quiz='미생성';
+  if(S.call2Data&&S.call2Data.quiz_ox){
+    var ox=S.call2Data.quiz_ox;
+    quiz='[O/X] '+ox.question+'\n정답: '+ox.answer+'  '+ox.explanation;
+    if(S.call2Data.quiz_mc){
+      var mc=S.call2Data.quiz_mc;
+      quiz+='\n\n[4지선다] '+mc.question+'\n'
+        +(Array.isArray(mc.options)?mc.options.map(function(o,i){return (i+1)+'. '+o;}).join(' / '):'')
+        +'\n정답: '+(mc.answer+1)+'번  '+mc.explanation;
+    }
+  }
+  var newsText=(Array.isArray(S.news)&&S.news.length>0)
+    ?S.news.map(function(n,i){return '['+(i+1)+'] '+(n.title||'')+'  ('+(n.date||'')+')\n'+(n.summary||'');}).join('\n\n')
+    :'선택 없음';
+  var sections=[
+    {lbl:'카카오 플친 제목', body:S.title||'미선택'},
+    {lbl:'오프닝 멘트',      body:(S.opening&&S.opening.text)||'미선택'},
+    {lbl:'선택 주제',        body:S.subject?S.subject.title+'\n유형: '+S.subject.type:'미선택'},
+    {lbl:'사연',             body:(S.story&&S.story.text)||'미선택'},
+    {lbl:'꿀팁',             body:tips},
+    {lbl:'세무 퀴즈',        body:quiz},
+    {lbl:'뉴스 한입 브리핑', body:newsText},
+    {lbl:'리마인드 멘트',    body:S.remind||'미선택'},
+  ];
+  document.getElementById('finalContent').innerHTML=sections.map(function(sec){
+    var bodyHtml=escHtml(sec.body||'').replace(/\n/g,'<br>');
+    return '<div class="final-sec">'
+      +'<div class="final-sec-hd"><span class="final-sec-lbl">'+sec.lbl+'</span>'
+      +'<button class="btn-sm" onclick="copySec(this)">복사</button></div>'
+      +'<div class="final-sec-body" data-text="'+escHtml(sec.body||'')+'">'+bodyHtml+'</div></div>';
+  }).join('');
+  setTimeout(function(){document.getElementById('finalArea').scrollIntoView({behavior:'smooth'});},80);
+}
+function copySec(btn){
+  var body=btn.closest('.final-sec').querySelector('.final-sec-body');
+  navigator.clipboard.writeText(body?body.getAttribute('data-text'):'').then(function(){
+    btn.textContent='복사됨'; setTimeout(function(){btn.textContent='복사';},1500);
+  }).catch(function(){alert('복사 실패');});
+}
+function copyAll(){
+  var all=Array.from(document.querySelectorAll('.final-sec')).map(function(el){
+    return '['+el.querySelector('.final-sec-lbl').textContent+']\n'
+      +el.querySelector('.final-sec-body').getAttribute('data-text');
+  }).join('\n\n---\n\n');
+  navigator.clipboard.writeText(all).then(function(){alert('전체 복사 완료');})
+    .catch(function(){alert('복사 실패');});
+}
+</script>
+</body>
+</html>
