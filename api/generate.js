@@ -1,5 +1,5 @@
 // api/generate.js — Vercel Serverless Function
-// ANTHROPIC_API_KEY 는 서버 환경변수에서만 관리
+// OPENAI_API_KEY 는 서버 환경변수에서만 관리
 
 const ALLOWED_TYPES = ['analyze', 'call1', 'call2', 'call3'];
 
@@ -74,7 +74,7 @@ CTA 패턴: ${p.ctaPattern || '없음'}
 subjects: 정확히 5개 / stories: 정확히 3개 / openings: 정확히 3개 / reminds: 정확히 3개 / titles: 정확히 5개
 
 [콘텐츠 기준]
-- subjects: CTR ${p.ctr}% 기반 유형 정렬. 직전 주제(${p.topic || '없음'}) 중복 금지. 정책·지원 최대 1개.
+- subjects: CTR ${p.ctr}% 기반 유형 정렬. 직전 주제(${p.prevTopic || '없음'}) 중복 금지. 정책·지원 최대 1개.
   유형: 나해당형/손해반전형/놓침형/헷갈림형/현실질문형/정책체감형
 - stories: 소상공인 말투. "이거 내 얘기인데?" 공감형. 세무 포인트 자연스럽게.
 - openings: 뉴스앵커·기관 인사 금지. 2~4문장. 사장님 공감 첫 문장.
@@ -211,9 +211,9 @@ export default async function handler(req, res) {
   if (req.method !== 'POST')
     return res.status(405).json({ error: 'Method not allowed' });
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    console.error('[밀당레터] ANTHROPIC_API_KEY 환경변수 없음');
+    console.error('[밀당레터] OPENAI_API_KEY 환경변수 없음');
     return res.status(500).json({ error: '서버 설정 오류: API 키 없음' });
   }
 
@@ -230,41 +230,45 @@ export default async function handler(req, res) {
   const prompt = buildPrompt(type, payload || {});
   const startTime = Date.now();
 
-  let anthropicRes;
+  let openaiRes;
   try {
-    anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+    openaiRes = await fetch('https://api.openai.com/v1/responses', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: MAX_TOKENS[type],
-        messages: [{ role: 'user', content: prompt }]
+        model: 'gpt-5.4-mini',
+        input: prompt,
+        max_output_tokens: MAX_TOKENS[type]
       })
     });
   } catch (e) {
-    console.error('[밀당레터] Anthropic 네트워크 오류:', e.message);
-    return res.status(502).json({ error: 'Anthropic API 연결 실패: ' + e.message });
+    console.error('[밀당레터] OpenAI 네트워크 오류:', e.message);
+    return res.status(502).json({ error: 'OpenAI API 연결 실패: ' + e.message });
   }
 
-  if (!anthropicRes.ok) {
-    const errBody = await anthropicRes.text();
-    console.error('[밀당레터] Anthropic HTTP 오류', anthropicRes.status, errBody);
+  if (!openaiRes.ok) {
+    const errBody = await openaiRes.text();
+    console.error('[밀당레터] OpenAI HTTP 오류', openaiRes.status, errBody);
     return res.status(502).json({
-      error: 'Anthropic API 오류 ' + anthropicRes.status,
+      error: 'OpenAI API 오류 ' + openaiRes.status,
       detail: errBody.slice(0, 300)
     });
   }
 
   let raw;
   try {
-    const data = await anthropicRes.json();
-    raw = data.content?.[0]?.text || '';
+    const data = await openaiRes.json();
+    raw =
+      data.output_text ||
+      data.output?.map(item =>
+        (item.content || []).map(c => c.text || '').join('')
+      ).join('') ||
+      '';
   } catch (e) {
-    console.error('[밀당레터] Anthropic 응답 파싱 오류:', e.message);
+    console.error('[밀당레터] OpenAI 응답 파싱 오류:', e.message);
     return res.status(502).json({ error: '응답 파싱 오류' });
   }
 
