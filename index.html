@@ -117,6 +117,13 @@ textarea.fi{resize:vertical;line-height:1.5}
   <button class="tb locked" onclick="goTab(6)">7 오프닝 멘트</button>
   <button class="tb locked" onclick="goTab(7)">8 리마인드 멘트</button>
   <button class="tb locked" onclick="goTab(8)">9 카카오 제목</button>
+  <!-- ■ 생성 결과 다시 시작 버튼 — softReset() 연결 -->
+  <button
+    onclick="softReset()"
+    style="margin-left:auto;font-size:11px;font-weight:500;padding:5px 10px;border-radius:var(--radius);border:0.5px solid var(--coral-bd);background:transparent;color:var(--coral-text);cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .1s"
+    onmouseover="this.style.background='var(--coral-bg)'"
+    onmouseout="this.style.background='transparent'"
+    title="전 회차 분석 데이터는 유지하고, 이번 회차 생성 결과만 초기화합니다">생성 결과 다시 시작</button>
 </div>
 
 <!-- ══════════════════════════════
@@ -269,17 +276,209 @@ textarea.fi{resize:vertical;line-height:1.5}
    상태
 ══════════════════════════════════════ */
 var S = {
+  /* 탭1 입력값 — localStorage 저장 대상 */
   ctr:0, share:0, note:'',
+  rawHtml: '',          /* 직전 회차 HTML 원본 */
   /* 탭1 분석 결과 — HTML 자동 추출 */
-  analysis: null,   /* { title, topic, keywords[], opening_pattern, cta_pattern, avoid[] } */
+  analysis: null,       /* { title, topic, keywords[], opening_pattern, cta_pattern, avoid[] } */
   recType: '',
   /* 이후 탭 상태 */
   call1Data:null, call2Data:null, call3Data:null,
   subject:null, story:null, opening:null, remind:null, title:null,
-  news:[], selNewsIdx:[]
+  news:[], selNewsIdx:[],
+  /* UI 상태 */
+  activeTab: 0,
+  unlockedTabs: [0],    /* 열려 있는 탭 인덱스 목록 */
+  doneTabs: []          /* 완료 표시된 탭 인덱스 목록 */
 };
 
 var API_ENDPOINT = '/api/generate';
+
+/* ══════════════════════════════════════
+   ■ localStorage 저장 — saveState()
+   변경이 발생할 때마다 자동 호출됩니다.
+   key: mildang_tool_state
+══════════════════════════════════════ */
+var LS_KEY = 'mildang_tool_state';
+
+function saveState(){
+  try {
+    /* rawHtml은 용량이 클 수 있으므로 4000자 제한 저장 */
+    var snapshot = {
+      ctr:         S.ctr,
+      share:       S.share,
+      note:        S.note,
+      rawHtml:     S.rawHtml,
+      analysis:    S.analysis,
+      recType:     S.recType,
+      call1Data:   S.call1Data,
+      call2Data:   S.call2Data,
+      call3Data:   S.call3Data,
+      subject:     S.subject,
+      story:       S.story,
+      opening:     S.opening,
+      remind:      S.remind,
+      title:       S.title,
+      news:        S.news,
+      selNewsIdx:  S.selNewsIdx,
+      activeTab:   S.activeTab,
+      unlockedTabs: S.unlockedTabs,
+      doneTabs:     S.doneTabs
+    };
+    localStorage.setItem(LS_KEY, JSON.stringify(snapshot));
+  } catch(e) {
+    /* QuotaExceededError 등 무시 — 저장 실패해도 동작은 유지 */
+    console.warn('[밀당레터] localStorage 저장 실패:', e.message);
+  }
+}
+
+/* ══════════════════════════════════════
+   ■ localStorage 복원 — restoreState()
+   페이지 로드 시 DOMContentLoaded에서 호출됩니다.
+══════════════════════════════════════ */
+function restoreState(){
+  var raw;
+  try { raw = localStorage.getItem(LS_KEY); } catch(e){ return; }
+  if(!raw) return;
+
+  var saved;
+  try { saved = JSON.parse(raw); } catch(e){ return; }
+
+  /* S 객체에 저장값 복원 */
+  S.ctr         = saved.ctr         || 0;
+  S.share       = saved.share       || 0;
+  S.note        = saved.note        || '';
+  S.rawHtml     = saved.rawHtml     || '';
+  S.analysis    = saved.analysis    || null;
+  S.recType     = saved.recType     || '';
+  S.call1Data   = saved.call1Data   || null;
+  S.call2Data   = saved.call2Data   || null;
+  S.call3Data   = saved.call3Data   || null;
+  S.subject     = saved.subject     || null;
+  S.story       = saved.story       || null;
+  S.opening     = saved.opening     || null;
+  S.remind      = saved.remind      || null;
+  S.title       = saved.title       || null;
+  S.news        = saved.news        || [];
+  S.selNewsIdx  = saved.selNewsIdx  || [];
+  S.activeTab   = saved.activeTab   || 0;
+  S.unlockedTabs = Array.isArray(saved.unlockedTabs) ? saved.unlockedTabs : [0];
+  S.doneTabs     = Array.isArray(saved.doneTabs)     ? saved.doneTabs     : [];
+
+  /* DOM 복원 — 탭1 입력값 */
+  if(S.ctr)   document.getElementById('t1ctr').value   = S.ctr;
+  if(S.share) document.getElementById('t1share').value = S.share;
+  if(S.note)  document.getElementById('t1note').value  = S.note;
+  if(S.rawHtml){
+    document.getElementById('t1html').value = S.rawHtml;
+    onPasteInput(); /* 배지 업데이트 */
+  }
+
+  /* 탭1 분석 결과 DOM 복원 */
+  if(S.analysis){
+    document.getElementById('t1skel').style.display = 'none';
+    document.getElementById('t1result').style.display = 'block';
+    renderTab1Result(S.analysis);
+    setBtn('next0', false);
+  }
+
+  /* 탭 잠금/완료/활성 상태 복원 */
+  tbs().forEach(function(btn, idx){
+    btn.classList.remove('active','done','locked');
+    if(S.unlockedTabs.indexOf(idx) === -1) btn.classList.add('locked');
+    if(S.doneTabs.indexOf(idx) !== -1)     btn.classList.add('done');
+  });
+
+  /* 활성 탭 전환 (goTab은 locked 체크하므로 직접 패널 전환) */
+  var ai = S.activeTab || 0;
+  tbs().forEach(function(b,idx){ b.classList.toggle('active', idx===ai); });
+  pnls().forEach(function(p,idx){ p.classList.toggle('active', idx===ai); });
+
+  /* 각 탭 콘텐츠 DOM 복원 */
+  if(S.call1Data){
+    renderTab2FromState();
+    renderTab3FromState();
+    renderTab7FromState();
+    renderTab8FromState();
+    renderTab9FromState();
+    /* 탭2 버튼 상태 */
+    document.getElementById('btn-call1').style.display = 'none';
+    document.getElementById('btn-regen1').style.display = '';
+  }
+  if(S.subject)  setBtn('next1', false);
+  if(S.story)    setBtn('next2', false);
+  if(S.call2Data){
+    renderTab4FromState();
+    renderTab5FromState();
+    setBtn('next3', false);
+    setBtn('next4', false);
+    document.getElementById('btn-call2').style.display = 'none';
+    document.getElementById('btn-regen2').style.display = '';
+  }
+  if(S.call3Data){
+    /* renderTab6FromState가 selNewsIdx 기반으로 on 클래스 직접 반영 */
+    renderTab6FromState();
+    if(S.selNewsIdx.length > 0) setBtn('next5', false);
+    document.getElementById('btn-call3').style.display = 'none';
+    document.getElementById('btn-regen3').style.display = '';
+  }
+  if(S.opening) setBtn('next6', false);
+  if(S.remind)  setBtn('next7', false);
+  if(S.title)   setBtn('next8', false);
+
+  /* carry 업데이트 */
+  updateCarry(ai);
+}
+
+/* ══════════════════════════════════════
+   ■ 생성 결과 다시 시작 — softReset()
+   탭1 분석 데이터는 유지, 탭2~9 생성 결과만 초기화.
+══════════════════════════════════════ */
+/* ══════════════════════════════════════
+   ■ 생성 결과 다시 시작 — softReset()
+   탭1 분석 데이터(CTR·공유수·비고·HTML·분석 결과)는 유지.
+   탭2~9 생성 결과·선택값만 초기화.
+   "전 회차 학습 기준 유지 + 이번 회차 생성 결과만 다시 시작"
+══════════════════════════════════════ */
+function softReset(){
+  if(!confirm(
+    '이번 회차 생성 결과를 다시 시작하겠습니까?\n\n'
+    +'전 회차 분석 데이터(CTR·공유수·HTML·분석 결과)는 유지됩니다.\n'
+    +'탭2~9 생성 결과와 선택값만 초기화됩니다.'
+  )) return;
+
+  /* ── 탭2~9 S 상태만 초기화 (탭1 분석 데이터는 보존) ── */
+  S.call1Data=null; S.call2Data=null; S.call3Data=null;
+  S.subject=null; S.story=null; S.opening=null; S.remind=null; S.title=null;
+  S.news=[]; S.selNewsIdx=[];
+
+  /* 탭 잠금 상태: 탭0만 열고 나머지 잠금 */
+  S.activeTab=0;
+  S.unlockedTabs=[0];
+  S.doneTabs=[];
+
+  /* ── DOM: 탭 상태 복원 ── */
+  tbs().forEach(function(btn, idx){
+    btn.classList.remove('active','done','locked');
+    if(idx > 0) btn.classList.add('locked');
+  });
+  tbs()[0].classList.add('active');
+  pnls().forEach(function(p,idx){ p.classList.toggle('active', idx===0); });
+
+  /* ── DOM: 탭2~9 콘텐츠 초기화 ── */
+  resetAll();
+
+  /* ── DOM: 탭2 생성/재생성 버튼 초기 상태로 ── */
+  document.getElementById('btn-call1').style.display='';
+  document.getElementById('btn-regen1').style.display='none';
+
+  /* ── 탭1은 분석 결과 그대로 유지 (DOM 변경 없음) ── */
+  /* next0 버튼: 분석 결과가 있으면 활성 유지 */
+  if(S.analysis) setBtn('next0', false);
+
+  /* localStorage 갱신 — 탭1 데이터는 살리고 탭2~9만 지워진 상태로 저장 */
+  saveState();
+}
 
 /* ── 탭 제어 ── */
 function tbs(){ return document.querySelectorAll('.tb'); }
@@ -289,11 +488,21 @@ function goTab(i){
   if(tbs()[i].classList.contains('locked')) return;
   tbs().forEach(function(b,idx){ b.classList.toggle('active', idx===i); });
   pnls().forEach(function(p,idx){ p.classList.toggle('active', idx===i); });
+  S.activeTab = i; /* ← 저장 */
   updateCarry(i);
   renderTabFromState(i);
+  saveState(); /* ← 탭 이동 시 저장 */
 }
-function unlockTab(i){ tbs()[i].classList.remove('locked'); }
-function completeTab(cur, nxt){ tbs()[cur].classList.add('done'); unlockTab(nxt); goTab(nxt); }
+function unlockTab(i){
+  tbs()[i].classList.remove('locked');
+  if(S.unlockedTabs.indexOf(i) === -1) S.unlockedTabs.push(i); /* ← 저장 */
+}
+function completeTab(cur, nxt){
+  tbs()[cur].classList.add('done');
+  if(S.doneTabs.indexOf(cur) === -1) S.doneTabs.push(cur); /* ← 저장 */
+  unlockTab(nxt);
+  goTab(nxt);
+}
 function setBtn(id, dis){ var b=document.getElementById(id); if(b) b.disabled=dis; }
 
 function loading(){
@@ -328,6 +537,7 @@ function onPasteInput(){
   var wrap = document.getElementById('pasteWrap');
   var badge = document.getElementById('extractBadge');
   var hint  = document.getElementById('extractHint');
+  S.rawHtml = val; /* ← rawHtml 상태에 저장 */
   if(val.length > 50){
     wrap.classList.add('has-content');
     badge.className = 'extract-badge eb-ready';
@@ -339,6 +549,7 @@ function onPasteInput(){
     badge.textContent = 'HTML 대기 중';
     hint.textContent = 'HTML을 붙여넣으면 자동 추출됩니다';
   }
+  saveState(); /* ← 붙여넣기 시 자동 저장 */
 }
 
 function clearPaste(){
@@ -366,6 +577,7 @@ async function runTab1(){
   S.share = Math.max(0, parseInt(document.getElementById('t1share').value)||0);
   S.note  = document.getElementById('t1note').value.trim();
   S.recType = S.ctr>=4?'나해당형·반전형':S.ctr>=3?'공감형·헷갈림형':'공감형·현실질문형';
+  saveState(); /* ← 입력값 즉시 저장 */
 
   var rawHtml  = document.getElementById('t1html').value.trim();
   var bodyText = rawHtml ? htmlToText(rawHtml) : '';
@@ -389,6 +601,7 @@ async function runTab1(){
     S.analysis = result;
     renderTab1Result(result);
     setBtn('next0', false);
+    saveState(); /* ← 분석 결과 저장 */
   } catch(e){
     document.getElementById('t1result').innerHTML = errBox(e.message);
   } finally {
@@ -457,13 +670,25 @@ async function callBackend(type, payload){
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ type:type, payload:payload })
   });
-  if(!res.ok){
-    var body='';
-    try{ var j=await res.json(); body=j.error||JSON.stringify(j); }
-    catch(_){ body=await res.text(); }
-    throw new Error('서버 오류 '+res.status+': '+body);
+
+  /* body 스트림은 한 번만 읽을 수 있으므로
+     text()로 먼저 읽은 뒤 JSON 파싱을 시도합니다.
+     res.json() + res.text() 이중 읽기 버그 방지 */
+  var rawText;
+  try { rawText = await res.text(); } catch(e) {
+    throw new Error('응답 읽기 실패: ' + e.message);
   }
-  var data = await res.json();
+
+  if(!res.ok){
+    var errMsg = rawText;
+    try { var j = JSON.parse(rawText); errMsg = j.error || j.message || rawText; } catch(_){}
+    throw new Error('서버 오류 ' + res.status + ': ' + errMsg);
+  }
+
+  var data;
+  try { data = JSON.parse(rawText); } catch(e) {
+    throw new Error('응답 JSON 파싱 실패: ' + rawText.slice(0, 200));
+  }
   if(data.error) throw new Error(data.error);
   if(!data.result) throw new Error('서버 응답에 result 없음');
   return data.result;
@@ -494,6 +719,7 @@ async function call1(){
     renderTab2FromState();
     document.getElementById('btn-call1').style.display = 'none';
     document.getElementById('btn-regen1').style.display = '';
+    saveState(); /* ← 1차 생성 결과 저장 */
   } catch(e){
     document.getElementById('t2area').innerHTML = errBox(e.message);
   } finally {
@@ -550,6 +776,7 @@ function selectSubject(i){
   S.subject=S.call1Data.subjects[i]; setBtn('next1',false);
   resetDownstreamOfSubject();
   renderTab3FromState(); renderTab7FromState(); renderTab8FromState(); renderTab9FromState();
+  saveState(); /* ← 주제 선택 저장 */
 }
 
 /* ── TAB 3 ── */
@@ -573,6 +800,7 @@ function selectStory(i){
   document.getElementById('stc'+i).classList.add('on');
   S.story=S.call1Data.stories[i]; setBtn('next2',false);
   resetDownstreamOfStory(); renderTab7FromState();
+  saveState(); /* ← 사연 선택 저장 */
 }
 
 /* ── 2차 호출 ── */
@@ -592,6 +820,7 @@ async function call2(){
     setBtn('next3',false); setBtn('next4',false);
     document.getElementById('btn-call2').style.display='none';
     document.getElementById('btn-regen2').style.display='';
+    saveState(); /* ← 2차 생성 결과 저장 */
   } catch(e){
     document.getElementById('t4area').innerHTML=errBox(e.message);
   } finally { setBtn('btn-call2',false); }
@@ -655,19 +884,23 @@ async function call3(){
       subjectTitle:S.subject?S.subject.title:'',
       subjectType:S.subject?S.subject.type:''
     });
-    S.call3Data=result; renderTab6FromState();
+    S.call3Data=result; renderTab6Fresh(); /* 신규 생성 — selNewsIdx 초기화 포함 */
     document.getElementById('btn-call3').style.display='none';
     document.getElementById('btn-regen3').style.display='';
+    saveState(); /* ← 3차 생성 결과 저장 */
   } catch(e){
     document.getElementById('t6area').innerHTML=errBox(e.message);
   } finally { setBtn('btn-call3',false); }
 }
 function renderTab6FromState(){
   var data=S.call3Data; if(!data||!Array.isArray(data.news)) return;
-  S.selNewsIdx=[]; S.news=[]; document.getElementById('next5').disabled=true;
+  /* ※ 신규 생성 시에만 selNewsIdx 초기화 — 복원 시에는 기존 선택 유지 */
+  document.getElementById('next5').disabled=S.selNewsIdx.length===0;
   document.getElementById('t6area').innerHTML='<div class="sel-grid">'
     +data.news.slice(0,10).map(function(n,i){
-      return '<div class="sc" id="nc'+i+'" onclick="toggleNews('+i+')">'
+      /* 복원된 selNewsIdx 기반으로 on 클래스 즉시 반영 */
+      var isOn = S.selNewsIdx.indexOf(i) !== -1;
+      return '<div class="sc'+(isOn?' on':'')+'" id="nc'+i+'" onclick="toggleNews('+i+')">'
         +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
         +'<div style="flex:1">'
         +'<div style="font-size:13px;font-weight:500;margin-bottom:3px">'+escHtml(n.title)+'</div>'
@@ -677,13 +910,24 @@ function renderTab6FromState(){
         +'</div><div class="ck">✓</div></div></div>';
     }).join('')+'</div>';
 }
+
+/* 신규 생성 시에만 호출 — selNewsIdx·news 초기화 후 렌더 */
+function renderTab6Fresh(){
+  S.selNewsIdx=[]; S.news=[];
+  renderTab6FromState();
+}
 function toggleNews(i){
   var idx=S.selNewsIdx.indexOf(i);
   if(idx>-1){S.selNewsIdx.splice(idx,1);document.getElementById('nc'+i).classList.remove('on');}
   else{if(S.selNewsIdx.length>=2){alert('최대 2개 선택 가능합니다');return;}S.selNewsIdx.push(i);document.getElementById('nc'+i).classList.add('on');}
   document.getElementById('next5').disabled=S.selNewsIdx.length===0;
+  saveState(); /* ← 뉴스 선택 저장 */
 }
-function newsComplete(){ S.news=S.selNewsIdx.map(function(i){return S.call3Data.news[i];}); completeTab(5,6); }
+function newsComplete(){
+  S.news=S.selNewsIdx.map(function(i){return S.call3Data.news[i];});
+  saveState(); /* ← 뉴스 확정 저장 */
+  completeTab(5,6);
+}
 
 /* ── TAB 7/8/9 ── */
 function renderTab7FromState(){
@@ -702,6 +946,7 @@ function selectOpening(i){
   document.querySelectorAll('#t7area .sc').forEach(function(c){c.classList.remove('on');});
   document.getElementById('opc'+i).classList.add('on');
   S.opening=S.call1Data.openings[i]; setBtn('next6',false);
+  saveState(); /* ← 오프닝 선택 저장 */
 }
 
 function renderTab8FromState(){
@@ -720,6 +965,7 @@ function selectRemind(i){
   document.querySelectorAll('#t8area .sc').forEach(function(c){c.classList.remove('on');});
   document.getElementById('rmc'+i).classList.add('on');
   S.remind=S.call1Data.reminds[i]; setBtn('next7',false);
+  saveState(); /* ← 리마인드 선택 저장 */
 }
 
 function renderTab9FromState(){
@@ -741,6 +987,7 @@ function selectTitle(i){
   document.querySelectorAll('#t9area .sc').forEach(function(c){c.classList.remove('on');});
   document.getElementById('ttc'+i).classList.add('on');
   S.title=S.call1Data.titles[i].title; setBtn('next8',false);
+  saveState(); /* ← 제목 선택 저장 */
 }
 
 function renderTabFromState(i){
@@ -806,6 +1053,13 @@ function copyAll(){
   navigator.clipboard.writeText(all).then(function(){alert('전체 복사 완료');})
     .catch(function(){alert('복사 실패');});
 }
+/* ══════════════════════════════════════
+   ■ 페이지 로드 시 localStorage 자동 복원
+   — restoreState() 호출
+══════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function(){
+  restoreState();
+});
 </script>
 </body>
 </html>
