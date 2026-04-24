@@ -3,7 +3,7 @@
 
 const ALLOWED_TYPES = ['analyze', 'call1', 'call2', 'call3'];
 
-const MAX_TOKENS = { analyze: 800, call1: 2000, call2: 1200, call3: 1200 };
+const MAX_TOKENS = { analyze: 800, call1: 2000, call2: 1200, call3: 1500 };
 
 // ── 프롬프트 빌더 ──────────────────────────────────────
 function buildPrompt(type, p) {
@@ -123,14 +123,15 @@ CTR: ${p.ctr}%
 선택 주제: ${p.subjectTitle || '미선택'}
 주제 유형: ${p.subjectType || '미선택'}
 
-[지시]
-순수 JSON만 출력하세요. 앞뒤 마크다운, 설명 텍스트 일절 금지.
+[절대 규칙 — 반드시 준수]
+- 응답은 JSON 객체 하나만 출력합니다.
+- 첫 글자는 반드시 { 이어야 합니다.
+- 마지막 글자는 반드시 } 이어야 합니다.
+- \`\`\`json, \`\`\`, 마크다운, 설명 문장, 인사말, 주석 일절 금지.
+- JSON 외 어떤 텍스트도 출력하지 마세요.
 
-{
-  "news": [
-    {"title":"기사 제목","date":"2026.4.xx","summary":"2~3문장 요약","why":"왜 적합한지"}
-  ]
-}
+[출력 형식]
+{"news":[{"title":"기사 제목","date":"2026.4.xx","summary":"2~3문장 요약","why":"왜 적합한지"}]}
 
 [기준]
 - news 정확히 10개.
@@ -155,14 +156,22 @@ function safeParseJSON(raw) {
   // 2단계: 직접 파싱 시도
   try { return JSON.parse(cleaned); } catch (_) {}
 
-  // 3단계: 첫 { ... } 블록 추출 후 파싱
+  // 3단계: 첫 { ... } 블록 추출 (중첩 포함 전체 추출)
+  const start = cleaned.indexOf('{');
+  const end = cleaned.lastIndexOf('}');
+  if (start !== -1 && end !== -1 && end > start) {
+    const extracted = cleaned.slice(start, end + 1);
+    try { return JSON.parse(extracted); } catch (_) {}
+  }
+
+  // 4단계: 정규식으로 JSON 블록 추출
   const match = cleaned.match(/\{[\s\S]*\}/);
   if (match) {
     try { return JSON.parse(match[0]); } catch (_) {}
   }
 
-  // 4단계: 실패 상세 로그 후 에러
-  throw new Error('JSON 파싱 실패 — 원본: ' + cleaned.slice(0, 200));
+  // 5단계: 실패 상세 로그 후 에러
+  throw new Error('JSON 파싱 실패 — 원본: ' + cleaned.slice(0, 300));
 }
 
 // ── 응답 구조 검증 ──────────────────────────────────
@@ -187,11 +196,10 @@ function validateResult(type, result) {
       errors.push('quiz_ox 누락');
     if (!result.quiz_mc || !result.quiz_mc.question)
       errors.push('quiz_mc 누락');
-    // answer 타입 보정
     if (result.quiz_mc && typeof result.quiz_mc.answer === 'string')
       result.quiz_mc.answer = parseInt(result.quiz_mc.answer) || 0;
     if (result.quiz_ox && !['O','X'].includes(result.quiz_ox.answer))
-      result.quiz_ox.answer = 'X'; // fallback
+      result.quiz_ox.answer = 'X';
   }
   if (type === 'call3') {
     if (!Array.isArray(result.news) || result.news.length < 5)
@@ -200,9 +208,24 @@ function validateResult(type, result) {
   return errors;
 }
 
+// ── OpenAI 응답에서 텍스트 추출 ──────────────────────
+function extractTextFromOpenAIResponse(data) {
+  // Chat Completions API 형식
+  if (data.choices && data.choices[0]) {
+    return data.choices[0].message?.content || '';
+  }
+  // Responses API 형식
+  if (data.output_text) return data.output_text;
+  if (Array.isArray(data.output)) {
+    return data.output
+      .map(item => (item.content || []).map(c => c.text || '').join(''))
+      .join('');
+  }
+  return '';
+}
+
 // ── 핸들러 ──────────────────────────────────────────
 export default async function handler(req, res) {
-  // CORS (필요 시)
   res.setHeader('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -232,16 +255,20 @@ export default async function handler(req, res) {
 
   let openaiRes;
   try {
-    openaiRes = await fetch('https://api.openai.com/v1/responses', {
+    openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'gpt-5.4-mini',
-        input: prompt,
-        max_output_tokens: MAX_TOKENS[type]
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: '당신은 JSON만 출력하는 어시스턴트입니다. 마크다운, 설명문, 인사말 없이 순수 JSON만 반환합니다.' },
+          { role: 'user', content: prompt }
+        ],
+        max_tokens: MAX_TOKENS[type],
+        response_format: type === 'call3' ? { type: 'json_object' } : undefined
       })
     });
   } catch (e) {
@@ -261,12 +288,10 @@ export default async function handler(req, res) {
   let raw;
   try {
     const data = await openaiRes.json();
-    raw =
-      data.output_text ||
-      data.output?.map(item =>
-        (item.content || []).map(c => c.text || '').join('')
-      ).join('') ||
-      '';
+    raw = extractTextFromOpenAIResponse(data);
+    if (!raw) {
+      console.error('[밀당레터] 빈 응답 data:', JSON.stringify(data).slice(0, 300));
+    }
   } catch (e) {
     console.error('[밀당레터] OpenAI 응답 파싱 오류:', e.message);
     return res.status(502).json({ error: '응답 파싱 오류' });
@@ -276,7 +301,8 @@ export default async function handler(req, res) {
   try {
     result = safeParseJSON(raw);
   } catch (e) {
-    console.error('[밀당레터] JSON 파싱 실패 type=' + type, e.message, '원본:', raw.slice(0, 500));
+    console.error('[밀당레터] JSON 파싱 실패 type=' + type, e.message);
+    console.error('[밀당레터] 원본 응답 (앞 500자):', raw.slice(0, 500));
     return res.status(422).json({
       error: 'AI 응답 형식 오류. 재시도해주세요.',
       detail: e.message
@@ -286,7 +312,6 @@ export default async function handler(req, res) {
   const validationErrors = validateResult(type, result);
   if (validationErrors.length > 0) {
     console.warn('[밀당레터] 응답 구조 경고 type=' + type, validationErrors);
-    // 경고만 로깅, 결과는 그대로 반환 (부분 데이터라도 사용 가능하게)
   }
 
   const elapsed = Date.now() - startTime;
