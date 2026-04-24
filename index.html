@@ -148,6 +148,15 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 /* 다시 시작 버튼 */
 .reset-btn{margin-left:auto;font-size:11px;font-weight:500;padding:5px 10px;border-radius:var(--radius);border:0.5px solid var(--coral-bd);background:transparent;color:var(--coral-text);cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .1s}
 .reset-btn:hover{background:var(--coral-bg)}
+
+/* 과거 회차 아카이브 */
+.archive-wrap{margin-top:2rem;padding-top:1.5rem;border-top:0.5px solid var(--border)}
+.archive-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px}
+.archive-card-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
+.archive-card-title{font-size:13px;font-weight:500;color:var(--text)}
+.archive-card-meta{font-size:11px;color:var(--text3);line-height:1.6}
+.archive-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+@media(max-width:600px){.archive-form-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -205,6 +214,10 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <div class="slbl">분석 결과</div>
     <div class="skel" id="t1skel"><p>아직 분석 전입니다</p><p>수치 입력 후 분석 생성을 눌러주세요</p></div>
     <div id="t1result" style="display:none"></div>
+    <div id="t1archive-row" style="display:none;margin-top:12px">
+      <button class="btn-sm" id="btn-archive-t1" onclick="addAnalysisToArchive()">이 회차를 아카이브에 저장</button>
+      <span id="archive-t1-saved" style="display:none;margin-left:8px;font-size:12px;color:var(--teal-text);font-weight:500">✓ 저장됨</span>
+    </div>
   </div>
 </div>
 
@@ -415,6 +428,44 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <button class="btn-main" onclick="copyAll()">전체 복사</button>
   </div>
   <div id="finalContent"></div>
+
+  <div class="archive-wrap">
+    <div class="ph"><span class="ph-title">과거 회차 아카이브</span></div>
+    <p class="ph-sub">2페이지 주제 생성 시 과거 회차의 제목 구조·소재군·감정 패턴 중복을 자동으로 피합니다. 아카이브가 비어 있으면 직전 회차 분석값만 사용됩니다.</p>
+    <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
+      <button class="btn-next" onclick="addToArchive()">이번 회차 최종 초안을 아카이브에 저장</button>
+      <button class="btn-main" onclick="toggleArchiveForm()">수동 입력 추가</button>
+    </div>
+    <div id="archiveForm" style="display:none">
+      <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px">
+        <div class="slbl" style="margin-bottom:10px">회차 정보 수동 입력</div>
+        <div class="archive-form-grid">
+          <div><div class="fl">발송일</div><input class="fi" id="arc-date" placeholder="예: 2026-04-18"></div>
+          <div><div class="fl">카카오 제목</div><input class="fi" id="arc-title" placeholder="예: 신고 끝났는데 또 내랍니다"></div>
+        </div>
+        <div class="archive-form-grid">
+          <div><div class="fl">CTR (%)</div><input class="fi" id="arc-ctr" type="number" step="0.1" placeholder="예: 3.2"></div>
+          <div><div class="fl">공유수</div><input class="fi" id="arc-share" type="number" placeholder="예: 0"></div>
+        </div>
+        <div style="margin-bottom:8px"><div class="fl">핵심 주제</div><input class="fi" id="arc-topic" placeholder="예: 가산세 발생 원인과 구제 방법"></div>
+        <div class="archive-form-grid">
+          <div><div class="fl">사연 소재</div><input class="fi" id="arc-story" placeholder="예: 부가세 신고 누락, 가산세 고지"></div>
+          <div><div class="fl">꿀팁 소재</div><input class="fi" id="arc-tip" placeholder="예: 경정청구 방법"></div>
+        </div>
+        <div class="archive-form-grid">
+          <div><div class="fl">퀴즈 소재</div><input class="fi" id="arc-quiz" placeholder="예: 가산세 유형 OX"></div>
+          <div><div class="fl">뉴스 소재</div><input class="fi" id="arc-news" placeholder="예: 국세청 신고 간소화"></div>
+        </div>
+        <div style="margin-bottom:8px"><div class="fl">피해야 할 반복 표현·소재</div><input class="fi" id="arc-avoid" placeholder="예: 가산세, 경정청구, 신고 누락"></div>
+        <div style="margin-bottom:4px"><div class="fl">비고</div><input class="fi" id="arc-note" placeholder="예: 캐러셀형, CTR 높음"></div>
+        <div class="btn-row" style="margin-top:12px">
+          <button class="btn-next" onclick="saveArchiveManual()">저장</button>
+          <button class="btn-main" onclick="toggleArchiveForm()">취소</button>
+        </div>
+      </div>
+    </div>
+    <div id="archiveList"></div>
+  </div>
 </div>
 
 </div><!-- /.wrap -->
@@ -452,7 +503,9 @@ var S = {
   /* 탭12 — 제목 */
   titleData: null, title: null,
   /* UI 상태 */
-  activeTab: 0, unlockedTabs: [0], doneTabs: []
+  activeTab: 0, unlockedTabs: [0], doneTabs: [],
+  /* 과거 회차 아카이브 */
+  archive: []
 };
 
 var API_ENDPOINT = '/api/generate';
@@ -528,6 +581,7 @@ function restoreState() {
   if (S.remindData)   { renderReminds();  showRegenBtn('remind');  }
   if (S.remindDraft)  { renderRemindDraft(S.remindDraft); document.getElementById('t11draft').style.display='block'; showRegenBtn('remind-draft'); }
   if (S.titleData)    { renderTitles();   showRegenBtn('titles');  }
+  renderArchive();
 
   /* 버튼 상태 복원 */
   if (S.subject)     setBtn('next1', false);
@@ -810,28 +864,79 @@ function renderAnalysisResult(r) {
   }
 
   document.getElementById('t1result').innerHTML = ctrHtml + prevGridHtml + coveredHtml;
+  document.getElementById('t1archive-row').style.display = 'block';
+  /* 저장됨 상태 초기화 — 재분석 시 버튼 재활성화 */
+  var savedTag = document.getElementById('archive-t1-saved');
+  var saveBtn  = document.getElementById('btn-archive-t1');
+  if (savedTag) savedTag.style.display = 'none';
+  if (saveBtn)  saveBtn.disabled = false;
+}
+
+function addAnalysisToArchive() {
+  if (!S.analysis) { alert('분석 결과가 없습니다. 먼저 분석을 생성해주세요.'); return; }
+  if (!Array.isArray(S.archive)) S.archive = [];
+
+  var title = S.prevTitle || S.analysis.title || '';
+  var isDuplicate = title && S.archive.some(function(a) { return a.kakaoTitle === title; });
+  if (isDuplicate && !confirm('같은 제목("' + title + '")의 항목이 이미 아카이브에 있습니다.\n그래도 저장하겠습니까?')) return;
+
+  var kwStr = Array.isArray(S.analysis.keywords) ? S.analysis.keywords.join(', ') : '';
+  var avoidStr = S.analysis.avoid_material || '';
+  var avoidExpr = [avoidStr, kwStr].filter(Boolean).join(' / ');
+
+  S.archive.push({
+    date:             new Date().toISOString().slice(0, 10),
+    kakaoTitle:       title,
+    topic:            S.analysis.topic || '',
+    storySummary:     S.analysis.prev_covered || '',
+    tipSummary:       '',
+    quizSummary:      '',
+    newsSummary:      '',
+    ctr:              S.ctr   || 0,
+    share:            S.share || 0,
+    note:             S.note  || '',
+    avoidExpressions: avoidExpr
+  });
+
+  saveState();
+  renderArchive();
+
+  var savedTag = document.getElementById('archive-t1-saved');
+  var saveBtn  = document.getElementById('btn-archive-t1');
+  if (savedTag) savedTag.style.display = 'inline';
+  if (saveBtn)  saveBtn.disabled = true;
 }
 
 /* ══════════════════════════════════════
    TAB 2 — 주제 후보
 ══════════════════════════════════════ */
 async function callSubjects() {
-  S.subject = null; S.storyData = null; S.story = null; S.storyDraft = null;
-  S.tipData = null; S.tip = null; S.tipDraft = null;
+  /* 선택값 + 이후 단계 생성 결과 전체 초기화 */
+  S.subject     = null; S.subjectData  = null;
+  S.storyData   = null; S.story        = null; S.storyDraft  = null;
+  S.tipData     = null; S.tip          = null; S.tipDraft    = null;
+  S.quizData    = null;
+  S.selNewsIdx  = [];   S.newsDraft    = null;
+  S.openingData = null; S.opening      = null; S.openingDraft = null;
+  S.remindData  = null; S.remind       = null; S.remindDraft  = null;
+  S.titleData   = null; S.title        = null;
+  updateCarry(1);
   document.getElementById('t2area').innerHTML = loading();
   setBtn('next1', true);
   try {
     var result = await callBackend('subjects', {
       ctr: S.ctr, share: S.share, note: S.note,
       recType: S.recType, prevTitle: S.prevTitle,
-      prevTopic:       S.analysis ? S.analysis.topic           : '',
-      prevKeywords:    S.analysis ? (S.analysis.keywords       || []) : [],
-      avoid:           S.analysis ? (S.analysis.avoid          || []) : [],
-      currentInterest: S.analysis ? (S.analysis.current_interest || []) : [],
-      directionHints:  S.analysis ? (S.analysis.direction_hints || '') : '',
+      prevTopic:       S.analysis ? S.analysis.topic            : '',
+      prevKeywords:    S.analysis ? (S.analysis.keywords        || []) : [],
+      avoid:           S.analysis ? (S.analysis.avoid           || []) : [],
+      openingPattern:  S.analysis ? (S.analysis.opening_pattern || '') : '',
+      ctaPattern:      S.analysis ? (S.analysis.cta_pattern     || '') : '',
+      archive:         Array.isArray(S.archive) ? S.archive.slice(-15) : [],
     });
     S.subjectData = result;
     renderSubjects();
+    updateCarry(1);
     showRegenBtn('subjects');
     saveState();
   } catch(e) {
@@ -1690,6 +1795,100 @@ function copyAll() {
   navigator.clipboard.writeText(parts.join('\n\n━━━━━━━━━━\n\n')).then(function() {
     alert('전체 복사 완료');
   }).catch(function(){ alert('복사 실패'); });
+}
+
+/* ══════════════════════════════════════
+   과거 회차 아카이브
+══════════════════════════════════════ */
+function renderArchive() {
+  var list = document.getElementById('archiveList');
+  if (!list) return;
+  if (!Array.isArray(S.archive) || !S.archive.length) {
+    list.innerHTML = '<p style="font-size:12px;color:var(--text3);padding:4px 0">저장된 과거 회차가 없습니다. 최종 초안 완료 후 저장하거나 수동으로 입력하세요.</p>';
+    return;
+  }
+  var reversed = S.archive.slice().reverse();
+  list.innerHTML = reversed.map(function(a, displayIdx) {
+    var realIdx = S.archive.length - 1 - displayIdx;
+    return '<div class="archive-card">'
+      + '<div class="archive-card-hd">'
+      + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+      + (a.date ? '<span class="tag tgr">' + escHtml(a.date) + '</span>' : '')
+      + '<span class="archive-card-title">' + escHtml(a.kakaoTitle || '(제목 없음)') + '</span>'
+      + '</div>'
+      + '<button class="btn-danger" onclick="deleteArchiveItem(' + realIdx + ')">삭제</button>'
+      + '</div>'
+      + '<div class="archive-card-meta">'
+      + (a.topic ? '<span><b>주제</b> ' + escHtml(a.topic) + '</span>' : '')
+      + (a.ctr   ? ' · <span>CTR ' + escHtml(String(a.ctr)) + '%</span>' : '')
+      + (a.share ? ' · <span>공유 ' + escHtml(String(a.share)) + '건</span>' : '')
+      + (a.note  ? ' · <span>' + escHtml(a.note) + '</span>' : '')
+      + '</div>'
+      + (a.avoidExpressions ? '<div class="archive-card-meta" style="margin-top:3px"><b>회피 소재</b> ' + escHtml(a.avoidExpressions) + '</div>' : '')
+      + '</div>';
+  }).join('');
+}
+
+function addToArchive() {
+  if (!Array.isArray(S.archive)) S.archive = [];
+  var entry = {
+    date:             new Date().toISOString().slice(0, 10),
+    kakaoTitle:       S.title || '',
+    topic:            S.subject ? (S.subject.title || '') : '',
+    storySummary:     S.storyDraft ? (S.storyDraft.title || '') : '',
+    tipSummary:       S.tipDraft   ? (S.tipDraft.headline || '') : '',
+    quizSummary:      S.quizData   ? (S.quizData.quiz_title || '') : '',
+    newsSummary:      (S.newsDraft && Array.isArray(S.newsDraft.briefing) && S.newsDraft.briefing.length)
+                        ? S.newsDraft.briefing.map(function(b){ return b.headline || ''; }).join(', ')
+                        : '',
+    ctr:              S.ctr   || 0,
+    share:            S.share || 0,
+    note:             S.note  || '',
+    avoidExpressions: S.analysis ? (S.analysis.avoid_material || '') : ''
+  };
+  S.archive.push(entry);
+  saveState();
+  renderArchive();
+  alert('이번 회차가 아카이브에 저장되었습니다.');
+}
+
+function deleteArchiveItem(realIdx) {
+  if (!Array.isArray(S.archive)) return;
+  S.archive.splice(realIdx, 1);
+  saveState();
+  renderArchive();
+}
+
+function toggleArchiveForm() {
+  var form = document.getElementById('archiveForm');
+  if (!form) return;
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+}
+
+function saveArchiveManual() {
+  var g = function(id){ var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  var entry = {
+    date:             g('arc-date'),
+    kakaoTitle:       g('arc-title'),
+    ctr:              parseFloat(g('arc-ctr'))  || 0,
+    share:            parseInt(g('arc-share'))  || 0,
+    topic:            g('arc-topic'),
+    storySummary:     g('arc-story'),
+    tipSummary:       g('arc-tip'),
+    quizSummary:      g('arc-quiz'),
+    newsSummary:      g('arc-news'),
+    avoidExpressions: g('arc-avoid'),
+    note:             g('arc-note')
+  };
+  if (!Array.isArray(S.archive)) S.archive = [];
+  S.archive.push(entry);
+  saveState();
+  renderArchive();
+  toggleArchiveForm();
+  ['arc-date','arc-title','arc-ctr','arc-share','arc-topic','arc-story',
+   'arc-tip','arc-quiz','arc-news','arc-avoid','arc-note'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
 }
 
 /* ══════════════════════════════════════
