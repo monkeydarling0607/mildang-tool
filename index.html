@@ -15,27 +15,37 @@
   --blue-bg:#E6F1FB;--blue-text:#0C447C;
   --coral-bg:#FAECE7;--coral-text:#712B13;--coral-bd:#F0997B;
   --gray-bg:#F1EFE8;--gray-text:#5F5E5A;
+  --purple-bg:#F0EEFA;--purple-text:#4A237A;
   --radius:8px;--radius-lg:12px
 }
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--text);font-size:14px;line-height:1.5;background:var(--bg)}
-.wrap{max-width:860px;margin:0 auto;padding:1.25rem 1rem 4rem}
-.tab-nav{display:flex;gap:3px;flex-wrap:wrap;border-bottom:0.5px solid var(--border);padding-bottom:.7rem;margin-bottom:1.75rem}
-.tb{font-size:12px;font-weight:500;padding:5px 10px;border-radius:var(--radius);border:0.5px solid transparent;background:transparent;color:var(--text3);cursor:pointer;white-space:nowrap;font-family:inherit;transition:background .12s,color .12s}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--text);font-size:14px;line-height:1.5;background:var(--bg2)}
+.wrap{max-width:1240px;margin:0 auto;padding:1.5rem 2rem 5rem;background:var(--bg);min-height:100vh}
+@media(max-width:768px){.wrap{padding:1.25rem 1rem 4rem}}
+
+/* 탭 네비게이션 */
+.tab-nav{display:flex;gap:4px;flex-wrap:wrap;border-bottom:0.5px solid var(--border);padding-bottom:.75rem;margin-bottom:1.75rem;align-items:center}
+.tb{font-size:11px;font-weight:500;padding:5px 10px;border-radius:var(--radius);border:0.5px solid transparent;background:transparent;color:var(--text3);cursor:pointer;white-space:nowrap;font-family:inherit;transition:background .12s,color .12s}
 .tb:hover:not(.locked){background:var(--bg2);color:var(--text)}
 .tb.active{border-color:var(--border2);color:var(--text)}
 .tb.done{border-color:var(--teal-bd);color:var(--teal-text)}
 .tb.locked{opacity:.35;cursor:default;pointer-events:none}
 .panel{display:none}.panel.active{display:block}
+
+/* 공통 레이아웃 */
 .ph{display:flex;align-items:center;gap:7px;margin-bottom:3px}
 .ph-title{font-size:15px;font-weight:500}
 .ph-sub{font-size:13px;color:var(--text2);margin-bottom:1.4rem;line-height:1.55}
 .fl{font-size:11px;font-weight:500;color:var(--text3);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em}
 .fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
-@media(max-width:600px){.fg3{grid-template-columns:1fr}}
+.fg2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+@media(max-width:600px){.fg3,.fg2{grid-template-columns:1fr}}
 .fi{width:100%;font-size:13px;color:var(--text);background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:7px 10px;outline:none;transition:border-color .15s;font-family:inherit}
 .fi:focus{border-color:var(--border2)}
 .fi::placeholder{color:var(--text3)}
 textarea.fi{resize:vertical;line-height:1.5}
+select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+
+/* 버튼 */
 .btn-row{display:flex;align-items:center;gap:8px;margin-top:1.25rem;flex-wrap:wrap}
 .btn-main{font-size:13px;font-weight:500;padding:8px 16px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;font-family:inherit;transition:background .1s}
 .btn-main:hover:not(:disabled){background:var(--bg2)}
@@ -43,20 +53,41 @@ textarea.fi{resize:vertical;line-height:1.5}
 .btn-next{font-size:13px;font-weight:500;padding:8px 16px;border-radius:var(--radius);border:0.5px solid var(--teal-bd);background:var(--teal-bg);color:var(--teal-text);cursor:pointer;font-family:inherit;transition:background .1s}
 .btn-next:hover:not(:disabled){background:#9FE1CB}
 .btn-next:disabled{opacity:.35;cursor:not-allowed;border-color:var(--border);background:transparent;color:var(--text3)}
+.btn-sm{font-size:12px;font-weight:500;padding:0 12px;height:28px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;transition:background .1s;white-space:nowrap}
+.btn-sm:hover{background:var(--bg2)}
+.btn-copy{font-size:11px;font-weight:500;padding:4px 10px;border-radius:var(--radius);border:0.5px solid var(--teal-bd);background:var(--teal-bg);color:var(--teal-text);cursor:pointer;font-family:inherit;transition:background .1s}
+.btn-copy:hover{background:#9FE1CB}
+.btn-danger{font-size:11px;font-weight:500;padding:5px 10px;border-radius:var(--radius);border:0.5px solid var(--coral-bd);background:transparent;color:var(--coral-text);cursor:pointer;font-family:inherit;transition:background .1s}
+.btn-danger:hover{background:var(--coral-bg)}
+
+/* 구분선 */
 .divider{border:none;border-top:0.5px solid var(--border);margin:1.25rem 0}
-.slbl{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:9px}
+
+/* 스켈레톤/로딩 */
 .skel{padding:1.5rem;border:0.5px dashed var(--border);border-radius:var(--radius-lg);text-align:center}
 .skel p{font-size:13px;color:var(--text3);line-height:1.7}
+.loading-pulse{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text3);padding:1.25rem 0}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:pulse 1.2s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,80%,100%{opacity:.2}40%{opacity:1}}
+
+/* 에러 */
+.err-box{padding:10px 12px;background:var(--coral-bg);border:0.5px solid var(--coral-bd);border-radius:var(--radius);font-size:13px;color:var(--coral-text);line-height:1.55}
+
+/* carry 박스 */
 .carry{background:var(--blue-bg);border:0.5px solid rgba(55,138,221,.22);border-radius:var(--radius);padding:8px 12px;font-size:12px;color:var(--blue-text);margin-bottom:1.25rem;line-height:1.6}
 .carry b{font-weight:500;display:block;margin-bottom:2px}
-.rc{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:.85rem 1.1rem;margin-bottom:8px}
-.rc-hd{display:flex;align-items:center;gap:7px;margin-bottom:7px;flex-wrap:wrap}
-.rc-body{font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap}
+
+/* 태그 */
 .tag{font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;white-space:nowrap}
 .tg{background:var(--teal-bg);color:var(--teal-text)}
 .ta{background:var(--amber-bg);color:var(--amber-text)}
 .tb2{background:var(--blue-bg);color:var(--blue-text)}
 .tgr{background:var(--gray-bg);color:var(--gray-text)}
+.tpr{background:var(--purple-bg);color:var(--purple-text)}
+.slbl{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:9px}
+
+/* 후보 선택 카드 */
 .sel-grid{display:flex;flex-direction:column;gap:8px}
 .sc{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:.85rem 1.1rem;cursor:pointer;position:relative;transition:border-color .15s,background .15s}
 .sc:hover{border-color:var(--border2)}
@@ -64,33 +95,19 @@ textarea.fi{resize:vertical;line-height:1.5}
 .sc.on .sc-t{color:var(--teal-text)}
 .sc-t{font-size:13px;font-weight:500;color:var(--text);line-height:1.5;margin-bottom:5px}
 .sc-b{font-size:13px;color:var(--text2);line-height:1.7}
-.sc-meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:5px}
-.sc-mi{font-size:11px;color:var(--text3)}
+.sc-meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
+.sc-mi{font-size:12px;color:var(--text3);line-height:1.6}
 .sc-mi b{color:var(--text2);font-weight:500}
-.ck{position:absolute;top:.85rem;right:1rem;width:16px;height:16px;border-radius:50%;border:0.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent;background:var(--bg)}
+.ck{position:absolute;top:.85rem;right:1rem;width:16px;height:16px;border-radius:50%;border:0.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent;background:var(--bg);flex-shrink:0}
 .sc.on .ck{background:var(--teal-bd);border-color:var(--teal-bd);color:#fff}
-.loading-pulse{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--text3);padding:1.25rem 0}
-.dot{width:5px;height:5px;border-radius:50%;background:var(--text3);animation:pulse 1.2s ease-in-out infinite}
-.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
-@keyframes pulse{0%,80%,100%{opacity:.2}40%{opacity:1}}
-.err-box{padding:10px 12px;background:var(--coral-bg);border:0.5px solid var(--coral-bd);border-radius:var(--radius);font-size:13px;color:var(--coral-text);line-height:1.55}
-.call-badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;background:var(--amber-bg);color:var(--amber-text);display:inline-block;margin-bottom:10px}
-.btn-sm{font-size:12px;font-weight:500;padding:0 12px;height:30px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;transition:background .1s}
-.btn-sm:hover{background:var(--bg2)}
-.final-sec{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:.85rem 1.1rem;margin-bottom:8px}
-.final-sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.final-sec-lbl{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
-.final-sec-body{font-size:13px;color:var(--text2);line-height:1.7;white-space:pre-wrap}
 
-/* 탭1 전용 */
-.paste-area-wrap{position:relative;margin-bottom:10px}
-.paste-area{min-height:120px;max-height:240px}
-.paste-clear{position:absolute;top:8px;right:8px;font-size:11px;padding:2px 8px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg);color:var(--text3);cursor:pointer;display:none}
-.paste-area-wrap.has-content .paste-clear{display:block}
-.extract-row{display:flex;gap:8px;align-items:center;margin-bottom:1.25rem}
-.extract-badge{font-size:11px;padding:2px 8px;border-radius:99px;font-weight:500}
-.eb-empty{background:var(--gray-bg);color:var(--gray-text)}
-.eb-ready{background:var(--teal-bg);color:var(--teal-text)}
+/* 완성 원고 박스 */
+.draft-box{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.1rem;margin-top:1.25rem}
+.draft-box-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:8px}
+.draft-box-lbl{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
+.draft-body{font-size:13px;color:var(--text2);line-height:1.8;white-space:pre-wrap}
+
+/* 분석 결과 */
 .analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
 @media(max-width:600px){.analysis-grid{grid-template-columns:1fr}}
 .analysis-item{background:var(--bg2);border-radius:var(--radius);padding:10px 12px}
@@ -102,46 +119,75 @@ textarea.fi{resize:vertical;line-height:1.5}
 .direction-box{background:var(--teal-bg);border:0.5px solid rgba(93,202,165,.4);border-radius:var(--radius-lg);padding:.85rem 1.1rem;margin-top:8px}
 .direction-box-label{font-size:11px;font-weight:500;color:var(--teal-text);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
 .direction-box-body{font-size:13px;color:var(--teal-text);line-height:1.65}
+
+/* 퀴즈 */
+.quiz-opt{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+
+/* 뉴스 입력 */
+.news-input-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:.85rem 1.1rem;margin-bottom:8px}
+.news-input-card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+.news-input-card-num{font-size:12px;font-weight:500;color:var(--text3)}
+
+/* 최종 초안 */
+.final-sec{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:.85rem 1.1rem;margin-bottom:8px}
+.final-sec-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px}
+.final-sec-lbl{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.04em}
+.final-sec-body{font-size:13px;color:var(--text2);line-height:1.8;white-space:pre-wrap}
+
+/* 탭1 전용 */
+.paste-area-wrap{position:relative;margin-bottom:10px}
+.paste-area{min-height:100px;max-height:200px}
+.paste-clear{position:absolute;top:8px;right:8px;font-size:11px;padding:2px 8px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg);color:var(--text3);cursor:pointer;display:none}
+.paste-area-wrap.has-content .paste-clear{display:block}
+
+/* 형식 선택 버튼 그룹 */
+.opt-group{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.opt-btn{font-size:12px;font-weight:500;padding:5px 12px;border-radius:var(--radius);border:0.5px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;font-family:inherit;transition:background .1s,border-color .1s}
+.opt-btn.sel{border-color:var(--teal-bd);background:var(--teal-bg);color:var(--teal-text)}
+
+/* 다시 시작 버튼 */
+.reset-btn{margin-left:auto;font-size:11px;font-weight:500;padding:5px 10px;border-radius:var(--radius);border:0.5px solid var(--coral-bd);background:transparent;color:var(--coral-text);cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .1s}
+.reset-btn:hover{background:var(--coral-bg)}
 </style>
 </head>
 <body>
 <div class="wrap">
 
+<!-- 탭 네비게이션 -->
 <div class="tab-nav" id="tabNav">
-  <button class="tb active" onclick="goTab(0)">1 직전 분석</button>
-  <button class="tb locked" onclick="goTab(1)">2 주제 선정</button>
-  <button class="tb locked" onclick="goTab(2)">3 사연 모음</button>
-  <button class="tb locked" onclick="goTab(3)">4 꿀팁</button>
-  <button class="tb locked" onclick="goTab(4)">5 세무 퀴즈</button>
-  <button class="tb locked" onclick="goTab(5)">6 뉴스 브리핑</button>
-  <button class="tb locked" onclick="goTab(6)">7 오프닝 멘트</button>
-  <button class="tb locked" onclick="goTab(7)">8 리마인드 멘트</button>
-  <button class="tb locked" onclick="goTab(8)">9 카카오 제목</button>
-  <!-- ■ 생성 결과 다시 시작 버튼 — softReset() 연결 -->
-  <button
+  <button class="tb active"  onclick="goTab(0)">1 직전 분석</button>
+  <button class="tb locked"  onclick="goTab(1)">2 주제 선정</button>
+  <button class="tb locked"  onclick="goTab(2)">3 사연 후보</button>
+  <button class="tb locked"  onclick="goTab(3)">4 사연 원고</button>
+  <button class="tb locked"  onclick="goTab(4)">5 꿀팁 후보</button>
+  <button class="tb locked"  onclick="goTab(5)">6 꿀팁 원고</button>
+  <button class="tb locked"  onclick="goTab(6)">7 세무퀴즈</button>
+  <button class="tb locked"  onclick="goTab(7)">8 뉴스 입력</button>
+  <button class="tb locked"  onclick="goTab(8)">9 뉴스 원고</button>
+  <button class="tb locked"  onclick="goTab(9)">10 오프닝</button>
+  <button class="tb locked"  onclick="goTab(10)">11 리마인드</button>
+  <button class="tb locked"  onclick="goTab(11)">12 제목</button>
+  <button class="tb locked"  onclick="goTab(12)">13 최종 초안</button>
+  <button class="reset-btn"
     onclick="softReset()"
-    style="margin-left:auto;font-size:11px;font-weight:500;padding:5px 10px;border-radius:var(--radius);border:0.5px solid var(--coral-bd);background:transparent;color:var(--coral-text);cursor:pointer;font-family:inherit;white-space:nowrap;transition:background .1s"
-    onmouseover="this.style.background='var(--coral-bg)'"
-    onmouseout="this.style.background='transparent'"
-    title="전 회차 분석 데이터는 유지하고, 이번 회차 생성 결과만 초기화합니다">생성 결과 다시 시작</button>
+    title="직전 분석 데이터는 유지하고 이번 회차 생성 결과만 초기화">생성 결과 다시 시작</button>
 </div>
 
-<!-- ══════════════════════════════
-     TAB 1 — 직전 회차 분석
-══════════════════════════════ -->
+<!-- ══════ TAB 1 — 직전 회차 분석 ══════ -->
 <div class="panel active" id="p0">
   <div class="ph"><span class="ph-title">직전 회차 분석</span></div>
-  <p class="ph-sub">직전 회차 HTML을 붙여넣으면 제목·주제·패턴을 자동 추출합니다. CTR·공유수와 함께 이번 회차 추천 방향까지 자동 생성됩니다.</p>
+  <p class="ph-sub">직전 회차 HTML을 붙여넣으면 제목·주제·패턴을 자동 추출합니다. HTML 없이 수치만으로도 분석 방향을 받을 수 있습니다.</p>
 
-  <!-- 성과 수치 -->
   <div class="fg3">
     <div><div class="fl">CTR (%)</div><input class="fi" id="t1ctr" type="number" step="0.1" min="0" max="100" placeholder="예: 3.2"></div>
     <div><div class="fl">공유수</div><input class="fi" id="t1share" type="number" min="0" placeholder="예: 0"></div>
     <div><div class="fl">비고</div><input class="fi" id="t1note" placeholder="예: 캐러셀 피드형 전환"></div>
   </div>
 
-  <!-- HTML 붙여넣기 -->
-  <div class="fl" style="margin-top:4px">직전 회차 HTML 붙여넣기</div>
+  <div class="fl" style="margin-top:4px">직전 회차 제목 직접 입력 <span style="font-weight:400;text-transform:none;color:var(--text3)">(HTML 제목 추출이 어려울 때)</span></div>
+  <input class="fi" id="t1prevTitle" placeholder="예: 사장님, 이 지출 비용처리 못 하면 손해입니다" style="margin-bottom:10px">
+
+  <div class="fl" style="margin-top:4px">직전 회차 HTML 붙여넣기 <span style="font-weight:400;text-transform:none;color:var(--text3)">(선택)</span></div>
   <div class="paste-area-wrap" id="pasteWrap">
     <textarea class="fi paste-area" id="t1html"
       placeholder="직전 회차 뉴스레터 HTML 전체를 여기에 붙여넣으세요.&#10;제목·주제·키워드·오프닝·CTA 패턴이 자동으로 추출됩니다."
@@ -149,916 +195,1528 @@ textarea.fi{resize:vertical;line-height:1.5}
     <button class="paste-clear" onclick="clearPaste()">지우기</button>
   </div>
 
-  <!-- 추출 상태 -->
-  <div class="extract-row">
-    <span class="extract-badge eb-empty" id="extractBadge">HTML 대기 중</span>
-    <span style="font-size:12px;color:var(--text3)" id="extractHint">HTML을 붙여넣으면 자동 추출됩니다</span>
-  </div>
-
-  <!-- 참고용 URL -->
-  <div class="fl">직전 회차 URL <span style="font-weight:400;text-transform:none;color:var(--text3)">(선택 — 참고용)</span></div>
-  <input class="fi" id="t1url" type="text" placeholder="https://..." style="margin-bottom:1.25rem">
-
   <div class="btn-row">
-    <button class="btn-main" id="btn-analyze" onclick="runTab1()">분석 생성</button>
+    <button class="btn-main" id="btn-analyze" onclick="runAnalyze()">분석 생성</button>
     <button class="btn-next" id="next0" disabled onclick="completeTab(0,1)">다음 →</button>
   </div>
 
-  <!-- 분석 결과 -->
   <div style="margin-top:1.5rem">
     <div class="divider"></div>
     <div class="slbl">분석 결과</div>
-    <div class="skel" id="t1skel">
-      <p>아직 분석 전입니다</p>
-      <p>HTML 붙여넣기 후 분석 생성을 눌러주세요</p>
-    </div>
+    <div class="skel" id="t1skel"><p>아직 분석 전입니다</p><p>수치 입력 후 분석 생성을 눌러주세요</p></div>
     <div id="t1result" style="display:none"></div>
   </div>
 </div>
 
-<!-- TAB 2 -->
+<!-- ══════ TAB 2 — 주제 선정 ══════ -->
 <div class="panel" id="p1">
   <div class="ph"><span class="ph-title">주제 선정</span></div>
-  <p class="ph-sub">주제·사연·오프닝·리마인드·제목을 한 번에 생성합니다. 주제 선택 후 각 탭에서 확인하세요.</p>
+  <p class="ph-sub">사연모음으로 풀기 좋은 주제 후보 5개를 생성합니다. 주제 선택이 이후 모든 단계의 기반이 됩니다.</p>
   <div class="carry" id="t2carry"></div>
-  <div class="call-badge">1차 호출 — 주제 / 사연 / 오프닝 / 리마인드 / 제목</div>
-  <div class="btn-row" style="margin-top:8px;margin-bottom:1rem">
-    <button class="btn-main" id="btn-call1" onclick="call1()">생성</button>
-    <button class="btn-main" id="btn-regen1" style="display:none" onclick="call1()">재생성</button>
+  <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
+    <button class="btn-main" id="btn-subjects" onclick="callSubjects()">주제 후보 생성</button>
+    <button class="btn-main" id="btn-regen-subjects" style="display:none" onclick="callSubjects()">재생성</button>
   </div>
-  <div id="t2area"><div class="skel"><p>생성 버튼을 눌러주세요</p><p>주제·사연·오프닝·리마인드·제목이 한 번에 생성됩니다</p></div></div>
+  <div id="t2area"><div class="skel"><p>생성 버튼을 눌러주세요</p></div></div>
   <div class="btn-row"><button class="btn-next" id="next1" disabled onclick="completeTab(1,2)">다음 →</button></div>
 </div>
 
-<!-- TAB 3 -->
+<!-- ══════ TAB 3 — 사연 후보 ══════ -->
 <div class="panel" id="p2">
-  <div class="ph"><span class="ph-title">사연 모음</span></div>
-  <p class="ph-sub">1차 생성 결과에서 사연 3개를 보여줍니다. 1개를 선택하세요.</p>
+  <div class="ph"><span class="ph-title">사연 후보</span></div>
+  <p class="ph-sub">선택한 주제를 기반으로 사연 후보 3개를 생성합니다. 유형(처음 겪는 상황형 / 이미 하고 있는데 맞나형 / 억울함·손해형)이 각각 다릅니다.</p>
   <div class="carry" id="t3carry"></div>
-  <div id="t3area"><div class="skel"><p>탭 2에서 생성 후 확인해주세요</p></div></div>
+  <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
+    <button class="btn-main" id="btn-stories" onclick="callStories()">사연 후보 생성</button>
+    <button class="btn-main" id="btn-regen-stories" style="display:none" onclick="callStories()">재생성</button>
+  </div>
+  <div id="t3area"><div class="skel"><p>생성 버튼을 눌러주세요</p></div></div>
   <div class="btn-row"><button class="btn-next" id="next2" disabled onclick="completeTab(2,3)">다음 →</button></div>
 </div>
 
-<!-- TAB 4 -->
+<!-- ══════ TAB 4 — 사연 원고 ══════ -->
 <div class="panel" id="p3">
-  <div class="ph"><span class="ph-title">꿀팁</span></div>
-  <p class="ph-sub">선택 주제·사연 기반으로 꿀팁과 세무 퀴즈를 한 번에 생성합니다.</p>
+  <div class="ph"><span class="ph-title">사연모음 완성 원고</span></div>
+  <p class="ph-sub">선택한 사연을 기반으로 스티비에 붙여넣을 수 있는 완성형 사연모음 원고를 생성합니다.</p>
   <div class="carry" id="t4carry"></div>
-  <div class="call-badge">2차 호출 — 꿀팁 / 세무퀴즈</div>
-  <div class="btn-row" style="margin-top:8px;margin-bottom:1rem">
-    <button class="btn-main" id="btn-call2" onclick="call2()">생성</button>
-    <button class="btn-main" id="btn-regen2" style="display:none" onclick="call2()">재생성</button>
+  <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
+    <button class="btn-main" id="btn-story-draft" onclick="callStoryDraft()">원고 생성</button>
+    <button class="btn-main" id="btn-regen-story-draft" style="display:none" onclick="callStoryDraft()">재생성</button>
   </div>
-  <div id="t4area"><div class="skel"><p>생성 버튼을 눌러주세요</p></div></div>
+  <div id="t4area"><div class="skel"><p>원고 생성 버튼을 눌러주세요</p></div></div>
   <div class="btn-row"><button class="btn-next" id="next3" disabled onclick="completeTab(3,4)">다음 →</button></div>
 </div>
 
-<!-- TAB 5 -->
+<!-- ══════ TAB 5 — 꿀팁 후보 ══════ -->
 <div class="panel" id="p4">
-  <div class="ph"><span class="ph-title">세무 퀴즈</span></div>
-  <p class="ph-sub">2차 생성 결과에서 퀴즈를 보여줍니다.</p>
+  <div class="ph"><span class="ph-title">꿀팁 후보</span></div>
+  <p class="ph-sub">주제·사연에 맞는 꿀팁 후보 4개를 생성합니다. 참고할 정책/뉴스 메모를 직접 입력하면 반영됩니다.</p>
   <div class="carry" id="t5carry"></div>
-  <div id="t5area"><div class="skel"><p>탭 4에서 생성 후 확인해주세요</p></div></div>
+  <div class="fl">참고 뉴스·정책 메모 <span style="font-weight:400;text-transform:none;color:var(--text3)">(선택 — 꿀팁 생성에 반영됩니다)</span></div>
+  <textarea class="fi" id="t5newsInput" rows="3" placeholder="예: 소상공인 전기요금 특별지원 신청 기한 5월 31일 / 24년 종합소득세 신고 5월 ..."></textarea>
+  <div class="btn-row" style="margin-bottom:1rem">
+    <button class="btn-main" id="btn-tips" onclick="callTips()">꿀팁 후보 생성</button>
+    <button class="btn-main" id="btn-regen-tips" style="display:none" onclick="callTips()">재생성</button>
+  </div>
+  <div id="t5area"><div class="skel"><p>생성 버튼을 눌러주세요</p></div></div>
   <div class="btn-row"><button class="btn-next" id="next4" disabled onclick="completeTab(4,5)">다음 →</button></div>
 </div>
 
-<!-- TAB 6 -->
+<!-- ══════ TAB 6 — 꿀팁 원고 ══════ -->
 <div class="panel" id="p5">
-  <div class="ph"><span class="ph-title">뉴스 한입 브리핑</span></div>
-  <p class="ph-sub">주제 연관 뉴스 후보를 생성합니다. 최대 2개 선택하세요.</p>
+  <div class="ph"><span class="ph-title">꿀팁 완성 원고</span></div>
+  <p class="ph-sub">선택한 꿀팁을 기반으로 스티비에 붙여넣을 수 있는 완성형 꿀팁 원고를 생성합니다.</p>
   <div class="carry" id="t6carry"></div>
-  <div class="call-badge">3차 호출 — 뉴스 브리핑</div>
-  <div class="btn-row" style="margin-top:8px;margin-bottom:1rem">
-    <button class="btn-main" id="btn-call3" onclick="call3()">생성</button>
-    <button class="btn-main" id="btn-regen3" style="display:none" onclick="call3()">재생성</button>
+  <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
+    <button class="btn-main" id="btn-tip-draft" onclick="callTipDraft()">원고 생성</button>
+    <button class="btn-main" id="btn-regen-tip-draft" style="display:none" onclick="callTipDraft()">재생성</button>
   </div>
-  <div id="t6area"><div class="skel"><p>생성 버튼을 눌러주세요</p></div></div>
-  <div class="btn-row"><button class="btn-next" id="next5" disabled onclick="newsComplete()">다음 →</button></div>
+  <div id="t6area"><div class="skel"><p>원고 생성 버튼을 눌러주세요</p></div></div>
+  <div class="btn-row"><button class="btn-next" id="next5" disabled onclick="completeTab(5,6)">다음 →</button></div>
 </div>
 
-<!-- TAB 7 -->
+<!-- ══════ TAB 7 — 세무퀴즈 ══════ -->
 <div class="panel" id="p6">
-  <div class="ph"><span class="ph-title">오프닝 멘트</span></div>
-  <p class="ph-sub">1차 생성 결과에서 오프닝 3개를 보여줍니다. 1개를 선택하세요.</p>
+  <div class="ph"><span class="ph-title">세무내공 +1 퀴즈</span></div>
+  <p class="ph-sub">퀴즈 형식과 난이도를 선택하면 주제·사연·꿀팁과 연결된 세무퀴즈를 생성합니다.</p>
   <div class="carry" id="t7carry"></div>
-  <div id="t7area"><div class="skel"><p>탭 2에서 생성 후 확인해주세요</p></div></div>
+
+  <div class="fl">퀴즈 형식</div>
+  <div class="opt-group" id="quizFormatGroup">
+    <button class="opt-btn sel" onclick="setOpt('quizFormat','ox',this)">O / X 퀴즈</button>
+    <button class="opt-btn" onclick="setOpt('quizFormat','mc',this)">4지선다 퀴즈</button>
+  </div>
+
+  <div class="fl" style="margin-top:8px">난이도</div>
+  <div class="opt-group" id="quizDiffGroup">
+    <button class="opt-btn" onclick="setOpt('quizDiff','easy',this)">쉬움</button>
+    <button class="opt-btn sel" onclick="setOpt('quizDiff','normal',this)">보통</button>
+    <button class="opt-btn" onclick="setOpt('quizDiff','hard',this)">어려움</button>
+  </div>
+
+  <div class="btn-row" style="margin-top:1rem;margin-bottom:1rem">
+    <button class="btn-main" id="btn-quiz" onclick="callQuiz()">퀴즈 생성</button>
+    <button class="btn-main" id="btn-regen-quiz" style="display:none" onclick="callQuiz()">재생성</button>
+  </div>
+  <div id="t7area"><div class="skel"><p>형식과 난이도를 선택 후 생성 버튼을 눌러주세요</p></div></div>
   <div class="btn-row"><button class="btn-next" id="next6" disabled onclick="completeTab(6,7)">다음 →</button></div>
 </div>
 
-<!-- TAB 8 -->
+<!-- ══════ TAB 8 — 뉴스 입력 ══════ -->
 <div class="panel" id="p7">
-  <div class="ph"><span class="ph-title">리마인드 멘트</span></div>
-  <p class="ph-sub">1차 생성 결과에서 리마인드 멘트 3개를 보여줍니다. 1개를 선택하세요.</p>
+  <div class="ph"><span class="ph-title">뉴스 입력</span></div>
+  <p class="ph-sub">최근 3일 이내 사장님에게 도움이 되는 뉴스를 직접 입력해 주세요. 최대 5개 입력 가능, 그 중 1~2개를 선택해 브리핑 원고를 생성합니다.</p>
   <div class="carry" id="t8carry"></div>
-  <div id="t8area"><div class="skel"><p>탭 2에서 생성 후 확인해주세요</p></div></div>
+
+  <div id="newsInputList"></div>
+  <div class="btn-row" style="margin-top:.5rem;margin-bottom:1.25rem">
+    <button class="btn-sm" onclick="addNewsInput()" id="btnAddNews">+ 뉴스 추가</button>
+  </div>
+
+  <div class="divider"></div>
+  <div class="slbl" style="margin-bottom:8px">입력한 뉴스 중 브리핑할 뉴스 선택 (최대 2개)</div>
+  <div id="newsSelectArea"><div class="skel"><p>위에서 뉴스를 입력하면 여기에 선택 카드가 표시됩니다</p></div></div>
+
   <div class="btn-row"><button class="btn-next" id="next7" disabled onclick="completeTab(7,8)">다음 →</button></div>
 </div>
 
-<!-- TAB 9 -->
+<!-- ══════ TAB 9 — 뉴스 원고 ══════ -->
 <div class="panel" id="p8">
-  <div class="ph"><span class="ph-title">카카오 플친 제목</span></div>
-  <p class="ph-sub">1차 생성 결과에서 제목 5개를 보여줍니다. 1개를 선택하세요.</p>
+  <div class="ph"><span class="ph-title">뉴스 한입 브리핑 원고</span></div>
+  <p class="ph-sub">선택한 뉴스를 사장님 관점으로 해설한 완성형 뉴스 브리핑 원고를 생성합니다.</p>
   <div class="carry" id="t9carry"></div>
-  <div id="t9area"><div class="skel"><p>탭 2에서 생성 후 확인해주세요</p></div></div>
-  <div class="btn-row"><button class="btn-next" id="next8" disabled onclick="showFinal()">최종 초안 보기 →</button></div>
-  <div id="finalArea" style="display:none;margin-top:2rem">
-    <div class="divider"></div>
-    <div class="slbl">최종 밀당레터 초안</div>
-    <div id="finalContent"></div>
-    <div class="btn-row"><button class="btn-main" onclick="copyAll()">전체 복사</button></div>
+  <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
+    <button class="btn-main" id="btn-news-draft" onclick="callNewsDraft()">브리핑 원고 생성</button>
+    <button class="btn-main" id="btn-regen-news-draft" style="display:none" onclick="callNewsDraft()">재생성</button>
   </div>
+  <div id="t9area"><div class="skel"><p>원고 생성 버튼을 눌러주세요</p></div></div>
+  <div class="btn-row"><button class="btn-next" id="next8" disabled onclick="completeTab(8,9)">다음 →</button></div>
+</div>
+
+<!-- ══════ TAB 10 — 오프닝 ══════ -->
+<div class="panel" id="p9">
+  <div class="ph"><span class="ph-title">오프닝 멘트</span></div>
+  <p class="ph-sub">이번 회차 구성 전체를 반영한 오프닝 후보 3개를 생성합니다. 후보 선택 후 완성형 원고를 만듭니다.</p>
+  <div class="carry" id="t10carry"></div>
+  <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
+    <button class="btn-main" id="btn-opening" onclick="callOpening()">후보 생성</button>
+    <button class="btn-main" id="btn-regen-opening" style="display:none" onclick="callOpening()">재생성</button>
+  </div>
+  <div id="t10area"><div class="skel"><p>후보 생성 버튼을 눌러주세요</p></div></div>
+
+  <!-- 완성 원고 (후보 선택 후 표시) -->
+  <div id="t10draft" style="display:none">
+    <div class="divider"></div>
+    <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
+      <button class="btn-main" id="btn-opening-draft" onclick="callOpeningDraft()">완성 원고 생성</button>
+      <button class="btn-main" id="btn-regen-opening-draft" style="display:none" onclick="callOpeningDraft()">재생성</button>
+    </div>
+    <div id="t10draftArea"><div class="skel"><p>완성 원고 생성 버튼을 눌러주세요</p></div></div>
+  </div>
+
+  <div class="btn-row"><button class="btn-next" id="next9" disabled onclick="completeTab(9,10)">다음 →</button></div>
+</div>
+
+<!-- ══════ TAB 11 — 리마인드 ══════ -->
+<div class="panel" id="p10">
+  <div class="ph"><span class="ph-title">리마인드 멘트</span></div>
+  <p class="ph-sub">유형별 리마인드 후보 5개를 생성합니다. 후보 선택 후 완성형 원고를 만듭니다.</p>
+  <div class="carry" id="t11carry"></div>
+  <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
+    <button class="btn-main" id="btn-remind" onclick="callRemind()">후보 생성</button>
+    <button class="btn-main" id="btn-regen-remind" style="display:none" onclick="callRemind()">재생성</button>
+  </div>
+  <div id="t11area"><div class="skel"><p>후보 생성 버튼을 눌러주세요</p></div></div>
+
+  <div id="t11draft" style="display:none">
+    <div class="divider"></div>
+    <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
+      <button class="btn-main" id="btn-remind-draft" onclick="callRemindDraft()">완성 원고 생성</button>
+      <button class="btn-main" id="btn-regen-remind-draft" style="display:none" onclick="callRemindDraft()">재생성</button>
+    </div>
+    <div id="t11draftArea"><div class="skel"><p>완성 원고 생성 버튼을 눌러주세요</p></div></div>
+  </div>
+
+  <div class="btn-row"><button class="btn-next" id="next10" disabled onclick="completeTab(10,11)">다음 →</button></div>
+</div>
+
+<!-- ══════ TAB 12 — 제목 ══════ -->
+<div class="panel" id="p11">
+  <div class="ph"><span class="ph-title">카카오 플친 제목</span></div>
+  <p class="ph-sub">CTR을 높이는 후킹형 제목 후보 7개를 생성합니다. 22자 이내, 돈/손해/지원금/반전 훅 강화.</p>
+  <div class="carry" id="t12carry"></div>
+  <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
+    <button class="btn-main" id="btn-titles" onclick="callTitles()">제목 후보 생성</button>
+    <button class="btn-main" id="btn-regen-titles" style="display:none" onclick="callTitles()">재생성</button>
+  </div>
+  <div id="t12area"><div class="skel"><p>생성 버튼을 눌러주세요</p></div></div>
+
+  <!-- 선택 후 표시 -->
+  <div id="t12selected" style="display:none;margin-top:1.25rem">
+    <div class="divider"></div>
+    <div class="draft-box">
+      <div class="draft-box-hd">
+        <span class="draft-box-lbl">선택된 최종 제목</span>
+        <button class="btn-copy" onclick="copyText(S.title)">복사</button>
+      </div>
+      <div class="draft-body" id="t12finalTitle"></div>
+    </div>
+  </div>
+
+  <div class="btn-row"><button class="btn-next" id="next11" disabled onclick="completeTab(11,12)">다음 →</button></div>
+</div>
+
+<!-- ══════ TAB 13 — 최종 초안 ══════ -->
+<div class="panel" id="p12">
+  <div class="ph"><span class="ph-title">최종 밀당레터 초안</span></div>
+  <p class="ph-sub">지금까지 생성·선택한 모든 원고를 밀당레터 포맷으로 정리합니다. 각 섹션별 복사 버튼과 전체 복사 버튼을 제공합니다.</p>
+  <div class="btn-row" style="margin-top:0;margin-bottom:1.25rem">
+    <button class="btn-next" onclick="buildFinal()">최종 초안 생성</button>
+    <button class="btn-main" onclick="copyAll()">전체 복사</button>
+  </div>
+  <div id="finalContent"></div>
 </div>
 
 </div><!-- /.wrap -->
 
 <script>
 /* ══════════════════════════════════════
-   상태
+   상태 객체 S
 ══════════════════════════════════════ */
 var S = {
-  /* 탭1 입력값 — localStorage 저장 대상 */
-  ctr:0, share:0, note:'',
-  rawHtml: '',          /* 직전 회차 HTML 원본 */
-  /* 탭1 분석 결과 — HTML 자동 추출 */
-  analysis: null,       /* { title, topic, keywords[], opening_pattern, cta_pattern, avoid[] } */
-  recType: '',
-  /* 이후 탭 상태 */
-  call1Data:null, call2Data:null, call3Data:null,
-  subject:null, story:null, opening:null, remind:null, title:null,
-  news:[], selNewsIdx:[],
+  /* 탭1 — 직전 회차 */
+  ctr: 0, share: 0, note: '', prevTitle: '',
+  rawHtml: '', analysis: null, recType: '',
+  /* 탭2 — 주제 */
+  subjectData: null, subject: null,
+  /* 탭3 — 사연 후보 */
+  storyData: null, story: null,
+  /* 탭4 — 사연 원고 */
+  storyDraft: null,
+  /* 탭5 — 꿀팁 */
+  tipUserNews: '',
+  tipData: null, tip: null,
+  /* 탭6 — 꿀팁 원고 */
+  tipDraft: null,
+  /* 탭7 — 퀴즈 */
+  quizFormat: 'ox', quizDiff: 'normal', quizData: null,
+  /* 탭8 — 뉴스 입력 */
+  newsInputs: [],   /* [{ title, date, source, link, summary }] */
+  selNewsIdx: [],   /* 선택 인덱스 (최대 2) */
+  /* 탭9 — 뉴스 원고 */
+  newsDraft: null,
+  /* 탭10 — 오프닝 */
+  openingData: null, opening: null, openingDraft: null,
+  /* 탭11 — 리마인드 */
+  remindData: null, remind: null, remindDraft: null,
+  /* 탭12 — 제목 */
+  titleData: null, title: null,
   /* UI 상태 */
-  activeTab: 0,
-  unlockedTabs: [0],    /* 열려 있는 탭 인덱스 목록 */
-  doneTabs: []          /* 완료 표시된 탭 인덱스 목록 */
+  activeTab: 0, unlockedTabs: [0], doneTabs: []
 };
 
 var API_ENDPOINT = '/api/generate';
+var LS_KEY = 'mildang_tool_state_v2';
 
 /* ══════════════════════════════════════
-   ■ localStorage 저장 — saveState()
-   변경이 발생할 때마다 자동 호출됩니다.
-   key: mildang_tool_state
+   localStorage 저장 / 복원
 ══════════════════════════════════════ */
-var LS_KEY = 'mildang_tool_state';
-
-function saveState(){
+function saveState() {
   try {
-    /* rawHtml은 용량이 클 수 있으므로 4000자 제한 저장 */
-    var snapshot = {
-      ctr:         S.ctr,
-      share:       S.share,
-      note:        S.note,
-      rawHtml:     S.rawHtml,
-      analysis:    S.analysis,
-      recType:     S.recType,
-      call1Data:   S.call1Data,
-      call2Data:   S.call2Data,
-      call3Data:   S.call3Data,
-      subject:     S.subject,
-      story:       S.story,
-      opening:     S.opening,
-      remind:      S.remind,
-      title:       S.title,
-      news:        S.news,
-      selNewsIdx:  S.selNewsIdx,
-      activeTab:   S.activeTab,
-      unlockedTabs: S.unlockedTabs,
-      doneTabs:     S.doneTabs
-    };
-    localStorage.setItem(LS_KEY, JSON.stringify(snapshot));
+    localStorage.setItem(LS_KEY, JSON.stringify(S));
   } catch(e) {
-    /* QuotaExceededError 등 무시 — 저장 실패해도 동작은 유지 */
     console.warn('[밀당레터] localStorage 저장 실패:', e.message);
   }
 }
 
-/* ══════════════════════════════════════
-   ■ localStorage 복원 — restoreState()
-   페이지 로드 시 DOMContentLoaded에서 호출됩니다.
-══════════════════════════════════════ */
-function restoreState(){
+function restoreState() {
   var raw;
-  try { raw = localStorage.getItem(LS_KEY); } catch(e){ return; }
-  if(!raw) return;
-
+  try { raw = localStorage.getItem(LS_KEY); } catch(e) { return; }
+  if (!raw) return;
   var saved;
-  try { saved = JSON.parse(raw); } catch(e){ return; }
+  try { saved = JSON.parse(raw); } catch(e) { return; }
 
-  /* S 객체에 저장값 복원 */
-  S.ctr         = saved.ctr         || 0;
-  S.share       = saved.share       || 0;
-  S.note        = saved.note        || '';
-  S.rawHtml     = saved.rawHtml     || '';
-  S.analysis    = saved.analysis    || null;
-  S.recType     = saved.recType     || '';
-  S.call1Data   = saved.call1Data   || null;
-  S.call2Data   = saved.call2Data   || null;
-  S.call3Data   = saved.call3Data   || null;
-  S.subject     = saved.subject     || null;
-  S.story       = saved.story       || null;
-  S.opening     = saved.opening     || null;
-  S.remind      = saved.remind      || null;
-  S.title       = saved.title       || null;
-  S.news        = saved.news        || [];
-  S.selNewsIdx  = saved.selNewsIdx  || [];
-  S.activeTab   = saved.activeTab   || 0;
-  S.unlockedTabs = Array.isArray(saved.unlockedTabs) ? saved.unlockedTabs : [0];
-  S.doneTabs     = Array.isArray(saved.doneTabs)     ? saved.doneTabs     : [];
+  Object.keys(S).forEach(function(k) {
+    if (saved[k] !== undefined) S[k] = saved[k];
+  });
 
   /* DOM 복원 — 탭1 입력값 */
-  if(S.ctr)   document.getElementById('t1ctr').value   = S.ctr;
-  if(S.share) document.getElementById('t1share').value = S.share;
-  if(S.note)  document.getElementById('t1note').value  = S.note;
-  if(S.rawHtml){
+  if (S.ctr)       document.getElementById('t1ctr').value       = S.ctr;
+  if (S.share)     document.getElementById('t1share').value     = S.share;
+  if (S.note)      document.getElementById('t1note').value      = S.note;
+  if (S.prevTitle) document.getElementById('t1prevTitle').value = S.prevTitle;
+  if (S.rawHtml) {
     document.getElementById('t1html').value = S.rawHtml;
-    onPasteInput(); /* 배지 업데이트 */
+    onPasteInput();
   }
 
-  /* 탭1 분석 결과 DOM 복원 */
-  if(S.analysis){
-    document.getElementById('t1skel').style.display = 'none';
+  /* 분석 결과 복원 */
+  if (S.analysis) {
+    document.getElementById('t1skel').style.display   = 'none';
     document.getElementById('t1result').style.display = 'block';
-    renderTab1Result(S.analysis);
+    renderAnalysisResult(S.analysis);
     setBtn('next0', false);
   }
 
-  /* 탭 잠금/완료/활성 상태 복원 */
-  tbs().forEach(function(btn, idx){
+  /* 탭 잠금/완료 복원 */
+  tbs().forEach(function(btn, idx) {
     btn.classList.remove('active','done','locked');
-    if(S.unlockedTabs.indexOf(idx) === -1) btn.classList.add('locked');
-    if(S.doneTabs.indexOf(idx) !== -1)     btn.classList.add('done');
+    if (S.unlockedTabs.indexOf(idx) === -1) btn.classList.add('locked');
+    if (S.doneTabs.indexOf(idx) !== -1)     btn.classList.add('done');
   });
-
-  /* 활성 탭 전환 (goTab은 locked 체크하므로 직접 패널 전환) */
   var ai = S.activeTab || 0;
-  tbs().forEach(function(b,idx){ b.classList.toggle('active', idx===ai); });
-  pnls().forEach(function(p,idx){ p.classList.toggle('active', idx===ai); });
+  tbs().forEach(function(b,i){ b.classList.toggle('active', i===ai); });
+  pnls().forEach(function(p,i){ p.classList.toggle('active', i===ai); });
 
   /* 각 탭 콘텐츠 DOM 복원 */
-  if(S.call1Data){
-    renderTab2FromState();
-    renderTab3FromState();
-    renderTab7FromState();
-    renderTab8FromState();
-    renderTab9FromState();
-    /* 탭2 버튼 상태 */
-    document.getElementById('btn-call1').style.display = 'none';
-    document.getElementById('btn-regen1').style.display = '';
+  if (S.subjectData)  { renderSubjects(); showRegenBtn('subjects'); }
+  if (S.storyData)    { renderStories();  showRegenBtn('stories');  }
+  if (S.storyDraft)   { renderStoryDraft(S.storyDraft); showRegenBtn('story-draft'); }
+  if (S.tipData)      { renderTips();     showRegenBtn('tips');     }
+  if (S.tipDraft)     { renderTipDraft(S.tipDraft); showRegenBtn('tip-draft'); }
+  if (S.quizData)     { renderQuiz(S.quizData); showRegenBtn('quiz'); }
+  /* 뉴스 입력 복원 */
+  if (Array.isArray(S.newsInputs) && S.newsInputs.length > 0) {
+    renderNewsInputsFromState();
+    renderNewsSelectArea();
+  } else {
+    initNewsInputs();
   }
-  if(S.subject)  setBtn('next1', false);
-  if(S.story)    setBtn('next2', false);
-  if(S.call2Data){
-    renderTab4FromState();
-    renderTab5FromState();
-    setBtn('next3', false);
-    setBtn('next4', false);
-    document.getElementById('btn-call2').style.display = 'none';
-    document.getElementById('btn-regen2').style.display = '';
-  }
-  if(S.call3Data){
-    /* renderTab6FromState가 selNewsIdx 기반으로 on 클래스 직접 반영 */
-    renderTab6FromState();
-    if(S.selNewsIdx.length > 0) setBtn('next5', false);
-    document.getElementById('btn-call3').style.display = 'none';
-    document.getElementById('btn-regen3').style.display = '';
-  }
-  if(S.opening) setBtn('next6', false);
-  if(S.remind)  setBtn('next7', false);
-  if(S.title)   setBtn('next8', false);
+  if (S.newsDraft)    { renderNewsDraft(S.newsDraft); showRegenBtn('news-draft'); }
+  if (S.openingData)  { renderOpenings(); showRegenBtn('opening'); }
+  if (S.openingDraft) { renderOpeningDraft(S.openingDraft); document.getElementById('t10draft').style.display='block'; showRegenBtn('opening-draft'); }
+  if (S.remindData)   { renderReminds();  showRegenBtn('remind');  }
+  if (S.remindDraft)  { renderRemindDraft(S.remindDraft); document.getElementById('t11draft').style.display='block'; showRegenBtn('remind-draft'); }
+  if (S.titleData)    { renderTitles();   showRegenBtn('titles');  }
 
-  /* carry 업데이트 */
+  /* 버튼 상태 복원 */
+  if (S.subject)     setBtn('next1', false);
+  if (S.story)       setBtn('next2', false);
+  if (S.storyDraft)  setBtn('next3', false);
+  if (S.tip)         setBtn('next4', false);
+  if (S.tipDraft)    setBtn('next5', false);
+  if (S.quizData)    setBtn('next6', false);
+  if (S.selNewsIdx && S.selNewsIdx.length > 0) setBtn('next7', false);
+  if (S.newsDraft)   setBtn('next8', false);
+  if (S.openingDraft) setBtn('next9', false);
+  if (S.remindDraft)  setBtn('next10', false);
+  if (S.title)        setBtn('next11', false);
+
+  /* 퀴즈 형식/난이도 UI 복원 */
+  restoreOptGroup('quizFormatGroup', S.quizFormat);
+  restoreOptGroup('quizDiffGroup',   S.quizDiff);
+
   updateCarry(ai);
 }
 
+function restoreOptGroup(groupId, val) {
+  var group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.opt-btn').forEach(function(btn) {
+    btn.classList.toggle('sel', btn.getAttribute('data-val') === val);
+  });
+}
+
 /* ══════════════════════════════════════
-   ■ 생성 결과 다시 시작 — softReset()
-   탭1 분석 데이터는 유지, 탭2~9 생성 결과만 초기화.
+   softReset — 탭1 분석 유지, 탭2~13 초기화
 ══════════════════════════════════════ */
-/* ══════════════════════════════════════
-   ■ 생성 결과 다시 시작 — softReset()
-   탭1 분석 데이터(CTR·공유수·비고·HTML·분석 결과)는 유지.
-   탭2~9 생성 결과·선택값만 초기화.
-   "전 회차 학습 기준 유지 + 이번 회차 생성 결과만 다시 시작"
-══════════════════════════════════════ */
-function softReset(){
-  if(!confirm(
+function softReset() {
+  if (!confirm(
     '이번 회차 생성 결과를 다시 시작하겠습니까?\n\n'
-    +'전 회차 분석 데이터(CTR·공유수·HTML·분석 결과)는 유지됩니다.\n'
-    +'탭2~9 생성 결과와 선택값만 초기화됩니다.'
+    + '직전 분석 데이터(CTR·공유수·HTML·분석 결과)는 유지됩니다.\n'
+    + '탭2~13 생성 결과와 선택값만 초기화됩니다.'
   )) return;
 
-  /* ── 탭2~9 S 상태만 초기화 (탭1 분석 데이터는 보존) ── */
-  S.call1Data=null; S.call2Data=null; S.call3Data=null;
-  S.subject=null; S.story=null; S.opening=null; S.remind=null; S.title=null;
-  S.news=[]; S.selNewsIdx=[];
+  S.subjectData=null; S.subject=null;
+  S.storyData=null;   S.story=null;    S.storyDraft=null;
+  S.tipUserNews='';   S.tipData=null;  S.tip=null; S.tipDraft=null;
+  S.quizFormat='ox';  S.quizDiff='normal'; S.quizData=null;
+  S.newsInputs=[];    S.selNewsIdx=[];  S.newsDraft=null;
+  S.openingData=null; S.opening=null;   S.openingDraft=null;
+  S.remindData=null;  S.remind=null;    S.remindDraft=null;
+  S.titleData=null;   S.title=null;
+  S.activeTab=0; S.unlockedTabs=[0]; S.doneTabs=[];
 
-  /* 탭 잠금 상태: 탭0만 열고 나머지 잠금 */
-  S.activeTab=0;
-  S.unlockedTabs=[0];
-  S.doneTabs=[];
-
-  /* ── DOM: 탭 상태 복원 ── */
-  tbs().forEach(function(btn, idx){
-    btn.classList.remove('active','done','locked');
-    if(idx > 0) btn.classList.add('locked');
-  });
+  tbs().forEach(function(btn,idx){ btn.classList.remove('active','done','locked'); if(idx>0) btn.classList.add('locked'); });
   tbs()[0].classList.add('active');
-  pnls().forEach(function(p,idx){ p.classList.toggle('active', idx===0); });
+  pnls().forEach(function(p,i){ p.classList.toggle('active', i===0); });
 
-  /* ── DOM: 탭2~9 콘텐츠 초기화 ── */
-  resetAll();
+  /* DOM 초기화 */
+  ['t2area','t3area','t4area','t5area','t6area','t7area','t8area','t9area','t10area','t11area','t12area'].forEach(function(id) {
+    var el=document.getElementById(id); if(el) el.innerHTML='<div class="skel"><p>앞 탭에서 생성 후 확인해주세요</p></div>';
+  });
+  ['t4draft','t9area','t10draft','t11draft','t12selected','finalContent'].forEach(function(id) {
+    var el=document.getElementById(id); if(el) el.style.display='none';
+  });
+  initNewsInputs();
+  document.getElementById('newsSelectArea').innerHTML='<div class="skel"><p>위에서 뉴스를 입력하면 여기에 선택 카드가 표시됩니다</p></div>';
+  document.getElementById('t5newsInput').value='';
 
-  /* ── DOM: 탭2 생성/재생성 버튼 초기 상태로 ── */
-  document.getElementById('btn-call1').style.display='';
-  document.getElementById('btn-regen1').style.display='none';
+  ['next1','next2','next3','next4','next5','next6','next7','next8','next9','next10','next11'].forEach(function(id){ setBtn(id,true); });
 
-  /* ── 탭1은 분석 결과 그대로 유지 (DOM 변경 없음) ── */
-  /* next0 버튼: 분석 결과가 있으면 활성 유지 */
-  if(S.analysis) setBtn('next0', false);
+  /* 재생성 버튼 숨기기 */
+  ['subjects','stories','story-draft','tips','tip-draft','quiz','news-draft','opening','opening-draft','remind','remind-draft','titles'].forEach(function(k) {
+    var regen=document.getElementById('btn-regen-'+k); if(regen) regen.style.display='none';
+    var orig=document.getElementById('btn-'+k); if(orig) orig.style.display='';
+  });
 
-  /* localStorage 갱신 — 탭1 데이터는 살리고 탭2~9만 지워진 상태로 저장 */
+  if (S.analysis) setBtn('next0', false);
   saveState();
 }
 
-/* ── 탭 제어 ── */
-function tbs(){ return document.querySelectorAll('.tb'); }
-function pnls(){ return document.querySelectorAll('.panel'); }
+/* ══════════════════════════════════════
+   탭 제어
+══════════════════════════════════════ */
+function tbs()  { return document.querySelectorAll('.tb'); }
+function pnls() { return document.querySelectorAll('.panel'); }
 
-function goTab(i){
-  if(tbs()[i].classList.contains('locked')) return;
+function goTab(i) {
+  if (tbs()[i].classList.contains('locked')) return;
   tbs().forEach(function(b,idx){ b.classList.toggle('active', idx===i); });
   pnls().forEach(function(p,idx){ p.classList.toggle('active', idx===i); });
-  S.activeTab = i; /* ← 저장 */
+  S.activeTab = i;
   updateCarry(i);
-  renderTabFromState(i);
-  saveState(); /* ← 탭 이동 시 저장 */
+  saveState();
 }
-function unlockTab(i){
+function unlockTab(i) {
   tbs()[i].classList.remove('locked');
-  if(S.unlockedTabs.indexOf(i) === -1) S.unlockedTabs.push(i); /* ← 저장 */
+  if (S.unlockedTabs.indexOf(i) === -1) S.unlockedTabs.push(i);
 }
-function completeTab(cur, nxt){
+function completeTab(cur, nxt) {
   tbs()[cur].classList.add('done');
-  if(S.doneTabs.indexOf(cur) === -1) S.doneTabs.push(cur); /* ← 저장 */
+  if (S.doneTabs.indexOf(cur) === -1) S.doneTabs.push(cur);
   unlockTab(nxt);
   goTab(nxt);
 }
-function setBtn(id, dis){ var b=document.getElementById(id); if(b) b.disabled=dis; }
+function setBtn(id, dis) { var b=document.getElementById(id); if(b) b.disabled=dis; }
+function showRegenBtn(key) {
+  var orig=document.getElementById('btn-'+key); if(orig) orig.style.display='none';
+  var regen=document.getElementById('btn-regen-'+key); if(regen) regen.style.display='';
+}
+function setOpt(stateKey, val, btn) {
+  S[stateKey] = val;
+  btn.closest('.opt-group').querySelectorAll('.opt-btn').forEach(function(b){ b.classList.remove('sel'); });
+  btn.classList.add('sel');
+  btn.setAttribute('data-val', val);
+  saveState();
+}
 
-function loading(){
+function loading() {
   return '<div class="loading-pulse"><div class="dot"></div><div class="dot"></div><div class="dot"></div>'
-    +'<span style="margin-left:6px">생성 중...</span></div>';
+    + '<span style="margin-left:6px">생성 중...</span></div>';
 }
-function errBox(msg){
-  return '<div class="err-box">생성 실패: '+escHtml(msg)
-    +'<br><span style="font-size:12px">네트워크 상태를 확인하거나 재시도해주세요</span></div>';
+function errBox(msg) {
+  return '<div class="err-box">생성 실패: ' + escHtml(msg)
+    + '<br><span style="font-size:12px">네트워크 상태를 확인하거나 재시도해주세요</span></div>';
 }
-function escHtml(s){
+function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-function updateCarry(i){
-  var ids={1:'t2carry',2:'t3carry',3:'t4carry',4:'t5carry',5:'t6carry',6:'t7carry',7:'t8carry',8:'t9carry'};
-  var el=document.getElementById(ids[i]); if(!el) return;
-  var parts=['CTR '+S.ctr.toFixed(1)+'%'];
-  if(S.analysis && S.analysis.topic) parts.push('직전주제: '+S.analysis.topic);
-  if(S.subject) parts.push('선택주제: '+S.subject.title);
-  if(S.story)   parts.push('사연톤: '+S.story.tone);
-  el.innerHTML='<b>앞 탭 반영값</b>'+parts.join('  ·  ');
+/* opt-group에 data-val 세팅 (초기화 시 필요) */
+document.querySelectorAll('.opt-btn').forEach(function(btn) {
+  btn.setAttribute('data-val', btn.textContent.trim() === 'O / X 퀴즈' ? 'ox'
+    : btn.textContent.trim() === '4지선다 퀴즈' ? 'mc'
+    : btn.textContent.trim() === '쉬움' ? 'easy'
+    : btn.textContent.trim() === '어려움' ? 'hard' : 'normal');
+});
+
+/* ══════════════════════════════════════
+   carry 업데이트
+══════════════════════════════════════ */
+function updateCarry(tabIdx) {
+  var ids={1:'t2carry',2:'t3carry',3:'t4carry',4:'t5carry',5:'t6carry',
+           6:'t7carry',7:'t8carry',8:'t9carry',9:'t10carry',10:'t11carry',11:'t12carry'};
+  var el = document.getElementById(ids[tabIdx]); if (!el) return;
+  var parts = ['CTR ' + (S.ctr||0).toFixed(1) + '%'];
+  if (S.analysis && S.analysis.topic) parts.push('직전주제: ' + S.analysis.topic);
+  if (S.subject)    parts.push('주제: ' + S.subject.title);
+  if (S.story)      parts.push('사연: ' + S.story.tone);
+  if (S.tip)        parts.push('꿀팁: ' + S.tip.title);
+  el.innerHTML = '<b>앞 탭 반영값</b>' + parts.join('  ·  ');
 }
 
 /* ══════════════════════════════════════
-   TAB 1 — HTML 붙여넣기 & 자동 분석
+   백엔드 호출
 ══════════════════════════════════════ */
-
-/* textarea 입력 감지 → 상태 배지 업데이트 */
-function onPasteInput(){
-  var val = document.getElementById('t1html').value.trim();
-  var wrap = document.getElementById('pasteWrap');
-  var badge = document.getElementById('extractBadge');
-  var hint  = document.getElementById('extractHint');
-  S.rawHtml = val; /* ← rawHtml 상태에 저장 */
-  if(val.length > 50){
-    wrap.classList.add('has-content');
-    badge.className = 'extract-badge eb-ready';
-    badge.textContent = 'HTML 감지됨';
-    hint.textContent = '분석 생성 버튼을 눌러주세요';
-  } else {
-    wrap.classList.remove('has-content');
-    badge.className = 'extract-badge eb-empty';
-    badge.textContent = 'HTML 대기 중';
-    hint.textContent = 'HTML을 붙여넣으면 자동 추출됩니다';
+async function callBackend(type, payload) {
+  var res = await fetch(API_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: type, payload: payload })
+  });
+  var rawText;
+  try { rawText = await res.text(); } catch(e) { throw new Error('응답 읽기 실패: ' + e.message); }
+  if (!res.ok) {
+    var errMsg = rawText;
+    try { var j=JSON.parse(rawText); errMsg=j.error||j.message||rawText; } catch(_){}
+    throw new Error('서버 오류 ' + res.status + ': ' + errMsg);
   }
-  saveState(); /* ← 붙여넣기 시 자동 저장 */
+  var data;
+  try { data = JSON.parse(rawText); } catch(e) { throw new Error('응답 JSON 파싱 실패: ' + rawText.slice(0,200)); }
+  if (data.error) throw new Error(data.error);
+  if (!data.result) throw new Error('서버 응답에 result 없음');
+  return data.result;
 }
 
-function clearPaste(){
+/* ══════════════════════════════════════
+   TAB 1 — 직전 회차 분석
+══════════════════════════════════════ */
+function onPasteInput() {
+  var val  = document.getElementById('t1html').value.trim();
+  var wrap = document.getElementById('pasteWrap');
+  S.rawHtml = val;
+  wrap.classList.toggle('has-content', val.length > 50);
+  saveState();
+}
+function clearPaste() {
   document.getElementById('t1html').value = '';
   onPasteInput();
 }
-
-/* HTML → 텍스트 변환 (브라우저 파서 활용) */
-function htmlToText(html){
+function htmlToText(html) {
   var tmp = document.createElement('div');
   tmp.innerHTML = html;
-  /* script / style 제거 */
-  ['script','style'].forEach(function(tag){
+  ['script','style'].forEach(function(tag) {
     Array.from(tmp.querySelectorAll(tag)).forEach(function(el){ el.remove(); });
   });
   return (tmp.innerText || tmp.textContent || '').replace(/\s+/g,' ').trim();
 }
 
-/* 탭1 분석 생성 — 백엔드 호출 */
-async function runTab1(){
+async function runAnalyze() {
   var ctrVal = document.getElementById('t1ctr').value.trim();
-  if(!ctrVal){ alert('CTR을 입력해주세요'); return; }
+  if (!ctrVal) { alert('CTR을 입력해주세요'); return; }
 
-  S.ctr   = Math.max(0, parseFloat(ctrVal)||0);
-  S.share = Math.max(0, parseInt(document.getElementById('t1share').value)||0);
-  S.note  = document.getElementById('t1note').value.trim();
-  S.recType = S.ctr>=4?'나해당형·반전형':S.ctr>=3?'공감형·헷갈림형':'공감형·현실질문형';
-  saveState(); /* ← 입력값 즉시 저장 */
+  S.ctr       = Math.max(0, parseFloat(ctrVal)||0);
+  S.share     = Math.max(0, parseInt(document.getElementById('t1share').value)||0);
+  S.note      = document.getElementById('t1note').value.trim();
+  S.prevTitle = document.getElementById('t1prevTitle').value.trim();
+  S.recType   = S.ctr>=4 ? '나해당형·반전형' : S.ctr>=3 ? '공감형·헷갈림형' : '공감형·현실질문형';
+  saveState();
 
   var rawHtml  = document.getElementById('t1html').value.trim();
   var bodyText = rawHtml ? htmlToText(rawHtml) : '';
 
-  /* HTML 없어도 진행 (수치만으로 분석) */
-  document.getElementById('t1skel').style.display  = 'none';
+  document.getElementById('t1skel').style.display   = 'none';
   document.getElementById('t1result').style.display = 'none';
-  document.getElementById('t1result').innerHTML = loading();
+  document.getElementById('t1result').innerHTML     = loading();
   document.getElementById('t1result').style.display = 'block';
   setBtn('btn-analyze', true);
   setBtn('next0', true);
 
   try {
     var result = await callBackend('analyze', {
-      ctr:      S.ctr,
-      share:    S.share,
-      note:     S.note,
-      recType:  S.recType,
-      bodyText: bodyText.slice(0, 4000)   /* 토큰 절약: 최대 4000자 */
+      ctr: S.ctr, share: S.share, note: S.note,
+      recType: S.recType, prevTitle: S.prevTitle,
+      bodyText: bodyText.slice(0, 4000)
     });
     S.analysis = result;
-    renderTab1Result(result);
+    renderAnalysisResult(result);
     setBtn('next0', false);
-    saveState(); /* ← 분석 결과 저장 */
-  } catch(e){
+    saveState();
+  } catch(e) {
     document.getElementById('t1result').innerHTML = errBox(e.message);
   } finally {
     setBtn('btn-analyze', false);
   }
 }
 
-function renderTab1Result(r){
-  if(!r){ document.getElementById('t1result').innerHTML = errBox('분석 결과 없음'); return; }
+function renderAnalysisResult(r) {
+  if (!r) { document.getElementById('t1result').innerHTML = errBox('분석 결과 없음'); return; }
 
-  /* 키워드 배지 */
-  var kwHtml = (Array.isArray(r.keywords) ? r.keywords : []).map(function(k){
-    return '<span class="bdg">'+escHtml(k)+'</span>';
-  }).join('');
-
-  /* 피해야 할 소재 */
-  var avoidHtml = (Array.isArray(r.avoid) ? r.avoid : []).map(function(a){
-    return '<span class="bdg w">'+escHtml(a)+'</span>';
-  }).join('');
-
-  var grid = [
-    { label:'직전 회차 제목',   value: escHtml(r.title  || '추출 불가') },
-    { label:'핵심 주제',        value: escHtml(r.topic  || '추출 불가') },
-    { label:'반복 키워드',      value: kwHtml || '<span class="bdg">없음</span>' },
-    { label:'오프닝 패턴',      value: escHtml(r.opening_pattern || '추출 불가') },
-    { label:'CTA 패턴',         value: escHtml(r.cta_pattern     || '추출 불가') },
-    { label:'피해야 할 중복 소재', value: avoidHtml || '<span class="bdg">없음</span>' },
-  ];
-
-  var gridHtml = '<div class="analysis-grid">'
-    + grid.map(function(item){
-        return '<div class="analysis-item">'
-          +'<div class="analysis-item-label">'+item.label+'</div>'
-          +'<div class="analysis-item-value">'+item.value+'</div>'
-          +'</div>';
-      }).join('')
+  /* ① 성과 배지 */
+  var cl = S.ctr>=4 ? 'tg' : 'ta';
+  var ll = S.ctr>=4 ? '고클릭' : S.ctr>=3 ? '평균' : '저클릭';
+  var ctrHtml = '<div style="background:var(--bg2);border-radius:var(--radius);padding:10px 12px;margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+    + '<span class="tag ' + cl + '">CTR ' + S.ctr.toFixed(1) + '% · ' + ll + '</span>'
+    + (S.note ? '<span class="tag tgr">' + escHtml(S.note) + '</span>' : '')
+    + '<span class="tag tb2">공유 ' + S.share + '건</span>'
+    + '<span class="tag tgr">권장: ' + escHtml(S.recType) + '</span>'
     + '</div>';
 
-  /* 이번 회차 추천 방향 */
-  var dirHtml = '<div class="direction-box">'
-    +'<div class="direction-box-label">이번 회차 추천 방향</div>'
-    +'<div class="direction-box-body">'+escHtml(r.direction || '방향 분석 결과 없음')+'</div>'
-    +'</div>';
-
-  /* CTR 요약 */
-  var cl = S.ctr>=4?'tg':'ta';
-  var ll = S.ctr>=4?'고클릭':S.ctr>=3?'평균':'저클릭';
-  var ctrHtml = '<div class="rc" style="margin-bottom:8px">'
-    +'<div class="rc-hd">'
-    +'<span class="tag '+cl+'">CTR '+S.ctr.toFixed(1)+'% · '+ll+'</span>'
-    +(S.note?'<span class="tag tgr">'+escHtml(S.note)+'</span>':'')
-    +'<span class="tag tb2">공유 '+S.share+'건</span>'
-    +'</div>'
-    +'<div class="rc-body">권장 유형: <b>'+S.recType+'</b></div>'
-    +'</div>';
-
-  document.getElementById('t1result').innerHTML = ctrHtml + gridHtml + dirHtml;
-}
-
-/* ══════════════════════════════════════
-   백엔드 호출
-══════════════════════════════════════ */
-async function callBackend(type, payload){
-  var res = await fetch(API_ENDPOINT, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ type:type, payload:payload })
-  });
-
-  /* body 스트림은 한 번만 읽을 수 있으므로
-     text()로 먼저 읽은 뒤 JSON 파싱을 시도합니다.
-     res.json() + res.text() 이중 읽기 버그 방지 */
-  var rawText;
-  try { rawText = await res.text(); } catch(e) {
-    throw new Error('응답 읽기 실패: ' + e.message);
-  }
-
-  if(!res.ok){
-    var errMsg = rawText;
-    try { var j = JSON.parse(rawText); errMsg = j.error || j.message || rawText; } catch(_){}
-    throw new Error('서버 오류 ' + res.status + ': ' + errMsg);
-  }
-
-  var data;
-  try { data = JSON.parse(rawText); } catch(e) {
-    throw new Error('응답 JSON 파싱 실패: ' + rawText.slice(0, 200));
-  }
-  if(data.error) throw new Error(data.error);
-  if(!data.result) throw new Error('서버 응답에 result 없음');
-  return data.result;
-}
-
-/* ══════════════════════════════════════
-   1차 호출: 주제·사연·오프닝·리마인드·제목
-══════════════════════════════════════ */
-async function call1(){
-  resetAll();
-  document.getElementById('t2area').innerHTML = loading();
-  setBtn('btn-call1', true); setBtn('next1', true);
-  try{
-    var result = await callBackend('call1', {
-      ctr:      S.ctr,
-      share:    S.share,
-      note:     S.note,
-      recType:  S.recType,
-      /* 분석 결과 자동 반영 */
-      prevTitle:    S.analysis ? S.analysis.title           : '',
-      prevTopic:    S.analysis ? S.analysis.topic           : '',
-      prevKeywords: S.analysis ? (S.analysis.keywords||[]).join(', ') : '',
-      avoid:        S.analysis ? (S.analysis.avoid||[]).join(', ')    : '',
-      openingPattern: S.analysis ? S.analysis.opening_pattern : '',
-      ctaPattern:     S.analysis ? S.analysis.cta_pattern     : ''
-    });
-    S.call1Data = result;
-    renderTab2FromState();
-    document.getElementById('btn-call1').style.display = 'none';
-    document.getElementById('btn-regen1').style.display = '';
-    saveState(); /* ← 1차 생성 결과 저장 */
-  } catch(e){
-    document.getElementById('t2area').innerHTML = errBox(e.message);
-  } finally {
-    setBtn('btn-call1', false);
-  }
-}
-
-function resetAll(){
-  S.call1Data=null; S.call2Data=null; S.call3Data=null;
-  S.subject=null; S.story=null; S.opening=null; S.remind=null; S.title=null;
-  S.news=[]; S.selNewsIdx=[];
-  ['next1','next2','next3','next4','next5','next6','next7','next8'].forEach(function(id){ setBtn(id,true); });
-  ['t3area','t4area','t5area','t6area','t7area','t8area','t9area'].forEach(function(id){
-    var el=document.getElementById(id);
-    if(el) el.innerHTML='<div class="skel"><p>앞 탭에서 생성 후 확인해주세요</p></div>';
-  });
-  document.getElementById('btn-regen2').style.display='none'; document.getElementById('btn-call2').style.display='';
-  document.getElementById('btn-regen3').style.display='none'; document.getElementById('btn-call3').style.display='';
-  document.getElementById('finalArea').style.display='none';
-}
-
-function resetDownstreamOfSubject(){
-  S.story=null; S.opening=null; S.remind=null; S.title=null;
-  ['next2','next6','next7','next8'].forEach(function(id){ setBtn(id,true); });
-}
-function resetDownstreamOfStory(){
-  S.opening=null; setBtn('next6',true);
-}
-
-/* ── TAB 2 ── */
-function renderTab2FromState(){
-  var data=S.call1Data;
-  if(!data||!Array.isArray(data.subjects)||!data.subjects.length){
-    document.getElementById('t2area').innerHTML=errBox('주제 데이터가 없습니다. 재생성해주세요.'); return;
-  }
-  document.getElementById('t2area').innerHTML='<div class="sel-grid">'
-    +data.subjects.map(function(s,i){
-      var isOn=S.subject&&S.subject.title===s.title;
-      return '<div class="sc'+(isOn?' on':'')+'" id="sc'+i+'" onclick="selectSubject('+i+')">'
-        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:5px">'
-        +'<div class="sc-t">'+escHtml(s.title)+'</div>'
-        +'<span class="tag tgr" style="flex-shrink:0;font-size:10px">'+escHtml(s.type)+'</span></div>'
-        +'<div class="sc-b" style="margin-bottom:5px">'+escHtml(s.desc)+'</div>'
-        +'<div class="sc-meta">'
-        +'<span class="sc-mi"><b>왜 좋음</b>  '+escHtml(s.why)+'</span>'
-        +'<span class="sc-mi"><b>타깃</b>  '+escHtml(s.target)+'</span></div>'
-        +'<div class="ck">✓</div></div>';
-    }).join('')+'</div>';
-}
-function selectSubject(i){
-  if(!S.call1Data||!S.call1Data.subjects[i]) return;
-  document.querySelectorAll('#t2area .sc').forEach(function(c){c.classList.remove('on');});
-  document.getElementById('sc'+i).classList.add('on');
-  S.subject=S.call1Data.subjects[i]; setBtn('next1',false);
-  resetDownstreamOfSubject();
-  renderTab3FromState(); renderTab7FromState(); renderTab8FromState(); renderTab9FromState();
-  saveState(); /* ← 주제 선택 저장 */
-}
-
-/* ── TAB 3 ── */
-function renderTab3FromState(){
-  var data=S.call1Data;
-  if(!data||!Array.isArray(data.stories)){
-    document.getElementById('t3area').innerHTML='<div class="skel"><p>탭 2에서 먼저 생성해주세요</p></div>'; return;
-  }
-  document.getElementById('t3area').innerHTML='<div class="sel-grid">'
-    +data.stories.map(function(s,i){
-      var isOn=S.story&&S.story.tone===s.tone;
-      return '<div class="sc'+(isOn?' on':'')+'" id="stc'+i+'" onclick="selectStory('+i+')">'
-        +'<div style="margin-bottom:6px"><span class="tag tgr">'+escHtml(s.tone)+'</span></div>'
-        +'<div class="sc-b">'+escHtml(s.text)+'</div>'
-        +'<div class="ck">✓</div></div>';
-    }).join('')+'</div>';
-}
-function selectStory(i){
-  if(!S.call1Data||!S.call1Data.stories[i]) return;
-  document.querySelectorAll('#t3area .sc').forEach(function(c){c.classList.remove('on');});
-  document.getElementById('stc'+i).classList.add('on');
-  S.story=S.call1Data.stories[i]; setBtn('next2',false);
-  resetDownstreamOfStory(); renderTab7FromState();
-  saveState(); /* ← 사연 선택 저장 */
-}
-
-/* ── 2차 호출 ── */
-async function call2(){
-  if(!S.subject){alert('탭 2에서 주제를 먼저 선택해주세요');return;}
-  S.call2Data=null;
-  document.getElementById('t4area').innerHTML=loading();
-  document.getElementById('t5area').innerHTML='<div class="skel"><p>탭 4 생성 후 확인해주세요</p></div>';
-  setBtn('next3',true); setBtn('next4',true); setBtn('btn-call2',true);
-  try{
-    var result=await callBackend('call2',{
-      subjectTitle:S.subject.title, subjectType:S.subject.type,
-      storyText:S.story?S.story.text:'', ctr:S.ctr
-    });
-    S.call2Data=result;
-    renderTab4FromState(); renderTab5FromState();
-    setBtn('next3',false); setBtn('next4',false);
-    document.getElementById('btn-call2').style.display='none';
-    document.getElementById('btn-regen2').style.display='';
-    saveState(); /* ← 2차 생성 결과 저장 */
-  } catch(e){
-    document.getElementById('t4area').innerHTML=errBox(e.message);
-  } finally { setBtn('btn-call2',false); }
-}
-function renderTab4FromState(){
-  var data=S.call2Data; if(!data||!Array.isArray(data.tips)) return;
-  var cls=['tg','tb2','tgr'];
-  document.getElementById('t4area').innerHTML=data.tips.map(function(t,i){
-    return '<div class="rc"><div class="rc-hd"><span class="tag '+cls[i]+'">'+escHtml(t.label)+'</span></div>'
-      +'<div class="rc-body">'+escHtml(t.body)+'</div></div>';
-  }).join('');
-}
-function renderTab5FromState(){
-  var data=S.call2Data;
-  if(!data||!data.quiz_ox){
-    document.getElementById('t5area').innerHTML='<div class="skel"><p>탭 4에서 생성 후 확인해주세요</p></div>'; return;
-  }
-  var ox=data.quiz_ox, mc=data.quiz_mc||{};
-  var mcAns=typeof mc.answer==='number'?mc.answer:parseInt(mc.answer)||0;
-  var oxAns=String(ox.answer||'X').toUpperCase();
-  var mcOpts=Array.isArray(mc.options)?mc.options:[];
-  document.getElementById('t5area').innerHTML=
-    '<div class="rc"><div class="rc-hd"><span class="tag ta">O / X 퀴즈</span></div>'
-    +'<div class="rc-body" style="font-weight:500;margin-bottom:10px">'+escHtml(ox.question)+'</div>'
-    +'<div style="display:flex;gap:8px;margin-bottom:6px">'
-    +'<button class="btn-sm" onclick="chkOX(this,\''+oxAns+'\',\'O\')">O</button>'
-    +'<button class="btn-sm" onclick="chkOX(this,\''+oxAns+'\',\'X\')">X</button>'
-    +'</div><div id="ox-res" style="display:none;font-size:12px;color:var(--text2);padding-top:8px;border-top:0.5px solid var(--border)">'
-    +'<b>정답: '+oxAns+'</b>  '+escHtml(ox.explanation)+'</div></div>'
-    +(mc.question?'<div class="rc"><div class="rc-hd"><span class="tag tb2">4지선다 퀴즈</span></div>'
-    +'<div class="rc-body" style="font-weight:500;margin-bottom:10px">'+escHtml(mc.question)+'</div>'
-    +'<div style="display:flex;flex-direction:column;gap:6px" id="q2opts">'
-    +mcOpts.map(function(o,i){
-      return '<button class="btn-sm" style="text-align:left;padding:7px 10px;width:100%"'
-        +' onclick="chkMC('+i+','+mcAns+',\''+escHtml(mc.explanation).replace(/'/g,"&#39;")+'\')">'
-        +(i+1)+'. '+escHtml(o)+'</button>';
-    }).join('')
-    +'</div><div id="q2-res" style="display:none;font-size:12px;color:var(--text2);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)">'
-    +'<b>정답: '+(mcAns+1)+'번</b>  '+escHtml(mc.explanation)+'</div></div>':'');
-}
-function chkOX(btn,correct,chosen){
-  var el=document.getElementById('ox-res');
-  if(el){el.style.display='block';el.style.color=chosen===correct?'var(--teal-text)':'var(--coral-text)';}
-}
-function chkMC(i,correct,ex){
-  document.querySelectorAll('#q2opts button').forEach(function(b,idx){
-    b.style.borderColor=idx===correct?'var(--teal-bd)':idx===i&&i!==correct?'var(--coral-bd)':'';
-    b.style.background=idx===correct?'var(--teal-bg)':idx===i&&i!==correct?'var(--coral-bg)':'';
-  });
-  var el=document.getElementById('q2-res'); if(el) el.style.display='block';
-}
-
-/* ── 3차 호출 ── */
-async function call3(){
-  S.call3Data=null; S.selNewsIdx=[]; S.news=[];
-  document.getElementById('next5').disabled=true;
-  document.getElementById('t6area').innerHTML=loading();
-  setBtn('btn-call3',true);
-  try{
-    var result=await callBackend('call3',{
-      subjectTitle:S.subject?S.subject.title:'',
-      subjectType:S.subject?S.subject.type:''
-    });
-    S.call3Data=result; renderTab6Fresh(); /* 신규 생성 — selNewsIdx 초기화 포함 */
-    document.getElementById('btn-call3').style.display='none';
-    document.getElementById('btn-regen3').style.display='';
-    saveState(); /* ← 3차 생성 결과 저장 */
-  } catch(e){
-    document.getElementById('t6area').innerHTML=errBox(e.message);
-  } finally { setBtn('btn-call3',false); }
-}
-function renderTab6FromState(){
-  var data=S.call3Data; if(!data||!Array.isArray(data.news)) return;
-  /* ※ 신규 생성 시에만 selNewsIdx 초기화 — 복원 시에는 기존 선택 유지 */
-  document.getElementById('next5').disabled=S.selNewsIdx.length===0;
-  document.getElementById('t6area').innerHTML='<div class="sel-grid">'
-    +data.news.slice(0,10).map(function(n,i){
-      /* 복원된 selNewsIdx 기반으로 on 클래스 즉시 반영 */
-      var isOn = S.selNewsIdx.indexOf(i) !== -1;
-      return '<div class="sc'+(isOn?' on':'')+'" id="nc'+i+'" onclick="toggleNews('+i+')">'
-        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
-        +'<div style="flex:1">'
-        +'<div style="font-size:13px;font-weight:500;margin-bottom:3px">'+escHtml(n.title)+'</div>'
-        +'<div style="font-size:11px;color:var(--text3);margin-bottom:6px">'+escHtml(n.date)+'</div>'
-        +'<div style="font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:4px">'+escHtml(n.summary)+'</div>'
-        +'<div style="font-size:11px;color:var(--text3)"><b style="color:var(--text2);font-weight:500">왜 좋음</b>  '+escHtml(n.why)+'</div>'
-        +'</div><div class="ck">✓</div></div></div>';
-    }).join('')+'</div>';
-}
-
-/* 신규 생성 시에만 호출 — selNewsIdx·news 초기화 후 렌더 */
-function renderTab6Fresh(){
-  S.selNewsIdx=[]; S.news=[];
-  renderTab6FromState();
-}
-function toggleNews(i){
-  var idx=S.selNewsIdx.indexOf(i);
-  if(idx>-1){S.selNewsIdx.splice(idx,1);document.getElementById('nc'+i).classList.remove('on');}
-  else{if(S.selNewsIdx.length>=2){alert('최대 2개 선택 가능합니다');return;}S.selNewsIdx.push(i);document.getElementById('nc'+i).classList.add('on');}
-  document.getElementById('next5').disabled=S.selNewsIdx.length===0;
-  saveState(); /* ← 뉴스 선택 저장 */
-}
-function newsComplete(){
-  S.news=S.selNewsIdx.map(function(i){return S.call3Data.news[i];});
-  saveState(); /* ← 뉴스 확정 저장 */
-  completeTab(5,6);
-}
-
-/* ── TAB 7/8/9 ── */
-function renderTab7FromState(){
-  var data=S.call1Data;
-  if(!data||!Array.isArray(data.openings)){document.getElementById('t7area').innerHTML='<div class="skel"><p>탭 2에서 먼저 생성해주세요</p></div>';return;}
-  document.getElementById('t7area').innerHTML='<div class="sel-grid">'
-    +data.openings.map(function(o,i){
-      var isOn=S.opening&&S.opening.tone===o.tone;
-      return '<div class="sc'+(isOn?' on':'')+'" id="opc'+i+'" onclick="selectOpening('+i+')">'
-        +'<div style="margin-bottom:6px"><span class="tag tgr">'+escHtml(o.tone)+'</span></div>'
-        +'<div class="sc-b">'+escHtml(o.text)+'</div><div class="ck">✓</div></div>';
-    }).join('')+'</div>';
-}
-function selectOpening(i){
-  if(!S.call1Data||!S.call1Data.openings[i]) return;
-  document.querySelectorAll('#t7area .sc').forEach(function(c){c.classList.remove('on');});
-  document.getElementById('opc'+i).classList.add('on');
-  S.opening=S.call1Data.openings[i]; setBtn('next6',false);
-  saveState(); /* ← 오프닝 선택 저장 */
-}
-
-function renderTab8FromState(){
-  var data=S.call1Data;
-  if(!data||!Array.isArray(data.reminds)){document.getElementById('t8area').innerHTML='<div class="skel"><p>탭 2에서 먼저 생성해주세요</p></div>';return;}
-  document.getElementById('t8area').innerHTML='<div class="sel-grid">'
-    +data.reminds.map(function(r,i){
-      var isOn=S.remind===r;
-      return '<div class="sc'+(isOn?' on':'')+'" id="rmc'+i+'" onclick="selectRemind('+i+')">'
-        +'<div style="margin-bottom:6px"><span class="tag ta">멘트 '+(i+1)+'</span></div>'
-        +'<div class="sc-b">'+escHtml(r)+'</div><div class="ck">✓</div></div>';
-    }).join('')+'</div>';
-}
-function selectRemind(i){
-  if(!S.call1Data||S.call1Data.reminds[i]===undefined) return;
-  document.querySelectorAll('#t8area .sc').forEach(function(c){c.classList.remove('on');});
-  document.getElementById('rmc'+i).classList.add('on');
-  S.remind=S.call1Data.reminds[i]; setBtn('next7',false);
-  saveState(); /* ← 리마인드 선택 저장 */
-}
-
-function renderTab9FromState(){
-  var data=S.call1Data;
-  if(!data||!Array.isArray(data.titles)){document.getElementById('t9area').innerHTML='<div class="skel"><p>탭 2에서 먼저 생성해주세요</p></div>';return;}
-  document.getElementById('t9area').innerHTML='<div class="sel-grid">'
-    +data.titles.map(function(t,i){
-      var isOn=S.title===t.title;
-      return '<div class="sc'+(isOn?' on':'')+'" id="ttc'+i+'" onclick="selectTitle('+i+')">'
-        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:5px">'
-        +'<div class="sc-t">'+escHtml(t.title)+'</div>'
-        +'<span class="tag tgr" style="flex-shrink:0;font-size:10px">'+escHtml(t.type)+'</span></div>'
-        +'<div style="font-size:11px;color:var(--text3)">'+(t.title.length<=22?'22자 이내 · 카톡 최적':t.title.length+'자 · 축약 권장')+'</div>'
-        +'<div class="ck">✓</div></div>';
-    }).join('')+'</div>';
-}
-function selectTitle(i){
-  if(!S.call1Data||!S.call1Data.titles[i]) return;
-  document.querySelectorAll('#t9area .sc').forEach(function(c){c.classList.remove('on');});
-  document.getElementById('ttc'+i).classList.add('on');
-  S.title=S.call1Data.titles[i].title; setBtn('next8',false);
-  saveState(); /* ← 제목 선택 저장 */
-}
-
-function renderTabFromState(i){
-  if(i===1&&S.call1Data) renderTab2FromState();
-  if(i===2&&S.call1Data) renderTab3FromState();
-  if(i===3&&S.call2Data) renderTab4FromState();
-  if(i===4&&S.call2Data) renderTab5FromState();
-  if(i===5&&S.call3Data) renderTab6FromState();
-  if(i===6&&S.call1Data) renderTab7FromState();
-  if(i===7&&S.call1Data) renderTab8FromState();
-  if(i===8&&S.call1Data) renderTab9FromState();
-}
-
-/* ── 최종 초안 ── */
-function showFinal(){
-  document.getElementById('finalArea').style.display='block';
-  var tips=(S.call2Data&&Array.isArray(S.call2Data.tips))
-    ?S.call2Data.tips.map(function(t){return '['+t.label+']\n'+t.body;}).join('\n\n'):'미생성';
-  var quiz='미생성';
-  if(S.call2Data&&S.call2Data.quiz_ox){
-    var ox=S.call2Data.quiz_ox;
-    quiz='[O/X] '+ox.question+'\n정답: '+ox.answer+'  '+ox.explanation;
-    if(S.call2Data.quiz_mc){
-      var mc=S.call2Data.quiz_mc;
-      quiz+='\n\n[4지선다] '+mc.question+'\n'
-        +(Array.isArray(mc.options)?mc.options.map(function(o,i){return (i+1)+'. '+o;}).join(' / '):'')
-        +'\n정답: '+(mc.answer+1)+'번  '+mc.explanation;
-    }
-  }
-  var newsText=(Array.isArray(S.news)&&S.news.length>0)
-    ?S.news.map(function(n,i){return '['+(i+1)+'] '+(n.title||'')+'  ('+(n.date||'')+')\n'+(n.summary||'');}).join('\n\n')
-    :'선택 없음';
-  var sections=[
-    {lbl:'카카오 플친 제목', body:S.title||'미선택'},
-    {lbl:'오프닝 멘트',      body:(S.opening&&S.opening.text)||'미선택'},
-    {lbl:'선택 주제',        body:S.subject?S.subject.title+'\n유형: '+S.subject.type:'미선택'},
-    {lbl:'사연',             body:(S.story&&S.story.text)||'미선택'},
-    {lbl:'꿀팁',             body:tips},
-    {lbl:'세무 퀴즈',        body:quiz},
-    {lbl:'뉴스 한입 브리핑', body:newsText},
-    {lbl:'리마인드 멘트',    body:S.remind||'미선택'},
+  /* ② 직전 회차 참고·회피 자료 그리드 */
+  var kwHtml    = (Array.isArray(r.keywords) ? r.keywords : []).map(function(k){ return '<span class="bdg">' + escHtml(k) + '</span>'; }).join('');
+  var avoidHtml = (Array.isArray(r.avoid)    ? r.avoid    : []).map(function(a){ return '<span class="bdg w">' + escHtml(a) + '</span>'; }).join('');
+  var prevGrid = [
+    { label:'직전 회차 제목',  value: escHtml(r.title  || '(없음)') },
+    { label:'직전 회차 주제',  value: escHtml(r.topic  || '(없음)') },
+    { label:'반복 키워드',     value: kwHtml    || '<span class="bdg">없음</span>' },
+    { label:'오프닝 패턴',     value: escHtml(r.opening_pattern || '(없음)') },
+    { label:'CTA 패턴',        value: escHtml(r.cta_pattern     || '(없음)') },
+    { label:'이번에 피할 소재', value: avoidHtml || '<span class="bdg">없음</span>' },
+    { label:'본문 구조',        value: escHtml(r.body_structure  || '(없음)') },
   ];
-  document.getElementById('finalContent').innerHTML=sections.map(function(sec){
-    var bodyHtml=escHtml(sec.body||'').replace(/\n/g,'<br>');
-    return '<div class="final-sec">'
-      +'<div class="final-sec-hd"><span class="final-sec-lbl">'+sec.lbl+'</span>'
-      +'<button class="btn-sm" onclick="copySec(this)">복사</button></div>'
-      +'<div class="final-sec-body" data-text="'+escHtml(sec.body||'')+'">'+bodyHtml+'</div></div>';
-  }).join('');
-  setTimeout(function(){document.getElementById('finalArea').scrollIntoView({behavior:'smooth'});},80);
+  var prevGridHtml = '<div class="slbl" style="margin-bottom:6px">직전 회차 참고·회피 자료</div>'
+    + '<div class="analysis-grid" style="margin-bottom:12px">'
+    + prevGrid.map(function(item) {
+        return '<div class="analysis-item"><div class="analysis-item-label">' + item.label + '</div>'
+          + '<div class="analysis-item-value">' + item.value + '</div></div>';
+      }).join('') + '</div>';
+
+  /* ③ 직전 회차 다룬 소재 + 제외 소재 (2컬럼) */
+  var coveredHtml = '';
+  if (r.prev_covered || r.avoid_material) {
+    coveredHtml = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'
+      + (r.prev_covered
+          ? '<div style="background:var(--coral-bg);border:0.5px solid var(--coral-bd);border-radius:var(--radius);padding:10px 12px">'
+            + '<div style="font-size:11px;font-weight:500;color:var(--coral-text);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em">직전 회차에서 다룬 소재</div>'
+            + '<div style="font-size:12px;color:var(--coral-text);line-height:1.65">' + escHtml(r.prev_covered) + '</div></div>'
+          : '<div></div>')
+      + (r.avoid_material
+          ? '<div style="background:var(--amber-bg);border:0.5px solid rgba(99,56,6,.15);border-radius:var(--radius);padding:10px 12px">'
+            + '<div style="font-size:11px;font-weight:500;color:var(--amber-text);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em">이번 회차에서 제외할 소재</div>'
+            + '<div style="font-size:12px;color:var(--amber-text);line-height:1.65">' + escHtml(r.avoid_material) + '</div></div>'
+          : '<div></div>')
+      + '</div>';
+  }
+
+  /* ④ 현재 시기상 관심사 범주 */
+  var interestArr = Array.isArray(r.current_interest) ? r.current_interest : (r.current_interest ? [r.current_interest] : []);
+  var currentHtml = interestArr.length
+    ? '<div style="background:var(--blue-bg);border:0.5px solid rgba(55,138,221,.22);border-radius:var(--radius);padding:10px 12px;margin-bottom:12px">'
+      + '<div style="font-size:11px;font-weight:500;color:var(--blue-text);margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">현재 시기상 관심사 범주</div>'
+      + '<div style="display:flex;flex-wrap:wrap;gap:6px">'
+      + interestArr.map(function(c){ return '<span class="bdg" style="background:rgba(55,138,221,.12);color:var(--blue-text);border-color:rgba(55,138,221,.3)">' + escHtml(c) + '</span>'; }).join('')
+      + '</div></div>'
+    : '';
+
+  /* ⑤ 2페이지 주제 선정 참고 메모 */
+  var dirHtml = '<div class="direction-box">'
+    + '<div class="direction-box-label">2페이지 주제 선정 참고 메모 (주제 확정 아님)</div>'
+    + '<div class="direction-box-body" style="margin-bottom:0">' + escHtml(r.direction_hints || '(없음)') + '</div>'
+    + '</div>';
+
+  document.getElementById('t1result').innerHTML = ctrHtml + prevGridHtml + coveredHtml + currentHtml + dirHtml;
 }
-function copySec(btn){
-  var body=btn.closest('.final-sec').querySelector('.final-sec-body');
-  navigator.clipboard.writeText(body?body.getAttribute('data-text'):'').then(function(){
-    btn.textContent='복사됨'; setTimeout(function(){btn.textContent='복사';},1500);
-  }).catch(function(){alert('복사 실패');});
-}
-function copyAll(){
-  var all=Array.from(document.querySelectorAll('.final-sec')).map(function(el){
-    return '['+el.querySelector('.final-sec-lbl').textContent+']\n'
-      +el.querySelector('.final-sec-body').getAttribute('data-text');
-  }).join('\n\n---\n\n');
-  navigator.clipboard.writeText(all).then(function(){alert('전체 복사 완료');})
-    .catch(function(){alert('복사 실패');});
-}
+
 /* ══════════════════════════════════════
-   ■ 페이지 로드 시 localStorage 자동 복원
-   — restoreState() 호출
+   TAB 2 — 주제 후보
 ══════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded', function(){
+async function callSubjects() {
+  S.subject = null; S.storyData = null; S.story = null; S.storyDraft = null;
+  S.tipData = null; S.tip = null; S.tipDraft = null;
+  document.getElementById('t2area').innerHTML = loading();
+  setBtn('next1', true);
+  try {
+    var result = await callBackend('subjects', {
+      ctr: S.ctr, share: S.share, note: S.note,
+      recType: S.recType, prevTitle: S.prevTitle,
+      prevTopic:       S.analysis ? S.analysis.topic           : '',
+      prevKeywords:    S.analysis ? (S.analysis.keywords       || []) : [],
+      avoid:           S.analysis ? (S.analysis.avoid          || []) : [],
+      currentInterest: S.analysis ? (S.analysis.current_interest || []) : [],
+      directionHints:  S.analysis ? (S.analysis.direction_hints || '') : '',
+    });
+    S.subjectData = result;
+    renderSubjects();
+    showRegenBtn('subjects');
+    saveState();
+  } catch(e) {
+    document.getElementById('t2area').innerHTML = errBox(e.message);
+  }
+}
+
+function renderSubjects() {
+  var data = S.subjectData;
+  if (!data || !Array.isArray(data.subjects) || !data.subjects.length) {
+    document.getElementById('t2area').innerHTML = errBox('주제 데이터가 없습니다. 재생성해주세요.'); return;
+  }
+  document.getElementById('t2area').innerHTML = '<div class="sel-grid">'
+    + data.subjects.map(function(s, i) {
+        var isOn = S.subject && S.subject.title === s.title;
+        return '<div class="sc' + (isOn?' on':'') + '" id="sbj'+i+'" onclick="selectSubject('+i+')">'
+          + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:5px">'
+          + '<div class="sc-t">' + escHtml(s.title) + '</div>'
+          + '<span class="tag tgr" style="flex-shrink:0;font-size:10px">' + escHtml(s.type||'') + '</span></div>'
+          + '<div class="sc-b" style="margin-bottom:8px">' + escHtml(s.summary||'') + '</div>'
+          + '<div class="sc-meta">'
+          + '<span class="sc-mi"><b>사연화 가능성</b> ' + escHtml(s.story_potential||'') + '</span>'
+          + '<span class="sc-mi"><b>예상 주인공</b> ' + escHtml(s.protagonist||'') + '</span>'
+          + '</div><div class="sc-meta">'
+          + '<span class="sc-mi"><b>예상 고민</b> ' + escHtml(s.concern||'') + '</span>'
+          + '</div><div class="sc-meta">'
+          + '<span class="sc-mi"><b>갈등/문제</b> ' + escHtml(s.conflict||'') + '</span>'
+          + '</div><div class="sc-meta">'
+          + '<span class="sc-mi"><b>세무 질문</b> ' + escHtml(s.tax_question||'') + '</span>'
+          + '</div><div class="sc-meta">'
+          + '<span class="sc-mi"><b>꿀팁/퀴즈 방향</b> ' + escHtml(s.tip_quiz_direction||'') + '</span>'
+          + '</div><div class="sc-meta">'
+          + '<span class="sc-mi"><b>사연으로 쓰면 좋은 이유</b> ' + escHtml(s.reason||'') + '</span>'
+          + '</div><div class="sc-meta">'
+          + '<span class="sc-mi"><b>리스크</b> ' + escHtml(s.risk||'') + '</span>'
+          + '</div><div class="sc-meta">'
+          + '<span class="sc-mi"><b>훅</b> ' + escHtml(s.hook||'') + '</span>'
+          + '</div>'
+          + '<div class="ck">✓</div></div>';
+      }).join('') + '</div>';
+}
+
+function selectSubject(i) {
+  if (!S.subjectData || !S.subjectData.subjects[i]) return;
+  document.querySelectorAll('#t2area .sc').forEach(function(c){ c.classList.remove('on'); });
+  document.getElementById('sbj'+i).classList.add('on');
+  S.subject = S.subjectData.subjects[i];
+  setBtn('next1', false);
+  saveState();
+}
+
+/* ══════════════════════════════════════
+   TAB 3 — 사연 후보
+══════════════════════════════════════ */
+async function callStories() {
+  if (!S.subject) { alert('탭 2에서 주제를 먼저 선택해주세요'); return; }
+  S.story = null; S.storyDraft = null;
+  document.getElementById('t3area').innerHTML = loading();
+  setBtn('next2', true);
+  try {
+    var result = await callBackend('stories', {
+      subjectTitle:   S.subject.title,
+      subjectSummary: S.subject.summary || '',
+      protagonist:    S.subject.protagonist || '',
+      concern:        S.subject.concern || '',
+      conflict:       S.subject.conflict || '',
+      taxQuestion:    S.subject.tax_question || '',
+      ctr: S.ctr
+    });
+    S.storyData = result;
+    renderStories();
+    showRegenBtn('stories');
+    saveState();
+  } catch(e) {
+    document.getElementById('t3area').innerHTML = errBox(e.message);
+  }
+}
+
+function renderStories() {
+  var data = S.storyData;
+  if (!data || !Array.isArray(data.stories) || !data.stories.length) {
+    document.getElementById('t3area').innerHTML = errBox('사연 데이터가 없습니다. 재생성해주세요.'); return;
+  }
+  document.getElementById('t3area').innerHTML = '<div class="sel-grid">'
+    + data.stories.map(function(s, i) {
+        var isOn = S.story && S.story.tone === s.tone;
+        return '<div class="sc' + (isOn?' on':'') + '" id="str'+i+'" onclick="selectStory('+i+')">'
+          + '<div style="margin-bottom:6px;display:flex;align-items:center;gap:6px">'
+          + '<span class="tag ta">' + escHtml(s.tone) + '</span>'
+          + '<span style="font-size:12px;color:var(--text3)">' + escHtml(s.narrator_profile||'') + '</span>'
+          + '</div>'
+          + '<div class="sc-t">' + escHtml(s.title||'') + '</div>'
+          + '<div class="sc-b">' + escHtml(s.text||'') + '</div>'
+          + '<div class="ck">✓</div></div>';
+      }).join('') + '</div>';
+}
+
+function selectStory(i) {
+  if (!S.storyData || !S.storyData.stories[i]) return;
+  document.querySelectorAll('#t3area .sc').forEach(function(c){ c.classList.remove('on'); });
+  document.getElementById('str'+i).classList.add('on');
+  S.story = S.storyData.stories[i];
+  setBtn('next2', false);
+  saveState();
+}
+
+/* ══════════════════════════════════════
+   TAB 4 — 사연 원고
+══════════════════════════════════════ */
+async function callStoryDraft() {
+  if (!S.story) { alert('탭 3에서 사연을 먼저 선택해주세요'); return; }
+  document.getElementById('t4area').innerHTML = loading();
+  setBtn('next3', true);
+  try {
+    var result = await callBackend('story_draft', {
+      subjectTitle:    S.subject ? S.subject.title     : '',
+      storyTone:       S.story.tone,
+      storyText:       S.story.text,
+      narratorProfile: S.story.narrator_profile || '',
+      taxQuestion:     S.subject ? (S.subject.tax_question || '') : '',
+      conflict:        S.subject ? (S.subject.conflict      || '') : '',
+    });
+    S.storyDraft = result;
+    renderStoryDraft(result);
+    showRegenBtn('story-draft');
+    setBtn('next3', false);
+    saveState();
+  } catch(e) {
+    document.getElementById('t4area').innerHTML = errBox(e.message);
+  }
+}
+
+function renderStoryDraft(r) {
+  if (!r) return;
+  var kpHtml = (Array.isArray(r.key_points) ? r.key_points : []).map(function(p) {
+    return '✓ ' + p;
+  }).join('\n');
+  var fullText = '【 ' + (r.title||'') + ' 】\n\n'
+    + '사연자: ' + (r.narrator||'') + '\n\n'
+    + (r.body||'') + '\n\n'
+    + '━━ 샘밀 세무사 의견 ━━\n'
+    + (r.expert_opinion||'') + '\n\n'
+    + '━━ 핵심 정리 ━━\n'
+    + kpHtml;
+  document.getElementById('t4area').innerHTML = '<div class="draft-box">'
+    + '<div class="draft-box-hd">'
+    + '<span class="draft-box-lbl">사연모음 완성 원고</span>'
+    + '<button class="btn-copy" onclick="copyText(' + JSON.stringify(fullText) + ')">복사</button>'
+    + '</div>'
+    + '<div class="draft-body">' + escHtml(fullText) + '</div>'
+    + '</div>';
+}
+
+/* ══════════════════════════════════════
+   TAB 5 — 꿀팁 후보
+══════════════════════════════════════ */
+async function callTips() {
+  if (!S.subject) { alert('탭 2에서 주제를 먼저 선택해주세요'); return; }
+  S.tip = null; S.tipDraft = null;
+  S.tipUserNews = document.getElementById('t5newsInput').value.trim();
+  document.getElementById('t5area').innerHTML = loading();
+  setBtn('next4', true);
+  try {
+    var result = await callBackend('tips', {
+      subjectTitle:  S.subject.title,
+      subjectType:   S.subject.type || '',
+      storyText:     S.story ? S.story.text : '',
+      ctr:           S.ctr,
+      userNewsInput: S.tipUserNews,
+    });
+    S.tipData = result;
+    renderTips();
+    showRegenBtn('tips');
+    saveState();
+  } catch(e) {
+    document.getElementById('t5area').innerHTML = errBox(e.message);
+  }
+}
+
+function renderTips() {
+  var data = S.tipData;
+  if (!data || !Array.isArray(data.tips) || !data.tips.length) {
+    document.getElementById('t5area').innerHTML = errBox('꿀팁 데이터가 없습니다. 재생성해주세요.'); return;
+  }
+  var typeColors = ['tg','tb2','ta','tgr'];
+  document.getElementById('t5area').innerHTML = '<div class="sel-grid">'
+    + data.tips.map(function(t, i) {
+        var isOn = S.tip && S.tip.title === t.title;
+        var tc = typeColors[i % typeColors.length];
+        return '<div class="sc' + (isOn?' on':'') + '" id="tip'+i+'" onclick="selectTip('+i+')">'
+          + '<div style="margin-bottom:6px"><span class="tag '+tc+'">' + escHtml(t.type||'') + '</span></div>'
+          + '<div class="sc-t">' + escHtml(t.title||'') + '</div>'
+          + '<div class="sc-meta">'
+          + '<span class="sc-mi"><b>연결 이유</b> ' + escHtml(t.reason||'') + '</span>'
+          + '</div><div class="sc-meta">'
+          + '<span class="sc-mi"><b>사장님 실익</b> ' + escHtml(t.benefit||'') + '</span>'
+          + '</div><div class="sc-meta">'
+          + '<span class="sc-mi"><b>원고 방향</b> ' + escHtml(t.direction||'') + '</span>'
+          + '</div><div class="sc-meta">'
+          + '<span class="sc-mi"><b>주의할 점</b> ' + escHtml(t.caution||'') + '</span>'
+          + '</div>'
+          + '<div class="ck">✓</div></div>';
+      }).join('') + '</div>';
+}
+
+function selectTip(i) {
+  if (!S.tipData || !S.tipData.tips[i]) return;
+  document.querySelectorAll('#t5area .sc').forEach(function(c){ c.classList.remove('on'); });
+  document.getElementById('tip'+i).classList.add('on');
+  S.tip = S.tipData.tips[i];
+  setBtn('next4', false);
+  saveState();
+}
+
+/* ══════════════════════════════════════
+   TAB 6 — 꿀팁 원고
+══════════════════════════════════════ */
+async function callTipDraft() {
+  if (!S.tip) { alert('탭 5에서 꿀팁을 먼저 선택해주세요'); return; }
+  document.getElementById('t6area').innerHTML = loading();
+  setBtn('next5', true);
+  try {
+    var result = await callBackend('tip_draft', {
+      subjectTitle: S.subject ? S.subject.title : '',
+      tipType:      S.tip.type,
+      tipTitle:     S.tip.title,
+      tipDirection: S.tip.direction || '',
+      tipCaution:   S.tip.caution  || '',
+      storyText:    S.story ? S.story.text : '',
+    });
+    S.tipDraft = result;
+    renderTipDraft(result);
+    showRegenBtn('tip-draft');
+    setBtn('next5', false);
+    saveState();
+  } catch(e) {
+    document.getElementById('t6area').innerHTML = errBox(e.message);
+  }
+}
+
+function renderTipDraft(r) {
+  if (!r) return;
+  var fullText = '【 꿀팁 】 ' + (r.headline||'') + '\n\n'
+    + (r.intro||'') + '\n\n'
+    + (r.body||'') + '\n\n'
+    + (r.cta||'') + '\n\n'
+    + '💡 ' + (r.summary||'');
+  document.getElementById('t6area').innerHTML = '<div class="draft-box">'
+    + '<div class="draft-box-hd">'
+    + '<span class="draft-box-lbl">꿀팁 완성 원고</span>'
+    + '<button class="btn-copy" onclick="copyText(' + JSON.stringify(fullText) + ')">복사</button>'
+    + '</div>'
+    + '<div class="draft-body">' + escHtml(fullText) + '</div>'
+    + '</div>';
+}
+
+/* ══════════════════════════════════════
+   TAB 7 — 세무퀴즈
+══════════════════════════════════════ */
+async function callQuiz() {
+  document.getElementById('t7area').innerHTML = loading();
+  setBtn('next6', true);
+  try {
+    var result = await callBackend('quiz', {
+      subjectTitle: S.subject ? S.subject.title : '',
+      storyText:    S.story ? S.story.text : '',
+      tipTitle:     S.tip   ? S.tip.title  : '',
+      format:       S.quizFormat,
+      difficulty:   S.quizDiff,
+    });
+    S.quizData = result;
+    renderQuiz(result);
+    showRegenBtn('quiz');
+    setBtn('next6', false);
+    saveState();
+  } catch(e) {
+    document.getElementById('t7area').innerHTML = errBox(e.message);
+  }
+}
+
+function renderQuiz(r) {
+  if (!r) return;
+  var isOX = !Array.isArray(r.options);
+  var answerStr = isOX ? String(r.answer) : ((r.answer+1) + '번 ' + (Array.isArray(r.options) ? r.options[r.answer] : ''));
+
+  var fullText = '【 세무내공 +1 퀴즈 】\n\n'
+    + (r.quiz_title||'') + '\n\n'
+    + 'Q. ' + (r.question||'') + '\n'
+    + (isOX ? 'O 또는 X로 답하세요\n' : (Array.isArray(r.options) ? r.options.map(function(o,i){ return (i+1)+'. '+o; }).join('\n') + '\n' : ''))
+    + '\n정답: ' + answerStr + '\n\n'
+    + '해설: ' + (r.explanation||'') + '\n\n'
+    + '💡 ' + (r.key_point||'');
+
+  var optsHtml = '';
+  if (isOX) {
+    optsHtml = '<div style="display:flex;gap:8px;margin:10px 0">'
+      + '<button class="btn-sm" onclick="chkOX(this,\'' + String(r.answer).toUpperCase() + '\',\'O\')">O</button>'
+      + '<button class="btn-sm" onclick="chkOX(this,\'' + String(r.answer).toUpperCase() + '\',\'X\')">X</button>'
+      + '</div>';
+  } else if (Array.isArray(r.options)) {
+    optsHtml = '<div class="quiz-opt">'
+      + r.options.map(function(o,i) {
+          return '<button class="btn-sm" style="text-align:left;padding:7px 10px;width:100%" onclick="chkMC('+i+','+r.answer+')">'
+            + (i+1) + '. ' + escHtml(o) + '</button>';
+        }).join('') + '</div>';
+  }
+
+  document.getElementById('t7area').innerHTML = '<div class="draft-box">'
+    + '<div class="draft-box-hd">'
+    + '<span class="draft-box-lbl">세무퀴즈 완성 원고</span>'
+    + '<button class="btn-copy" onclick="copyText(' + JSON.stringify(fullText) + ')">복사</button>'
+    + '</div>'
+    + '<div style="font-size:13px;font-weight:500;margin-bottom:8px">' + escHtml(r.quiz_title||'') + '</div>'
+    + '<div style="font-size:13px;margin-bottom:8px">Q. ' + escHtml(r.question||'') + '</div>'
+    + optsHtml
+    + '<div id="quizResBox" style="display:none;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);font-size:12px;color:var(--text2)">'
+    + '<b>정답: ' + escHtml(answerStr) + '</b><br>' + escHtml(r.explanation||'') + '</div>'
+    + (r.key_point ? '<div style="margin-top:10px;font-size:12px;color:var(--teal-text);background:var(--teal-bg);padding:8px 10px;border-radius:var(--radius)">💡 ' + escHtml(r.key_point) + '</div>' : '')
+    + '</div>';
+}
+
+function chkOX(btn, correct, chosen) {
+  document.getElementById('quizResBox').style.display='block';
+  document.getElementById('quizResBox').style.color = chosen===correct ? 'var(--teal-text)' : 'var(--coral-text)';
+}
+function chkMC(i, correct) {
+  document.querySelectorAll('.quiz-opt button').forEach(function(b, idx) {
+    b.style.borderColor = idx===correct ? 'var(--teal-bd)' : idx===i&&i!==correct ? 'var(--coral-bd)' : '';
+    b.style.background  = idx===correct ? 'var(--teal-bg)' : idx===i&&i!==correct ? 'var(--coral-bg)' : '';
+  });
+  document.getElementById('quizResBox').style.display='block';
+}
+
+/* ══════════════════════════════════════
+   TAB 8 — 뉴스 입력
+══════════════════════════════════════ */
+function initNewsInputs() {
+  S.newsInputs = [emptyNewsItem()];
+  S.selNewsIdx = [];
+  renderNewsInputsFromState();
+  renderNewsSelectArea();
+}
+
+function emptyNewsItem() {
+  return { title:'', date:'', source:'', link:'', summary:'' };
+}
+
+function renderNewsInputsFromState() {
+  var list = document.getElementById('newsInputList');
+  if (!list) return;
+  if (!S.newsInputs || S.newsInputs.length === 0) S.newsInputs = [emptyNewsItem()];
+  list.innerHTML = S.newsInputs.map(function(n, i) {
+    return '<div class="news-input-card" id="nic'+i+'">'
+      + '<div class="news-input-card-hd">'
+      + '<span class="news-input-card-num">뉴스 ' + (i+1) + '</span>'
+      + (S.newsInputs.length > 1 ? '<button class="btn-sm" onclick="removeNewsInput('+i+')">삭제</button>' : '')
+      + '</div>'
+      + '<div class="fg2">'
+      + '<div><div class="fl">뉴스 제목</div><input class="fi" value="'+escHtml(n.title)+'" oninput="setNewsField('+i+',\'title\',this.value)" placeholder="예: 소상공인 전기요금 특별지원 시작"></div>'
+      + '<div><div class="fl">발행일</div><input class="fi" value="'+escHtml(n.date)+'" oninput="setNewsField('+i+',\'date\',this.value)" placeholder="예: 2026.04.22"></div>'
+      + '</div>'
+      + '<div class="fg2">'
+      + '<div><div class="fl">출처/언론사</div><input class="fi" value="'+escHtml(n.source)+'" oninput="setNewsField('+i+',\'source\',this.value)" placeholder="예: 뉴시스"></div>'
+      + '<div><div class="fl">원문 링크</div><input class="fi" value="'+escHtml(n.link)+'" oninput="setNewsField('+i+',\'link\',this.value)" placeholder="https://..."></div>'
+      + '</div>'
+      + '<div><div class="fl">기사 요약 또는 메모</div>'
+      + '<textarea class="fi" rows="2" oninput="setNewsField('+i+',\'summary\',this.value)" placeholder="기사 핵심 내용을 간단히 메모해 주세요">'+escHtml(n.summary)+'</textarea>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+
+  var btnAdd = document.getElementById('btnAddNews');
+  if (btnAdd) btnAdd.style.display = S.newsInputs.length >= 5 ? 'none' : '';
+}
+
+function setNewsField(idx, field, val) {
+  if (!S.newsInputs[idx]) return;
+  S.newsInputs[idx][field] = val;
+  refreshNewsSelectArea();
+  saveState();
+}
+
+function addNewsInput() {
+  if (S.newsInputs.length >= 5) return;
+  S.newsInputs.push(emptyNewsItem());
+  renderNewsInputsFromState();
+  refreshNewsSelectArea();
+  saveState();
+}
+
+function removeNewsInput(i) {
+  S.newsInputs.splice(i, 1);
+  S.selNewsIdx = S.selNewsIdx.filter(function(idx){ return idx !== i; }).map(function(idx){ return idx > i ? idx-1 : idx; });
+  renderNewsInputsFromState();
+  renderNewsSelectArea();
+  saveState();
+}
+
+function refreshNewsSelectArea() {
+  /* 제목이 있는 항목만 선택 카드에 표시 */
+  var hasAny = S.newsInputs.some(function(n){ return n.title.trim(); });
+  if (hasAny) renderNewsSelectArea();
+}
+
+function renderNewsSelectArea() {
+  var area = document.getElementById('newsSelectArea');
+  if (!area) return;
+  var valid = S.newsInputs.map(function(n,i){ return {n:n,i:i}; }).filter(function(x){ return x.n.title.trim(); });
+  if (!valid.length) {
+    area.innerHTML = '<div class="skel"><p>제목이 있는 뉴스가 선택 카드에 표시됩니다</p></div>';
+    setBtn('next7', true);
+    return;
+  }
+  area.innerHTML = '<div class="sel-grid">'
+    + valid.map(function(x) {
+        var i = x.i; var n = x.n;
+        var isOn = S.selNewsIdx.indexOf(i) !== -1;
+        var daysOld = getDaysOld(n.date);
+        var warn = daysOld !== null && daysOld > 3 ? '<span class="tag ta" style="font-size:10px">⚠ ' + daysOld + '일 전 기사</span>' : '';
+        return '<div class="sc'+(isOn?' on':'')+'" id="nsc'+i+'" onclick="toggleNewsSelect('+i+')">'
+          + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
+          + '<div style="flex:1">'
+          + '<div style="font-size:13px;font-weight:500;margin-bottom:3px">' + escHtml(n.title) + '</div>'
+          + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px">'
+          + '<span style="font-size:11px;color:var(--text3)">' + escHtml(n.date||'날짜 없음') + '</span>'
+          + (n.source ? '<span style="font-size:11px;color:var(--text3)">· ' + escHtml(n.source) + '</span>' : '')
+          + warn
+          + '</div>'
+          + (n.link ? '<div style="font-size:11px;color:var(--blue-text);margin-bottom:4px;word-break:break-all">' + escHtml(n.link) + '</div>' : '<div style="font-size:11px;color:var(--coral-text);margin-bottom:4px">링크 없음</div>')
+          + (n.summary ? '<div style="font-size:12px;color:var(--text2)">' + escHtml(n.summary) + '</div>' : '')
+          + '</div><div class="ck">✓</div></div></div>';
+      }).join('') + '</div>';
+}
+
+function getDaysOld(dateStr) {
+  if (!dateStr) return null;
+  var clean = dateStr.replace(/\./g, '-').replace(/\s/g,'');
+  var d = new Date(clean);
+  if (isNaN(d.getTime())) return null;
+  return Math.floor((Date.now() - d.getTime()) / 86400000);
+}
+
+function toggleNewsSelect(i) {
+  var idx = S.selNewsIdx.indexOf(i);
+  var el  = document.getElementById('nsc'+i);
+  if (idx > -1) {
+    S.selNewsIdx.splice(idx,1);
+    if (el) el.classList.remove('on');
+  } else {
+    if (S.selNewsIdx.length >= 2) { alert('최대 2개 선택 가능합니다'); return; }
+    S.selNewsIdx.push(i);
+    if (el) el.classList.add('on');
+  }
+  setBtn('next7', S.selNewsIdx.length === 0);
+  saveState();
+}
+
+/* ══════════════════════════════════════
+   TAB 9 — 뉴스 원고
+══════════════════════════════════════ */
+async function callNewsDraft() {
+  if (!S.selNewsIdx.length) { alert('탭 8에서 뉴스를 먼저 선택해주세요'); return; }
+  var selectedNews = S.selNewsIdx.map(function(i){ return S.newsInputs[i]; }).filter(Boolean);
+  document.getElementById('t9area').innerHTML = loading();
+  setBtn('next8', true);
+  try {
+    var result = await callBackend('news_draft', {
+      subjectTitle: S.subject ? S.subject.title : '',
+      selectedNews: selectedNews,
+    });
+    S.newsDraft = result;
+    renderNewsDraft(result);
+    showRegenBtn('news-draft');
+    setBtn('next8', false);
+    saveState();
+  } catch(e) {
+    document.getElementById('t9area').innerHTML = errBox(e.message);
+  }
+}
+
+function renderNewsDraft(r) {
+  if (!r || !Array.isArray(r.briefing)) return;
+  var fullParts = r.briefing.map(function(b, i) {
+    return '【 뉴스 ' + (i+1) + ' 】 ' + (b.headline||'') + '\n'
+      + (b.date_label||'') + (b.source ? '  · ' + b.source : '') + '\n'
+      + (b.link ? b.link + '\n' : '')
+      + '\n' + (b.body||'') + '\n\n'
+      + '💡 ' + (b.ceo_point||'');
+  });
+  var fullText = fullParts.join('\n\n━━━━━━\n\n');
+
+  document.getElementById('t9area').innerHTML = '<div class="draft-box">'
+    + '<div class="draft-box-hd">'
+    + '<span class="draft-box-lbl">뉴스 한입 브리핑 완성 원고</span>'
+    + '<button class="btn-copy" onclick="copyText(' + JSON.stringify(fullText) + ')">복사</button>'
+    + '</div>'
+    + r.briefing.map(function(b, i) {
+        return '<div style="margin-bottom:1.25rem'+(i>0?';padding-top:1.25rem;border-top:0.5px solid var(--border)':'')+'">'
+          + '<div style="font-size:13px;font-weight:500;margin-bottom:4px">' + escHtml(b.headline||'') + '</div>'
+          + '<div style="font-size:11px;color:var(--text3);margin-bottom:6px">'
+          + escHtml(b.date_label||'') + (b.source ? '  · ' + escHtml(b.source) : '')
+          + (b.link ? '  <a href="'+escHtml(b.link)+'" target="_blank" style="color:var(--blue-text)">원문 링크</a>' : '  <span style="color:var(--coral-text)">링크 없음</span>')
+          + '</div>'
+          + '<div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:6px">' + escHtml(b.body||'') + '</div>'
+          + '<div style="font-size:12px;color:var(--teal-text);background:var(--teal-bg);padding:6px 10px;border-radius:var(--radius)">💡 ' + escHtml(b.ceo_point||'') + '</div>'
+          + '</div>';
+      }).join('')
+    + '</div>';
+}
+
+/* ══════════════════════════════════════
+   TAB 10 — 오프닝
+══════════════════════════════════════ */
+function getNewsTitles() {
+  return S.selNewsIdx.map(function(i){ return (S.newsInputs[i]||{}).title||''; }).filter(Boolean);
+}
+
+async function callOpening() {
+  S.opening = null; S.openingDraft = null;
+  document.getElementById('t10area').innerHTML = loading();
+  document.getElementById('t10draft').style.display = 'none';
+  setBtn('next9', true);
+  try {
+    var result = await callBackend('opening', {
+      subjectTitle: S.subject ? S.subject.title : '',
+      storyText:    S.story   ? S.story.text    : '',
+      tipTitle:     S.tip     ? S.tip.title     : '',
+      newsTitles:   getNewsTitles(),
+      ctr:          S.ctr,
+    });
+    S.openingData = result;
+    renderOpenings();
+    showRegenBtn('opening');
+    saveState();
+  } catch(e) {
+    document.getElementById('t10area').innerHTML = errBox(e.message);
+  }
+}
+
+function renderOpenings() {
+  var data = S.openingData;
+  if (!data || !Array.isArray(data.openings) || !data.openings.length) {
+    document.getElementById('t10area').innerHTML = errBox('오프닝 데이터가 없습니다. 재생성해주세요.'); return;
+  }
+  document.getElementById('t10area').innerHTML = '<div class="sel-grid">'
+    + data.openings.map(function(o, i) {
+        var isOn = S.opening && S.opening.tone === o.tone;
+        return '<div class="sc'+(isOn?' on':'')+'" id="opn'+i+'" onclick="selectOpening('+i+')">'
+          + '<div style="margin-bottom:6px;display:flex;gap:6px;flex-wrap:wrap">'
+          + '<span class="tag tg">' + escHtml(o.tone||'') + '</span>'
+          + '</div>'
+          + '<div class="sc-b" style="margin-bottom:6px;font-style:italic">"' + escHtml(o.preview||'') + '"</div>'
+          + '<div class="sc-b">' + escHtml(o.text||'') + '</div>'
+          + '<div class="sc-meta"><span class="sc-mi"><b>이번 주제와 맞는 이유</b> ' + escHtml(o.reason||'') + '</span></div>'
+          + '<div class="sc-meta"><span class="sc-mi"><b>예상 독자 반응</b> ' + escHtml(o.reader_reaction||'') + '</span></div>'
+          + '<div class="ck">✓</div></div>';
+      }).join('') + '</div>';
+}
+
+function selectOpening(i) {
+  if (!S.openingData || !S.openingData.openings[i]) return;
+  document.querySelectorAll('#t10area .sc').forEach(function(c){ c.classList.remove('on'); });
+  document.getElementById('opn'+i).classList.add('on');
+  S.opening = S.openingData.openings[i];
+  document.getElementById('t10draft').style.display = 'block';
+  saveState();
+}
+
+async function callOpeningDraft() {
+  if (!S.opening) { alert('오프닝 후보를 먼저 선택해주세요'); return; }
+  document.getElementById('t10draftArea').innerHTML = loading();
+  setBtn('next9', true);
+  try {
+    var result = await callBackend('opening_draft', {
+      subjectTitle: S.subject ? S.subject.title : '',
+      openingTone:  S.opening.tone,
+      openingText:  S.opening.text,
+      storyText:    S.story ? S.story.text : '',
+      tipTitle:     S.tip   ? S.tip.title  : '',
+      newsTitles:   getNewsTitles(),
+    });
+    S.openingDraft = result;
+    renderOpeningDraft(result);
+    showRegenBtn('opening-draft');
+    setBtn('next9', false);
+    saveState();
+  } catch(e) {
+    document.getElementById('t10draftArea').innerHTML = errBox(e.message);
+  }
+}
+
+function renderOpeningDraft(r) {
+  if (!r || !r.full_text) return;
+  document.getElementById('t10draftArea').innerHTML = '<div class="draft-box">'
+    + '<div class="draft-box-hd">'
+    + '<span class="draft-box-lbl">오프닝 완성 원고</span>'
+    + '<button class="btn-copy" onclick="copyText(' + JSON.stringify(r.full_text) + ')">복사</button>'
+    + '</div>'
+    + '<div class="draft-body">' + escHtml(r.full_text) + '</div>'
+    + '</div>';
+}
+
+/* ══════════════════════════════════════
+   TAB 11 — 리마인드
+══════════════════════════════════════ */
+async function callRemind() {
+  S.remind = null; S.remindDraft = null;
+  document.getElementById('t11area').innerHTML = loading();
+  document.getElementById('t11draft').style.display = 'none';
+  setBtn('next10', true);
+  try {
+    var result = await callBackend('remind', {
+      subjectTitle: S.subject ? S.subject.title : '',
+      tipTitle:     S.tip     ? S.tip.title     : '',
+      ctr:          S.ctr,
+    });
+    S.remindData = result;
+    renderReminds();
+    showRegenBtn('remind');
+    saveState();
+  } catch(e) {
+    document.getElementById('t11area').innerHTML = errBox(e.message);
+  }
+}
+
+function renderReminds() {
+  var data = S.remindData;
+  if (!data || !Array.isArray(data.reminds) || !data.reminds.length) {
+    document.getElementById('t11area').innerHTML = errBox('리마인드 데이터가 없습니다. 재생성해주세요.'); return;
+  }
+  document.getElementById('t11area').innerHTML = '<div class="sel-grid">'
+    + data.reminds.map(function(r, i) {
+        var isOn = S.remind && S.remind.type === r.type;
+        return '<div class="sc'+(isOn?' on':'')+'" id="rmd'+i+'" onclick="selectRemind('+i+')">'
+          + '<div style="margin-bottom:6px"><span class="tag ta">' + escHtml(r.type||'') + '</span></div>'
+          + '<div class="sc-b">' + escHtml(r.text||'') + '</div>'
+          + '<div class="ck">✓</div></div>';
+      }).join('') + '</div>';
+}
+
+function selectRemind(i) {
+  if (!S.remindData || !S.remindData.reminds[i]) return;
+  document.querySelectorAll('#t11area .sc').forEach(function(c){ c.classList.remove('on'); });
+  document.getElementById('rmd'+i).classList.add('on');
+  S.remind = S.remindData.reminds[i];
+  document.getElementById('t11draft').style.display = 'block';
+  saveState();
+}
+
+async function callRemindDraft() {
+  if (!S.remind) { alert('리마인드 후보를 먼저 선택해주세요'); return; }
+  document.getElementById('t11draftArea').innerHTML = loading();
+  setBtn('next10', true);
+  try {
+    var result = await callBackend('remind_draft', {
+      subjectTitle: S.subject ? S.subject.title : '',
+      remindType:   S.remind.type,
+      remindText:   S.remind.text,
+      tipTitle:     S.tip ? S.tip.title : '',
+    });
+    S.remindDraft = result;
+    renderRemindDraft(result);
+    showRegenBtn('remind-draft');
+    setBtn('next10', false);
+    saveState();
+  } catch(e) {
+    document.getElementById('t11draftArea').innerHTML = errBox(e.message);
+  }
+}
+
+function renderRemindDraft(r) {
+  if (!r || !r.full_text) return;
+  document.getElementById('t11draftArea').innerHTML = '<div class="draft-box">'
+    + '<div class="draft-box-hd">'
+    + '<span class="draft-box-lbl">리마인드 완성 원고</span>'
+    + '<button class="btn-copy" onclick="copyText(' + JSON.stringify(r.full_text) + ')">복사</button>'
+    + '</div>'
+    + '<div class="draft-body">' + escHtml(r.full_text) + '</div>'
+    + '</div>';
+}
+
+/* ══════════════════════════════════════
+   TAB 12 — 제목
+══════════════════════════════════════ */
+async function callTitles() {
+  S.title = null;
+  document.getElementById('t12area').innerHTML = loading();
+  document.getElementById('t12selected').style.display = 'none';
+  setBtn('next11', true);
+  try {
+    var result = await callBackend('titles', {
+      subjectTitle:    S.subject ? S.subject.title : '',
+      tipTitle:        S.tip     ? S.tip.title     : '',
+      openingPreview:  S.opening ? S.opening.preview : '',
+      ctr:             S.ctr,
+      prevTitle:       S.prevTitle || (S.analysis ? S.analysis.title : ''),
+      prevTopic:       S.analysis  ? S.analysis.topic : '',
+      recType:         S.recType,
+    });
+    S.titleData = result;
+    renderTitles();
+    showRegenBtn('titles');
+    saveState();
+  } catch(e) {
+    document.getElementById('t12area').innerHTML = errBox(e.message);
+  }
+}
+
+function renderTitles() {
+  var data = S.titleData;
+  if (!data || !Array.isArray(data.titles) || !data.titles.length) {
+    document.getElementById('t12area').innerHTML = errBox('제목 데이터가 없습니다. 재생성해주세요.'); return;
+  }
+  var scoreColor = { '상':'tg', '중':'tb2', '하':'ta' };
+  document.getElementById('t12area').innerHTML = '<div class="sel-grid">'
+    + data.titles.map(function(t, i) {
+        var isOn = S.title === t.title;
+        var sc = scoreColor[t.score] || 'tgr';
+        var lenWarn = (t.length||0) > 22 ? '<span class="tag ta" style="font-size:10px">'+t.length+'자 · 축약 권장</span>' : '<span class="tag tg" style="font-size:10px">'+t.length+'자</span>';
+        return '<div class="sc'+(isOn?' on':'')+'" id="ttl'+i+'" onclick="selectTitle('+i+')">'
+          + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">'
+          + '<div class="sc-t">' + escHtml(t.title||'') + '</div>'
+          + '<div style="display:flex;gap:4px;flex-shrink:0">' + lenWarn + '<span class="tag '+sc+'">추천 '+escHtml(t.score||'')+'</span></div>'
+          + '</div>'
+          + '<div class="sc-meta">'
+          + '<span class="sc-mi"><b>훅 유형</b> ' + escHtml(t.hook_type||'') + '</span>'
+          + '<span class="sc-mi"><b>클릭 포인트</b> ' + escHtml(t.click_point||'') + '</span>'
+          + '</div><div class="sc-meta">'
+          + '<span class="sc-mi"><b>겹치지 않는 이유</b> ' + escHtml(t.novelty_reason||'') + '</span>'
+          + '</div>'
+          + '<div class="ck">✓</div></div>';
+      }).join('') + '</div>';
+}
+
+function selectTitle(i) {
+  if (!S.titleData || !S.titleData.titles[i]) return;
+  document.querySelectorAll('#t12area .sc').forEach(function(c){ c.classList.remove('on'); });
+  document.getElementById('ttl'+i).classList.add('on');
+  S.title = S.titleData.titles[i].title;
+  document.getElementById('t12selected').style.display = 'block';
+  document.getElementById('t12finalTitle').textContent = S.title;
+  setBtn('next11', false);
+  saveState();
+}
+
+/* ══════════════════════════════════════
+   TAB 13 — 최종 초안
+══════════════════════════════════════ */
+function buildFinal() {
+  var sections = [
+    {
+      lbl: '① 카카오 플친 제목',
+      body: S.title || null,
+      warn: '탭 12에서 제목을 선택해주세요'
+    },
+    {
+      lbl: '② 오프닝 멘트',
+      body: S.openingDraft ? S.openingDraft.full_text : null,
+      warn: '탭 10에서 오프닝 완성 원고를 생성해주세요'
+    },
+    {
+      lbl: '③ 이번주 밀당레터는?',
+      body: S.subject ? '주제: ' + S.subject.title + '\n유형: ' + (S.subject.type||'') + '\n\n' + (S.subject.summary||'') : null,
+      warn: '탭 2에서 주제를 선택해주세요'
+    },
+    {
+      lbl: '④ 뉴스 한입 브리핑',
+      body: (function() {
+        if (!S.newsDraft || !Array.isArray(S.newsDraft.briefing)) return null;
+        return S.newsDraft.briefing.map(function(b, i) {
+          return '【 뉴스 ' + (i+1) + ' 】 ' + (b.headline||'') + '\n'
+            + (b.date_label||'') + (b.source ? '  · ' + b.source : '') + '\n'
+            + (b.link ? b.link + '\n' : '')
+            + '\n' + (b.body||'') + '\n'
+            + '💡 ' + (b.ceo_point||'');
+        }).join('\n\n━━━━━━\n\n');
+      })(),
+      warn: '탭 9에서 뉴스 브리핑 원고를 생성해주세요'
+    },
+    {
+      lbl: '⑤ 사연모음 Zip',
+      body: (function() {
+        if (!S.storyDraft) return null;
+        var r = S.storyDraft;
+        var kpHtml = (Array.isArray(r.key_points) ? r.key_points : []).map(function(p){ return '✓ ' + p; }).join('\n');
+        return '【 ' + (r.title||'') + ' 】\n\n' + '사연자: ' + (r.narrator||'') + '\n\n'
+          + (r.body||'') + '\n\n' + '━━ 샘밀 세무사 의견 ━━\n' + (r.expert_opinion||'') + '\n\n'
+          + '━━ 핵심 정리 ━━\n' + kpHtml;
+      })(),
+      warn: '탭 4에서 사연모음 원고를 생성해주세요'
+    },
+    {
+      lbl: '⑥ 꿀팁',
+      body: (function() {
+        if (!S.tipDraft) return null;
+        var r = S.tipDraft;
+        return '【 꿀팁 】 ' + (r.headline||'') + '\n\n'
+          + (r.intro||'') + '\n\n' + (r.body||'') + '\n\n'
+          + (r.cta||'') + '\n\n' + '💡 ' + (r.summary||'');
+      })(),
+      warn: '탭 6에서 꿀팁 원고를 생성해주세요'
+    },
+    {
+      lbl: '⑦ 세무내공 +1 퀴즈',
+      body: (function() {
+        if (!S.quizData) return null;
+        var r = S.quizData;
+        var isOX = !Array.isArray(r.options);
+        var ansStr = isOX ? String(r.answer) : ((r.answer+1) + '번 ' + (Array.isArray(r.options)?r.options[r.answer]:''));
+        return '【 세무내공 +1 퀴즈 】\n\n' + (r.quiz_title||'') + '\n\n'
+          + 'Q. ' + (r.question||'') + '\n'
+          + (isOX ? 'O 또는 X' : (Array.isArray(r.options)?r.options.map(function(o,i){return (i+1)+'. '+o;}).join('\n'):''))
+          + '\n\n정답: ' + ansStr + '\n해설: ' + (r.explanation||'') + '\n💡 ' + (r.key_point||'');
+      })(),
+      warn: '탭 7에서 세무퀴즈를 생성해주세요'
+    },
+    {
+      lbl: '⑧ 리마인드 멘트',
+      body: S.remindDraft ? S.remindDraft.full_text : null,
+      warn: '탭 11에서 리마인드 완성 원고를 생성해주세요'
+    },
+  ];
+
+  var html = sections.map(function(sec) {
+    var bodyText = sec.body || '';
+    var isWarn   = !sec.body;
+    return '<div class="final-sec">'
+      + '<div class="final-sec-hd">'
+      + '<span class="final-sec-lbl">' + sec.lbl + '</span>'
+      + (!isWarn ? '<button class="btn-copy" onclick="copyText(' + JSON.stringify(bodyText) + ')">복사</button>' : '')
+      + '</div>'
+      + (isWarn
+          ? '<div style="font-size:12px;color:var(--coral-text);padding:4px 0">' + escHtml(sec.warn) + '</div>'
+          : '<div class="final-sec-body">' + escHtml(bodyText) + '</div>')
+      + '</div>';
+  }).join('');
+
+  document.getElementById('finalContent').innerHTML = html;
+  setTimeout(function(){ document.getElementById('finalContent').scrollIntoView({behavior:'smooth'}); }, 80);
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text||'').then(function() {
+    /* brief visual feedback handled by caller or no-op */
+  }).catch(function(){ alert('복사 실패. 수동으로 복사해주세요.'); });
+}
+
+function copyAll() {
+  var sections = document.querySelectorAll('#finalContent .final-sec');
+  var parts = [];
+  sections.forEach(function(sec) {
+    var lbl  = sec.querySelector('.final-sec-lbl');
+    var body = sec.querySelector('.final-sec-body');
+    if (lbl && body) parts.push('[' + lbl.textContent + ']\n' + body.textContent);
+  });
+  navigator.clipboard.writeText(parts.join('\n\n━━━━━━━━━━\n\n')).then(function() {
+    alert('전체 복사 완료');
+  }).catch(function(){ alert('복사 실패'); });
+}
+
+/* ══════════════════════════════════════
+   페이지 로드 — 복원 + 뉴스 초기화
+══════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function() {
   restoreState();
+  /* 뉴스 입력이 없으면 빈 카드 1개 초기화 */
+  if (!S.newsInputs || S.newsInputs.length === 0) {
+    initNewsInputs();
+  }
 });
 </script>
 </body>
