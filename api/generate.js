@@ -21,8 +21,8 @@ const ALLOWED_TYPES = [
 const MAX_TOKENS = {
   analyze:        1400,
   subjects:       2800,
-  stories:        2000,
-  story_draft:    3000,
+  stories:        1800,
+  story_draft:    2000,
   tips:           2000,
   tip_draft:      2500,
   quiz:           1200,
@@ -233,16 +233,15 @@ subjects: 정확히 5개
 
 function buildStoriesPrompt(p) {
   return `당신은 세무법인 밀당레터 사연 기획자입니다.
-밀당레터 사연모음은 소상공인 사장님의 실제 고민을 짧은 사연으로 담는 섹션입니다.
+선택 주제를 기반으로 사연 후보 카드 3개를 생성하세요.
+완성형 원고는 불필요합니다. 후보 카드 선택용 정보만 작성하세요.
 
 [선택 주제]
 주제명: ${p.subjectTitle}
 요약: ${p.subjectSummary || ''}
 예상 주인공: ${p.protagonist || ''}
 예상 고민: ${p.concern || ''}
-갈등/문제: ${p.conflict || ''}
 세무 핵심 질문: ${p.taxQuestion || ''}
-CTR: ${p.ctr}%
 
 [지시]
 순수 JSON 객체만 출력하세요. 마크다운, 설명 텍스트 일절 금지.
@@ -251,31 +250,47 @@ CTR: ${p.ctr}%
   "stories": [
     {
       "tone": "사연 유형명",
-      "narrator_profile": "사연자 프로필 (업종, 나이대, 운영 기간 등)",
-      "title": "사연 제목 (한 줄)",
-      "text": "사연 미리보기 3~4문장 (핵심 상황 소개, 전체 원고 아님)"
+      "industry": "업종 및 상황 (예: 카페 운영 3년차, 직원 2명)",
+      "narrator_profile": "사연자 프로필 한 줄 (업종, 나이대, 운영기간)",
+      "title": "사연 제목 (사장님이 직접 붙인 제목처럼, 한 줄)",
+      "text": "사장님이 직접 말하는 구어체 2~3줄. 상황·감정·고민이 느껴지게. 각 tone에 맞는 말투 사용.",
+      "concern": "사장님이 실제로 하는 말투로. 예: '이게 비용처리가 되는 건지 모르겠어서요'",
+      "emotion_point": "사장님 속마음을 직접 표현. 예: '억울하기도 하고 제가 뭘 잘못한 건지 모르겠어요'",
+      "question": "실제로 세무사에게 보내는 문자 말투. 예: '제가 이 경우에도 환급받을 수 있는 건가요?'",
+      "reason": "공감 중심 한 줄. 예: '비슷한 상황인 분들이 꽤 많아서 읽자마자 자기 이야기처럼 느낄 수 있습니다'"
     }
   ]
 }
 
-[배열 개수]
-stories: 정확히 3개
+[배열 개수] stories: 정확히 3개
 
-[tone 유형 — 반드시 아래 3개를 각 1개씩 사용]
-1. "처음 겪는 상황형": 사업하면서 처음 맞닥뜨린 세무 상황
-2. "이미 하고 있는데 맞나형": 관행적으로 해왔는데 불안한 상황
-3. "억울함·손해형": 잘못된 줄 몰랐다가 손해 본 상황
+[tone — 반드시 아래 3개를 각 1개씩, 말투가 뚜렷하게 달라야 함]
+1. "처음 겪는 상황형" — 담담하고 당혹스러운 말투. "어쩌다 보니 이런 상황이 됐는데요..." 느낌.
+2. "이미 하고 있는데 맞나형" — 헷갈리고 불안한 말투. "이렇게 해왔는데 혹시 제가 잘못하고 있는 건 아닌가요?" 느낌.
+3. "억울함·손해형" — 억울하고 속상한 말투. "분명히 제가 맞게 한 것 같은데 왜 저만 이렇게 되는 건지..." 느낌.
+
+[text 작성 규칙]
+- 설명문·요약문 금지. 사장님이 말하는 장면처럼.
+- 나쁜 예: "최근 대출받아 재고 늘리니 세금까지 늘어나더라고요" (요약형)
+- 좋은 예: "대출은 받아서 숨통이 트이나 했는데, 세금까지 같이 늘 줄은 몰랐어요" (말하는 장면)
+- 3개의 text가 서로 말투·어조·감정이 뚜렷하게 달라야 함
 
 [기준]
-- 소상공인 말투. "이거 내 얘기인데?" 공감형
-- text는 카드에 보여줄 미리보기 3~4문장 (전체 원고 아님)
-- 세무 포인트를 자연스럽게 녹여 표현
-- 각 사연자 프로필은 서로 다른 업종·상황`;
+- 3개는 서로 다른 업종·나이대로 구성
+- concern/emotion_point/question/reason 모두 사장님 말투 또는 공감형 문장으로`;
 }
 
 function buildStoryDraftPrompt(p) {
+  const toneGuide =
+    p.storyTone && p.storyTone.includes('억울') ?
+      '억울형: 감정 표현 강하게. 속상함·억울함이 문장 곳곳에 배어나오게. "왜 저만", "분명히 맞게 한 것 같은데" 허용.' :
+    p.storyTone && p.storyTone.includes('맞나') ?
+      '헷갈림형: 불안하고 확신이 없는 말투. 질문이 많음. "이게 맞나 싶더라고요", "혹시 제가 잘못하고 있는 건 아닌지" 허용.' :
+      '담담형: 차분하고 사실 위주. 감정은 잔잔하게. "어쩌다 보니", "그게 문제가 될 줄은 몰랐어요" 허용.';
+
   return `당신은 세무법인 밀당레터 사연모음 작가입니다.
-밀당레터 사연모음은 소상공인 사장님의 실제 고민을 뉴스레터 원고 형태로 쓰는 섹션입니다.
+사장님이 세무 상담 신청 글이나 카톡으로 보낸 것처럼 써야 합니다.
+정리된 글이 아닌, 말하다 보니 이렇게 됐다는 느낌의 원고.
 
 [선택 정보]
 주제: ${p.subjectTitle}
@@ -285,30 +300,50 @@ function buildStoryDraftPrompt(p) {
 세무 핵심 질문: ${p.taxQuestion || ''}
 갈등/문제: ${p.conflict || ''}
 
-[사연모음 원고 구성]
-1. 사연 제목
-2. 사연자 설정 (독자가 이입할 수 있는 실제 사장님 캐릭터)
-3. 본문: 4~8문단, 상황 묘사 → 갈등/문제 발생 → 세무사 상담 결심 흐름
-4. 샘밀 세무사 의견: 1~2문단, 실용적이고 따뜻한 톤
-5. 핵심 정리: 3~5개 포인트 (독자가 바로 실천할 수 있는 체크리스트)
+[말투 방향]
+${toneGuide}
+
+[body 작성 기준]
+- 권장 350~500자, 절대 500자 초과 금지
+- 3~5문단, 문단 길이 불균형 허용 (짧은 문단 섞기)
+- 파트 제목(도입/본문/감정 등) 절대 표시 금지
+- 아래 흐름으로 자연스럽게 연결:
+  ① 상황 시작 — 첫 문장이 핵심. 설명형 금지.
+    나쁜 예: "저는 카페를 운영하고 있는데요" / "제가 온라인 쇼핑몰을 운영 중입니다"
+    좋은 예: "요즘 자금이 자꾸 꼬여서 대출까지 받게 됐어요" / "비용 처리 되는 줄 알고 썼는데 아니라고 하더라고요"
+  ② 실제 문제 — 상황 구체화, 금액·날짜·행동이 느껴지게
+  ③ 감정/헷갈림 — 짧고 강하게 1~2문장
+  ④ 세무사에게 묻는 질문 — 실제 말투 그대로
+  ⑤ 마무리 — 1문장, 다음 섹션(꿀팁)으로 자연 연결. 설명으로 끝내지 말 것
+
+[절대 금지 표현 — body에 사용 금지]
+결국 / 따라서 / 즉 / 한편 / 이에 따라 / 정리하자면 / 현재 상황에서 / 가장 고민되는 부분은
+
+[허용 표현 예시]
+"이게 맞나 싶더라고요" / "좀 이상했어요" / "괜히 불안하더라고요"
+"이럴 땐 제가 뭘 먼저 봐야 하는 걸까요?" / "처음엔 그냥 그런가 했는데요"
 
 [지시]
 순수 JSON 객체만 출력하세요. 마크다운, 설명 텍스트 일절 금지.
 
 {
-  "title": "사연 제목",
-  "narrator": "사연자 설정 (예: 직장 다니다 올해 초 음식점 차린 40대 사장님)",
-  "body": "본문 전체 (문단 구분은 \\n\\n 사용, 4~8문단, 최소 500자)",
-  "expert_opinion": "샘밀 세무사들의 의견 (1~2문단, \\n\\n으로 구분)",
-  "key_points": ["핵심 정리 포인트1", "포인트2", "포인트3"]
+  "title": "사장님이 직접 붙인 것 같은 제목 (한 줄)",
+  "narrator": "사연자 설정 한 줄 (예: 올해 초 카페 오픈한 38살 사장님, 직원 1명)",
+  "body": "350~500자. 3~5문단. \\n\\n으로 문단 구분. 말하듯 써 내려간 사장님 사연.",
+  "expert_opinions": [
+    "의견1 — 왜 이런 세금/문제가 발생했는지 구조 설명. 2~3문장.",
+    "의견2 — 사장님이 놓치기 쉬운 신고·비용처리 실수 포인트. 2~3문장.",
+    "의견3 — 지금 당장 확인해야 할 실무 대응 방법. 2~3문장."
+  ]
 }
 
-[기준]
-- 소상공인 말투. 생활감 있게. 딱딱한 설명문 절대 금지.
-- 세무 포인트는 자연스럽게 녹여서 표현, 교과서처럼 쓰지 않기
-- expert_opinion은 따뜻하게, "샘밀" 언급 가능
-- key_points는 ✓ 체크리스트 형태, 독자가 바로 실천 가능한 내용
-- body 최소 500자 이상`;
+[expert_opinions 작성 규칙]
+- 반드시 3개, 각각 관점이 달라야 함
+- 의견1(원인) / 의견2(실수포인트) / 의견3(대응) — 이 순서 고정
+- 세 의견에서 같은 단어·내용 반복 금지
+- body와 겹치지 말 것 — body는 사장님 경험, opinions는 전문가 해석
+- 각 의견 2~3문장 이내
+- "샘밀 세무사들이 자주 받는 질문이에요" 같은 현장감 있는 톤 유지`;
 }
 
 function buildTipsPrompt(p) {
@@ -739,9 +774,10 @@ function validateResult(type, result) {
     case 'story_draft':
       if (!result.title)  errors.push('title 누락');
       if (!result.body)   errors.push('body 누락');
-      if (!Array.isArray(result.key_points)) result.key_points = [];
-      if (!result.narrator)       result.narrator = '';
-      if (!result.expert_opinion) result.expert_opinion = '';
+      if (!result.narrator) result.narrator = '';
+      if (!Array.isArray(result.expert_opinions) || result.expert_opinions.length < 2)
+        errors.push(`expert_opinions 부족 (${Array.isArray(result.expert_opinions) ? result.expert_opinions.length : 0}개)`);
+      if (!Array.isArray(result.expert_opinions)) result.expert_opinions = [];
       break;
 
     case 'tips':
@@ -917,11 +953,11 @@ export default async function handler(req, res) {
   try {
     result = safeParseJSON(raw);
   } catch (e) {
-    console.error('[밀당레터] JSON 파싱 실패 type=' + type, e.message);
-    console.error('[밀당레터] 원본 응답 (앞 500자):', raw?.slice(0, 500));
+    console.error('[밀당레터] JSON 파싱 실패 type=' + type + ' — ' + e.message);
+    console.error('[밀당레터] 원본 응답 전체 (' + (raw?.length || 0) + '자):', raw?.slice(0, 800));
     return res.status(422).json({
-      error: 'AI 응답 형식 오류. 재시도해주세요.',
-      detail: e.message,
+      error: 'AI 응답 형식 오류 (type=' + type + '). 재시도해주세요.',
+      detail: e.message + ' | 원본 앞 200자: ' + (raw?.slice(0, 200) || ''),
     });
   }
 

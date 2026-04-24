@@ -700,8 +700,9 @@ function loading() {
     + '<span style="margin-left:6px">생성 중...</span></div>';
 }
 function errBox(msg) {
-  return '<div class="err-box">생성 실패: ' + escHtml(msg)
-    + '<br><span style="font-size:12px">네트워크 상태를 확인하거나 재시도해주세요</span></div>';
+  var safeMsg = escHtml(msg).replace(/\n/g, '<br>');
+  return '<div class="err-box">생성 실패: ' + safeMsg
+    + '<br><span style="font-size:12px">위 오류 메시지를 확인하거나 재시도해주세요</span></div>';
 }
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -734,21 +735,34 @@ function updateCarry(tabIdx) {
    백엔드 호출
 ══════════════════════════════════════ */
 async function callBackend(type, payload) {
-  var res = await fetch(API_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type: type, payload: payload })
-  });
+  var res;
+  try {
+    res = await fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: type, payload: payload })
+    });
+  } catch(e) {
+    throw new Error('네트워크 오류 — 서버에 연결할 수 없습니다.\n원인: ' + e.message + '\n(Vercel 타임아웃이거나 네트워크 문제일 수 있습니다. 재시도해주세요.)');
+  }
   var rawText;
   try { rawText = await res.text(); } catch(e) { throw new Error('응답 읽기 실패: ' + e.message); }
   if (!res.ok) {
     var errMsg = rawText;
-    try { var j=JSON.parse(rawText); errMsg=j.error||j.message||rawText; } catch(_){}
+    try {
+      var j = JSON.parse(rawText);
+      errMsg = j.error || j.message || rawText;
+      if (j.detail) errMsg += '\n상세: ' + j.detail;
+    } catch(_){}
     throw new Error('서버 오류 ' + res.status + ': ' + errMsg);
   }
   var data;
   try { data = JSON.parse(rawText); } catch(e) { throw new Error('응답 JSON 파싱 실패: ' + rawText.slice(0,200)); }
-  if (data.error) throw new Error(data.error);
+  if (data.error) {
+    var msg = data.error;
+    if (data.detail) msg += '\n상세: ' + data.detail;
+    throw new Error(msg);
+  }
   if (!data.result) throw new Error('서버 응답에 result 없음');
   return data.result;
 }
@@ -1024,12 +1038,23 @@ function renderStories() {
     + data.stories.map(function(s, i) {
         var isOn = S.story && S.story.tone === s.tone;
         return '<div class="sc' + (isOn?' on':'') + '" id="str'+i+'" onclick="selectStory('+i+')">'
-          + '<div style="margin-bottom:6px;display:flex;align-items:center;gap:6px">'
+          + '<div style="margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
           + '<span class="tag ta">' + escHtml(s.tone) + '</span>'
-          + '<span style="font-size:12px;color:var(--text3)">' + escHtml(s.narrator_profile||'') + '</span>'
+          + (s.industry ? '<span class="tag tgr" style="font-size:10px">' + escHtml(s.industry) + '</span>' : '')
           + '</div>'
           + '<div class="sc-t">' + escHtml(s.title||'') + '</div>'
-          + '<div class="sc-b">' + escHtml(s.text||'') + '</div>'
+          + '<div class="sc-b" style="margin-bottom:10px;font-style:italic;color:var(--text2)">' + escHtml(s.text||'') + '</div>'
+          + '<div class="sc-meta">'
+          + '<span class="sc-mi"><b>사연자</b> ' + escHtml(s.narrator_profile||'') + '</span>'
+          + '</div><div class="sc-meta">'
+          + '<span class="sc-mi"><b>가장 걸리는 건</b> ' + escHtml(s.concern||'') + '</span>'
+          + '</div><div class="sc-meta">'
+          + '<span class="sc-mi"><b>솔직히 이런 마음</b> ' + escHtml(s.emotion_point||'') + '</span>'
+          + '</div><div class="sc-meta">'
+          + '<span class="sc-mi"><b>제일 궁금한 건</b> ' + escHtml(s.question||'') + '</span>'
+          + '</div><div class="sc-meta">'
+          + '<span class="sc-mi"><b>이 사연이 좋은 이유</b> ' + escHtml(s.reason||'') + '</span>'
+          + '</div>'
           + '<div class="ck">✓</div></div>';
       }).join('') + '</div>';
 }
@@ -1071,16 +1096,14 @@ async function callStoryDraft() {
 
 function renderStoryDraft(r) {
   if (!r) return;
-  var kpHtml = (Array.isArray(r.key_points) ? r.key_points : []).map(function(p) {
-    return '✓ ' + p;
-  }).join('\n');
+  var opinions = Array.isArray(r.expert_opinions) ? r.expert_opinions : [];
+  var opinionsText = opinions.map(function(op, i) {
+    return '— 샘밀 세무사 의견 ' + (i + 1) + ' —\n' + op;
+  }).join('\n\n');
   var fullText = '【 ' + (r.title||'') + ' 】\n\n'
     + '사연자: ' + (r.narrator||'') + '\n\n'
     + (r.body||'') + '\n\n'
-    + '━━ 샘밀 세무사 의견 ━━\n'
-    + (r.expert_opinion||'') + '\n\n'
-    + '━━ 핵심 정리 ━━\n'
-    + kpHtml;
+    + opinionsText;
   document.getElementById('t4area').innerHTML = '<div class="draft-box">'
     + '<div class="draft-box-hd">'
     + '<span class="draft-box-lbl">사연모음 완성 원고</span>'
@@ -1721,10 +1744,10 @@ function buildFinal() {
       body: (function() {
         if (!S.storyDraft) return null;
         var r = S.storyDraft;
-        var kpHtml = (Array.isArray(r.key_points) ? r.key_points : []).map(function(p){ return '✓ ' + p; }).join('\n');
+        var opinions = Array.isArray(r.expert_opinions) ? r.expert_opinions : [];
+        var opinionsText = opinions.map(function(op, i){ return '— 샘밀 세무사 의견 ' + (i+1) + ' —\n' + op; }).join('\n\n');
         return '【 ' + (r.title||'') + ' 】\n\n' + '사연자: ' + (r.narrator||'') + '\n\n'
-          + (r.body||'') + '\n\n' + '━━ 샘밀 세무사 의견 ━━\n' + (r.expert_opinion||'') + '\n\n'
-          + '━━ 핵심 정리 ━━\n' + kpHtml;
+          + (r.body||'') + '\n\n' + opinionsText;
       })(),
       warn: '탭 4에서 사연모음 원고를 생성해주세요'
     },
