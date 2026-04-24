@@ -783,7 +783,7 @@ function renderAnalysisResult(r) {
     { label:'오프닝 패턴',     value: escHtml(r.opening_pattern || '(없음)') },
     { label:'CTA 패턴',        value: escHtml(r.cta_pattern     || '(없음)') },
     { label:'이번에 피할 소재', value: avoidHtml || '<span class="bdg">없음</span>' },
-    { label:'본문 구조',        value: escHtml(r.body_structure  || '(없음)') },
+    { label:'본문 구조',       value: escHtml(r.body_structure  || '(없음)') },
   ];
   var prevGridHtml = '<div class="slbl" style="margin-bottom:6px">직전 회차 참고·회피 자료</div>'
     + '<div class="analysis-grid" style="margin-bottom:12px">'
@@ -792,7 +792,7 @@ function renderAnalysisResult(r) {
           + '<div class="analysis-item-value">' + item.value + '</div></div>';
       }).join('') + '</div>';
 
-  /* ③ 직전 회차 다룬 소재 + 제외 소재 (2컬럼) */
+  /* ③ 직전 회차 다룬 소재 + 이번 회차 피해야 할 소재 (2컬럼) */
   var coveredHtml = '';
   if (r.prev_covered || r.avoid_material) {
     coveredHtml = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'
@@ -803,29 +803,13 @@ function renderAnalysisResult(r) {
           : '<div></div>')
       + (r.avoid_material
           ? '<div style="background:var(--amber-bg);border:0.5px solid rgba(99,56,6,.15);border-radius:var(--radius);padding:10px 12px">'
-            + '<div style="font-size:11px;font-weight:500;color:var(--amber-text);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em">이번 회차에서 제외할 소재</div>'
+            + '<div style="font-size:11px;font-weight:500;color:var(--amber-text);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em">이번 회차에서 피해야 할 소재</div>'
             + '<div style="font-size:12px;color:var(--amber-text);line-height:1.65">' + escHtml(r.avoid_material) + '</div></div>'
           : '<div></div>')
       + '</div>';
   }
 
-  /* ④ 현재 시기상 관심사 범주 */
-  var interestArr = Array.isArray(r.current_interest) ? r.current_interest : (r.current_interest ? [r.current_interest] : []);
-  var currentHtml = interestArr.length
-    ? '<div style="background:var(--blue-bg);border:0.5px solid rgba(55,138,221,.22);border-radius:var(--radius);padding:10px 12px;margin-bottom:12px">'
-      + '<div style="font-size:11px;font-weight:500;color:var(--blue-text);margin-bottom:7px;text-transform:uppercase;letter-spacing:.04em">현재 시기상 관심사 범주</div>'
-      + '<div style="display:flex;flex-wrap:wrap;gap:6px">'
-      + interestArr.map(function(c){ return '<span class="bdg" style="background:rgba(55,138,221,.12);color:var(--blue-text);border-color:rgba(55,138,221,.3)">' + escHtml(c) + '</span>'; }).join('')
-      + '</div></div>'
-    : '';
-
-  /* ⑤ 2페이지 주제 선정 참고 메모 */
-  var dirHtml = '<div class="direction-box">'
-    + '<div class="direction-box-label">2페이지 주제 선정 참고 메모 (주제 확정 아님)</div>'
-    + '<div class="direction-box-body" style="margin-bottom:0">' + escHtml(r.direction_hints || '(없음)') + '</div>'
-    + '</div>';
-
-  document.getElementById('t1result').innerHTML = ctrHtml + prevGridHtml + coveredHtml + currentHtml + dirHtml;
+  document.getElementById('t1result').innerHTML = ctrHtml + prevGridHtml + coveredHtml;
 }
 
 /* ══════════════════════════════════════
