@@ -35,7 +35,10 @@ export default async function handler(req, res) {
       if (!fetchRes.ok) throw new Error('HTTP ' + fetchRes.status);
       const html = await fetchRes.text();
       const entry = extractFromHtml(html, url);
-      if (includeHtml) entry.htmlContent = html;   // 단일 링크 분석용만 포함
+      if (includeHtml) {
+        entry.htmlContent  = html;                              // t1html 자동 채우기용
+        entry.analysisText = stripHtml(html).slice(0, 4000);  // runAnalyze() fallback용
+      }
       results.push(entry);
       console.log('[fetch-archive] OK:', url, '→ #' + entry.issueNo, entry.title.slice(0, 40));
     } catch (e) {

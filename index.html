@@ -16,6 +16,13 @@
   --coral-bg:#FAECE7;--coral-text:#712B13;--coral-bd:#F0997B;
   --gray-bg:#F1EFE8;--gray-text:#5F5E5A;
   --purple-bg:#F0EEFA;--purple-text:#4A237A;
+  /* 꿀팁 유형 배지 전용 */
+  --tip-risk-bg:#FFF7DB;--tip-risk-bd:#E4C766;--tip-risk-text:#8A6A00;
+  --tip-benefit-bg:#FFF1E6;--tip-benefit-bd:#F6B37A;--tip-benefit-text:#C96A14;
+  --tip-issue-bg:#EAF3FF;--tip-issue-bd:#9FC7F3;--tip-issue-text:#2563A8;
+  --tip-cash-bg:#F3F0FF;--tip-cash-bd:#B8A9E8;--tip-cash-text:#5B4AA0;
+  /* 선택 카드 전용 (유형 배지와 분리) */
+  --sel-bg:#EAF8F1;--sel-bd:#7BC7A3;--sel-text:#2F8F68;
   --radius:8px;--radius-lg:12px
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--text);font-size:14px;line-height:1.5;background:var(--bg2)}
@@ -79,11 +86,11 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .carry b{font-weight:500;display:block;margin-bottom:2px}
 
 /* 태그 */
-.tag{font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;white-space:nowrap}
-.tg{background:var(--teal-bg);color:var(--teal-text)}
-.ta{background:var(--amber-bg);color:var(--amber-text)}
-.tb2{background:var(--blue-bg);color:var(--blue-text)}
-.tgr{background:var(--gray-bg);color:var(--gray-text)}
+.tag{font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px;white-space:nowrap;border:0.5px solid transparent}
+.tg{background:var(--tip-benefit-bg);border-color:var(--tip-benefit-bd);color:var(--tip-benefit-text)}
+.ta{background:var(--tip-risk-bg);border-color:var(--tip-risk-bd);color:var(--tip-risk-text)}
+.tb2{background:var(--tip-issue-bg);border-color:var(--tip-issue-bd);color:var(--tip-issue-text)}
+.tgr{background:var(--tip-cash-bg);border-color:var(--tip-cash-bd);color:var(--tip-cash-text)}
 .tpr{background:var(--purple-bg);color:var(--purple-text)}
 .slbl{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:9px}
 
@@ -91,15 +98,16 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .sel-grid{display:flex;flex-direction:column;gap:8px}
 .sc{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:.85rem 1.1rem;cursor:pointer;position:relative;transition:border-color .15s,background .15s}
 .sc:hover{border-color:var(--border2)}
-.sc.on{border-color:var(--teal-bd);background:var(--teal-bg)}
-.sc.on .sc-t{color:var(--teal-text)}
+/* 선택 카드: 초록 계열 — 유형 배지 색과 완전히 분리 */
+.sc.on{border-color:var(--sel-bd);background:var(--sel-bg)}
+.sc.on .sc-t{color:var(--sel-text)}
 .sc-t{font-size:13px;font-weight:500;color:var(--text);line-height:1.5;margin-bottom:5px}
 .sc-b{font-size:13px;color:var(--text2);line-height:1.7}
 .sc-meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:6px}
 .sc-mi{font-size:12px;color:var(--text3);line-height:1.6}
 .sc-mi b{color:var(--text2);font-weight:500}
 .ck{position:absolute;top:.85rem;right:1rem;width:16px;height:16px;border-radius:50%;border:0.5px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent;background:var(--bg);flex-shrink:0}
-.sc.on .ck{background:var(--teal-bd);border-color:var(--teal-bd);color:#fff}
+.sc.on .ck{background:var(--sel-bd);border-color:var(--sel-bd);color:#fff}
 
 /* 완성 원고 박스 */
 .draft-box{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.1rem;margin-top:1.25rem}
@@ -197,12 +205,11 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <button class="tb locked"  onclick="goTab(4)">5 꿀팁 후보</button>
   <button class="tb locked"  onclick="goTab(5)">6 꿀팁 원고</button>
   <button class="tb locked"  onclick="goTab(6)">7 세무퀴즈</button>
-  <button class="tb locked"  onclick="goTab(7)">8 뉴스 입력</button>
-  <button class="tb locked"  onclick="goTab(8)">9 뉴스 원고</button>
-  <button class="tb locked"  onclick="goTab(9)">10 오프닝</button>
-  <button class="tb locked"  onclick="goTab(10)">11 리마인드</button>
-  <button class="tb locked"  onclick="goTab(11)">12 제목</button>
-  <button class="tb locked"  onclick="goTab(12)">13 최종 초안</button>
+  <button class="tb locked"  onclick="goTab(7)">8 뉴스 브리핑</button>
+  <button class="tb locked"  onclick="goTab(8)">9 오프닝</button>
+  <button class="tb locked"  onclick="goTab(9)">10 미리보기</button>
+  <button class="tb locked"  onclick="goTab(10)">11 제목</button>
+  <button class="tb locked"  onclick="goTab(11)">12 아카이브</button>
   <button class="reset-btn"
     onclick="softReset()"
     title="직전 분석 데이터는 유지하고 이번 회차 생성 결과만 초기화">생성 결과 다시 시작</button>
@@ -335,7 +342,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 <!-- ══════ TAB 5 — 꿀팁 후보 ══════ -->
 <div class="panel" id="p4">
   <div class="ph"><span class="ph-title">꿀팁 후보</span></div>
-  <p class="ph-sub">주제·사연에 맞는 꿀팁 후보 4개를 생성합니다. 참고할 정책/뉴스 메모를 직접 입력하면 반영됩니다.</p>
+  <p class="ph-sub">주제·사연에 맞는 꿀팁 후보 3개(실무리스크·현금흐름·이슈연결)를 자동 생성합니다. 혜택형은 아래 직접 입력 섹션에서 공식 공고를 넣으면 생성됩니다.</p>
   <div class="carry" id="t5carry"></div>
   <div class="fl">참고 뉴스·정책 메모 <span style="font-weight:400;text-transform:none;color:var(--text3)">(선택 — 꿀팁 생성에 반영됩니다)</span></div>
   <textarea class="fi" id="t5newsInput" rows="3" placeholder="예: 소상공인 전기요금 특별지원 신청 기한 5월 31일 / 24년 종합소득세 신고 5월 ..."></textarea>
@@ -344,6 +351,37 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <button class="btn-main" id="btn-regen-tips" style="display:none" onclick="callTips()">재생성</button>
   </div>
   <div id="t5area"><div class="skel"><p>생성 버튼을 눌러주세요</p></div></div>
+
+  <!-- ── 공고 내용 직접 입력 섹션 ── -->
+  <div class="divider" style="margin:1.5rem 0 1.5rem"></div>
+  <div class="ph" style="margin-bottom:6px">
+    <span class="tag" style="font-size:11px;background:var(--tip-benefit-bg);border-color:var(--tip-benefit-bd);color:var(--tip-benefit-text)">직접</span>
+    <span class="ph-title" style="font-size:14px">공고 내용 입력하기</span>
+  </div>
+  <p class="ph-sub" style="font-size:12px;margin-bottom:1.25rem">공고 URL / PDF / 직접 공고 입력을 통해 꿀팁을 생성합니다.</p>
+
+  <div class="fl">(선택) 공고 URL</div>
+  <input type="text" class="fi" id="t5benefitUrl" placeholder="https://bizinfo.go.kr/..." style="margin-bottom:10px">
+
+  <div class="fl">(선택) 공고 PDF</div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+    <label style="display:inline-block;padding:5px 12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);font-size:12px;cursor:pointer;color:var(--text)">
+      PDF 선택
+      <input type="file" id="t5benefitPdf" accept=".pdf" style="display:none" onchange="handleBenefitPdf(this)">
+    </label>
+    <span id="t5pdfName" style="font-size:12px;color:var(--text2)">선택된 파일 없음</span>
+    <button id="t5pdfClear" onclick="clearBenefitPdf()" style="display:none;padding:3px 8px;border:0.5px solid var(--border);border-radius:4px;background:transparent;font-size:11px;color:var(--text3);cursor:pointer">✕ 제거</button>
+  </div>
+
+  <div class="fl">(선택) 직접 공고 입력</div>
+  <textarea class="fi" id="t5benefitPaste" rows="6" placeholder="공고 본문, PDF 내용, 첨부 공고문 텍스트를 붙여넣어 주세요."></textarea>
+
+  <div class="btn-row" style="margin-top:10px;margin-bottom:1rem">
+    <button class="btn-main" id="btn-extract-benefit" onclick="callExtractBenefit()">꿀팁 만들기</button>
+    <button class="btn-sm" onclick="resetBenefitInput()" style="color:var(--text3)">입력 초기화</button>
+  </div>
+  <div id="t5benefitArea"></div>
+
   <div class="btn-row"><button class="btn-next" id="next4" disabled onclick="completeTab(4,5)">다음 →</button></div>
 </div>
 
@@ -387,38 +425,37 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <div class="btn-row"><button class="btn-next" id="next6" disabled onclick="completeTab(6,7)">다음 →</button></div>
 </div>
 
-<!-- ══════ TAB 8 — 뉴스 입력 ══════ -->
+<!-- ══════ TAB 8 — 뉴스 브리핑 ══════ -->
 <div class="panel" id="p7">
-  <div class="ph"><span class="ph-title">뉴스 입력</span></div>
-  <p class="ph-sub">최근 3일 이내 사장님에게 도움이 되는 뉴스를 직접 입력해 주세요. 최대 5개 입력 가능, 그 중 1~2개를 선택해 브리핑 원고를 생성합니다.</p>
+  <div class="ph"><span class="ph-title">뉴스 브리핑</span></div>
+  <p class="ph-sub">뉴스 링크를 넣으면 기사 내용을 읽고, 300자 이내 뉴스 한입 브리핑으로 정리합니다.</p>
+  <p style="font-size:12px;color:var(--text3);margin-top:-0.8rem;margin-bottom:1.25rem">일부 기사 링크는 자동으로 읽지 못할 수 있습니다. 이 경우 메모칸에 기사 본문이나 핵심 내용을 붙여넣어 주세요.</p>
   <div class="carry" id="t8carry"></div>
 
-  <div id="newsInputList"></div>
-  <div class="btn-row" style="margin-top:.5rem;margin-bottom:1.25rem">
-    <button class="btn-sm" onclick="addNewsInput()" id="btnAddNews">+ 뉴스 추가</button>
+  <!-- 상단: URL 입력 영역 -->
+  <div id="newsUrlInputArea">
+    <div><div class="fl">뉴스 링크</div>
+    <input class="fi" id="newsUrlInput" type="url" placeholder="https://... (기사 링크를 붙여넣으세요)"></div>
+    <div style="margin-top:.6rem"><div class="fl">메모 또는 기사 본문 붙여넣기 <span style="font-weight:400;color:var(--text3)">(선택)</span></div>
+    <textarea class="fi" id="newsMemoInput" rows="3" placeholder="기사를 자동으로 읽지 못한 경우 본문이나 핵심 내용을 붙여넣어 주세요"></textarea></div>
+    <div class="btn-row" style="margin-top:.75rem;margin-bottom:0">
+      <button class="btn-main" id="btnFetchNews" onclick="callFetchNews()">뉴스 브리핑 원고 만들기</button>
+      <button class="btn-sm" onclick="clearNewsInput()">입력 초기화</button>
+    </div>
   </div>
 
-  <div class="divider"></div>
-  <div class="slbl" style="margin-bottom:8px">입력한 뉴스 중 브리핑할 뉴스 선택 (최대 2개)</div>
-  <div id="newsSelectArea"><div class="skel"><p>위에서 뉴스를 입력하면 여기에 선택 카드가 표시됩니다</p></div></div>
-
-  <div class="btn-row"><button class="btn-next" id="next7" disabled onclick="completeTab(7,8)">다음 →</button></div>
-</div>
-
-<!-- ══════ TAB 9 — 뉴스 원고 ══════ -->
-<div class="panel" id="p8">
-  <div class="ph"><span class="ph-title">뉴스 한입 브리핑 원고</span></div>
-  <p class="ph-sub">선택한 뉴스를 사장님 관점으로 해설한 완성형 뉴스 브리핑 원고를 생성합니다.</p>
-  <div class="carry" id="t9carry"></div>
-  <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
-    <button class="btn-main" id="btn-news-draft" onclick="callNewsDraft()">브리핑 원고 생성</button>
-    <button class="btn-main" id="btn-regen-news-draft" style="display:none" onclick="callNewsDraft()">재생성</button>
+  <!-- 하단: 생성된 뉴스 한입 브리핑 원고 누적 영역 -->
+  <div id="newsBriefingSection" style="display:none">
+    <div class="divider"></div>
+    <div class="slbl" style="margin-bottom:6px">뉴스 한입 브리핑 원고</div>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:12px">생성된 뉴스 브리핑 원고가 아래에 쌓입니다.</p>
+    <div id="newsBriefingList"></div>
   </div>
-  <div id="t9area"><div class="skel"><p>원고 생성 버튼을 눌러주세요</p></div></div>
-  <div class="btn-row"><button class="btn-next" id="next8" disabled onclick="completeTab(8,9)">다음 →</button></div>
+
+  <div class="btn-row" style="margin-top:1.25rem"><button class="btn-next" id="next7" disabled onclick="completeTab(7,8)">다음 →</button></div>
 </div>
 
-<!-- ══════ TAB 10 — 오프닝 ══════ -->
+<!-- ══════ TAB 9 — 오프닝 ══════ -->
 <div class="panel" id="p9">
   <div class="ph"><span class="ph-title">오프닝 멘트</span></div>
   <p class="ph-sub">이번 회차 구성 전체를 반영한 오프닝 후보 3개를 생성합니다. 후보 선택 후 완성형 원고를 만듭니다.</p>
@@ -439,13 +476,13 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <div id="t10draftArea"><div class="skel"><p>완성 원고 생성 버튼을 눌러주세요</p></div></div>
   </div>
 
-  <div class="btn-row"><button class="btn-next" id="next9" disabled onclick="completeTab(9,10)">다음 →</button></div>
+  <div class="btn-row"><button class="btn-next" id="next9" disabled onclick="completeTab(8,9)">다음 →</button></div>
 </div>
 
-<!-- ══════ TAB 11 — 리마인드 ══════ -->
+<!-- ══════ TAB 10 — 리마인드 ══════ -->
 <div class="panel" id="p10">
-  <div class="ph"><span class="ph-title">리마인드 멘트</span></div>
-  <p class="ph-sub">유형별 리마인드 후보 5개를 생성합니다. 후보 선택 후 완성형 원고를 만듭니다.</p>
+  <div class="ph"><span class="ph-title">미리보기 문구</span></div>
+  <p class="ph-sub">뉴스레터 카드에 들어갈 미리보기 본문 문구를 생성합니다. 이번 회차에서 가장 후킹되는 소재를 골라 2~3문장으로 정리합니다.</p>
   <div class="carry" id="t11carry"></div>
   <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
     <button class="btn-main" id="btn-remind" onclick="callRemind()">후보 생성</button>
@@ -453,22 +490,13 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   </div>
   <div id="t11area"><div class="skel"><p>후보 생성 버튼을 눌러주세요</p></div></div>
 
-  <div id="t11draft" style="display:none">
-    <div class="divider"></div>
-    <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
-      <button class="btn-main" id="btn-remind-draft" onclick="callRemindDraft()">완성 원고 생성</button>
-      <button class="btn-main" id="btn-regen-remind-draft" style="display:none" onclick="callRemindDraft()">재생성</button>
-    </div>
-    <div id="t11draftArea"><div class="skel"><p>완성 원고 생성 버튼을 눌러주세요</p></div></div>
-  </div>
-
-  <div class="btn-row"><button class="btn-next" id="next10" disabled onclick="completeTab(10,11)">다음 →</button></div>
+  <div class="btn-row"><button class="btn-next" id="next10" disabled onclick="completeTab(9,10)">다음 →</button></div>
 </div>
 
-<!-- ══════ TAB 12 — 제목 ══════ -->
+<!-- ══════ TAB 11 — 제목 ══════ -->
 <div class="panel" id="p11">
   <div class="ph"><span class="ph-title">카카오 플친 제목</span></div>
-  <p class="ph-sub">CTR을 높이는 후킹형 제목 후보 7개를 생성합니다. 22자 이내, 돈/손해/지원금/반전 훅 강화.</p>
+  <p class="ph-sub">카카오톡 플친 메시지에서 보일 클릭 유도 제목을 생성합니다. 짧고 강하게, 이번 회차 핵심 소재를 압축합니다.</p>
   <div class="carry" id="t12carry"></div>
   <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
     <button class="btn-main" id="btn-titles" onclick="callTitles()">제목 후보 생성</button>
@@ -476,39 +504,63 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   </div>
   <div id="t12area"><div class="skel"><p>생성 버튼을 눌러주세요</p></div></div>
 
-  <!-- 선택 후 표시 -->
-  <div id="t12selected" style="display:none;margin-top:1.25rem">
-    <div class="divider"></div>
-    <div class="draft-box">
-      <div class="draft-box-hd">
-        <span class="draft-box-lbl">선택된 최종 제목</span>
-        <button class="btn-copy" onclick="copyText(S.title)">복사</button>
+  <div class="btn-row"><button class="btn-next" id="next11" disabled onclick="completeTab(10,11)">다음 →</button></div>
+</div>
+
+<!-- ══════ TAB 12 — 아카이브 ══════ -->
+<div class="panel" id="p12">
+  <div class="ph"><span class="ph-title">아카이브 관리</span></div>
+  <p class="ph-sub">과거 회차를 저장하고, 불러오고, 백업할 수 있습니다. 아카이브는 제목 구조·소재군·감정 패턴 중복 방지에 자동으로 활용됩니다.</p>
+
+  <!-- 관리 버튼 (항상 노출) -->
+  <div class="btn-row" style="margin-top:0;margin-bottom:1rem;flex-wrap:wrap;gap:6px">
+    <button class="btn-next" onclick="addToArchive()">이번 회차 아카이브 저장</button>
+    <button class="btn-main" onclick="toggleArchiveForm()">수동 입력 추가</button>
+    <button class="btn-sm" onclick="loadPublicArchive({silent:false})">아카이브 파일 불러오기</button>
+    <button class="btn-sm" onclick="openArchiveExport()">아카이브 백업하기</button>
+  </div>
+
+  <!-- 수동 입력 폼 (기본 접힘) -->
+  <div id="archiveForm" style="display:none;margin-bottom:12px">
+    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px">
+      <div class="slbl" style="margin-bottom:10px">회차 정보 수동 입력</div>
+      <div class="archive-form-grid">
+        <div><div class="fl">발송일</div><input class="fi" id="arc-date" placeholder="예: 2026-04-18"></div>
+        <div><div class="fl">카카오 제목</div><input class="fi" id="arc-title" placeholder="예: 신고 끝났는데 또 내랍니다"></div>
       </div>
-      <div class="draft-body" id="t12finalTitle"></div>
+      <div class="archive-form-grid">
+        <div><div class="fl">CTR (%)</div><input class="fi" id="arc-ctr" type="number" step="0.1" placeholder="예: 3.2"></div>
+        <div><div class="fl">공유수</div><input class="fi" id="arc-share" type="number" placeholder="예: 0"></div>
+      </div>
+      <div style="margin-bottom:8px"><div class="fl">핵심 주제</div><input class="fi" id="arc-topic" placeholder="예: 가산세 발생 원인과 구제 방법"></div>
+      <div class="archive-form-grid">
+        <div><div class="fl">사연 소재</div><input class="fi" id="arc-story" placeholder="예: 부가세 신고 누락, 가산세 고지"></div>
+        <div><div class="fl">꿀팁 소재</div><input class="fi" id="arc-tip" placeholder="예: 경정청구 방법"></div>
+      </div>
+      <div class="archive-form-grid">
+        <div><div class="fl">퀴즈 소재</div><input class="fi" id="arc-quiz" placeholder="예: 가산세 유형 OX"></div>
+        <div><div class="fl">뉴스 소재</div><input class="fi" id="arc-news" placeholder="예: 국세청 신고 간소화"></div>
+      </div>
+      <div style="margin-bottom:8px"><div class="fl">피해야 할 반복 표현·소재</div><input class="fi" id="arc-avoid" placeholder="예: 가산세, 경정청구, 신고 누락"></div>
+      <div style="margin-bottom:4px"><div class="fl">비고</div><input class="fi" id="arc-note" placeholder="예: 캐러셀형, CTR 높음"></div>
+      <div class="btn-row" style="margin-top:12px">
+        <button class="btn-next" onclick="saveArchiveManual()">저장</button>
+        <button class="btn-main" onclick="toggleArchiveForm()">취소</button>
+      </div>
     </div>
   </div>
 
-  <div class="btn-row"><button class="btn-next" id="next11" disabled onclick="completeTab(11,12)">다음 →</button></div>
-</div>
-
-<!-- ══════ TAB 13 — 최종 초안 ══════ -->
-<div class="panel" id="p12">
-  <div class="ph"><span class="ph-title">최종 밀당레터 초안</span></div>
-  <p class="ph-sub">지금까지 생성·선택한 모든 원고를 밀당레터 포맷으로 정리합니다. 각 섹션별 복사 버튼과 전체 복사 버튼을 제공합니다.</p>
-  <div class="btn-row" style="margin-top:0;margin-bottom:1.25rem">
-    <button class="btn-next" onclick="buildFinal()">최종 초안 생성</button>
-    <button class="btn-main" onclick="copyAll()">전체 복사</button>
-  </div>
-  <div id="finalContent"></div>
+  <!-- 아카이브 목록 -->
+  <div id="archiveList" style="max-height:500px;overflow-y:auto"></div>
 
   <!-- 아카이브 JSON 내보내기 모달 -->
   <div class="arc-modal-overlay" id="arcExportModal" onclick="if(event.target===this)closeArchiveExport()">
     <div class="arc-modal">
       <div class="arc-modal-hd">
-        <span class="arc-modal-title">현재 아카이브 JSON 내보내기</span>
+        <span class="arc-modal-title">아카이브 백업 (JSON)</span>
         <button class="arc-modal-close" onclick="closeArchiveExport()">✕</button>
       </div>
-      <p style="font-size:12px;color:var(--text2)">아래 JSON을 복사해서 <b>public/archive.json</b>에 붙여넣고 git push하면, 다른 PC에서도 동일한 아카이브를 사용할 수 있습니다.</p>
+      <p style="font-size:12px;color:var(--text2)">아래 JSON을 복사하거나 파일로 저장해 두면, 다른 기기에서도 동일한 아카이브를 사용할 수 있습니다.</p>
       <textarea id="arcExportText" readonly onclick="this.select()"></textarea>
       <div class="btn-row" style="margin-top:0">
         <button class="btn-next" onclick="copyArchiveJson()">JSON 복사</button>
@@ -516,46 +568,6 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
         <button class="btn-main" onclick="closeArchiveExport()">닫기</button>
       </div>
     </div>
-  </div>
-
-  <div class="archive-wrap">
-    <div class="ph"><span class="ph-title">과거 회차 아카이브</span></div>
-    <p class="ph-sub">2페이지 주제 생성 시 과거 회차의 제목 구조·소재군·감정 패턴 중복을 자동으로 피합니다. 아카이브가 비어 있으면 직전 회차 분석값만 사용됩니다.</p>
-    <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
-      <button class="btn-next" onclick="addToArchive()">이번 회차 최종 초안을 아카이브에 저장</button>
-      <button class="btn-main" onclick="toggleArchiveForm()">수동 입력 추가</button>
-      <button class="btn-sm" onclick="loadPublicArchive({silent:false})">공용 아카이브 불러오기</button>
-      <button class="btn-sm" onclick="openArchiveExport()">JSON 내보내기</button>
-    </div>
-    <div id="archiveForm" style="display:none">
-      <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px;margin-bottom:12px">
-        <div class="slbl" style="margin-bottom:10px">회차 정보 수동 입력</div>
-        <div class="archive-form-grid">
-          <div><div class="fl">발송일</div><input class="fi" id="arc-date" placeholder="예: 2026-04-18"></div>
-          <div><div class="fl">카카오 제목</div><input class="fi" id="arc-title" placeholder="예: 신고 끝났는데 또 내랍니다"></div>
-        </div>
-        <div class="archive-form-grid">
-          <div><div class="fl">CTR (%)</div><input class="fi" id="arc-ctr" type="number" step="0.1" placeholder="예: 3.2"></div>
-          <div><div class="fl">공유수</div><input class="fi" id="arc-share" type="number" placeholder="예: 0"></div>
-        </div>
-        <div style="margin-bottom:8px"><div class="fl">핵심 주제</div><input class="fi" id="arc-topic" placeholder="예: 가산세 발생 원인과 구제 방법"></div>
-        <div class="archive-form-grid">
-          <div><div class="fl">사연 소재</div><input class="fi" id="arc-story" placeholder="예: 부가세 신고 누락, 가산세 고지"></div>
-          <div><div class="fl">꿀팁 소재</div><input class="fi" id="arc-tip" placeholder="예: 경정청구 방법"></div>
-        </div>
-        <div class="archive-form-grid">
-          <div><div class="fl">퀴즈 소재</div><input class="fi" id="arc-quiz" placeholder="예: 가산세 유형 OX"></div>
-          <div><div class="fl">뉴스 소재</div><input class="fi" id="arc-news" placeholder="예: 국세청 신고 간소화"></div>
-        </div>
-        <div style="margin-bottom:8px"><div class="fl">피해야 할 반복 표현·소재</div><input class="fi" id="arc-avoid" placeholder="예: 가산세, 경정청구, 신고 누락"></div>
-        <div style="margin-bottom:4px"><div class="fl">비고</div><input class="fi" id="arc-note" placeholder="예: 캐러셀형, CTR 높음"></div>
-        <div class="btn-row" style="margin-top:12px">
-          <button class="btn-next" onclick="saveArchiveManual()">저장</button>
-          <button class="btn-main" onclick="toggleArchiveForm()">취소</button>
-        </div>
-      </div>
-    </div>
-    <div id="archiveList"></div>
   </div>
 </div>
 
@@ -578,20 +590,18 @@ var S = {
   storyDraft: null,
   /* 탭5 — 꿀팁 */
   tipUserNews: '',
-  tipData: null, tip: null,
+  tipData: null, tip: null, benefitSearch: null,
+  benefitTip: null,   /* 사용자가 직접 입력한 혜택형 꿀팁 */
   /* 탭6 — 꿀팁 원고 */
   tipDraft: null,
   /* 탭7 — 퀴즈 */
   quizFormat: 'ox', quizDiff: 'normal', quizData: null,
-  /* 탭8 — 뉴스 입력 */
-  newsInputs: [],   /* [{ title, date, source, link, summary }] */
-  selNewsIdx: [],   /* 선택 인덱스 (최대 2) */
-  /* 탭9 — 뉴스 원고 */
-  newsDraft: null,
-  /* 탭10 — 오프닝 */
+  /* 탭8 — 뉴스 브리핑 (링크 → 300자 원고 누적) */
+  newsCandidates: [], /* [{ id, url, memo, original_title, source, published_at, briefing_title, briefing_text, keywords[], read_status }] */
+  /* 탭9 — 오프닝 */
   openingData: null, opening: null, openingDraft: null,
   /* 탭11 — 리마인드 */
-  remindData: null, remind: null, remindDraft: null,
+  remindData: null, remind: null,
   /* 탭12 — 제목 */
   titleData: null, title: null,
   /* UI 상태 */
@@ -659,20 +669,16 @@ function restoreState() {
   if (S.storyData)    { renderStories();  showRegenBtn('stories');  }
   if (S.storyDraft)   { renderStoryDraft(S.storyDraft); showRegenBtn('story-draft'); }
   if (S.tipData)      { renderTips();     showRegenBtn('tips');     }
+  if (S.benefitTip)  { renderBenefitTip(); }
   if (S.tipDraft)     { renderTipDraft(S.tipDraft); showRegenBtn('tip-draft'); }
   if (S.quizData)     { renderQuiz(S.quizData); showRegenBtn('quiz'); }
-  /* 뉴스 입력 복원 */
-  if (Array.isArray(S.newsInputs) && S.newsInputs.length > 0) {
-    renderNewsInputsFromState();
-    renderNewsSelectArea();
-  } else {
-    initNewsInputs();
+  /* 뉴스 브리핑 원고 복원 */
+  if (Array.isArray(S.newsCandidates) && S.newsCandidates.length > 0) {
+    renderNewsBriefingList();
   }
-  if (S.newsDraft)    { renderNewsDraft(S.newsDraft); showRegenBtn('news-draft'); }
   if (S.openingData)  { renderOpenings(); showRegenBtn('opening'); }
   if (S.openingDraft) { renderOpeningDraft(S.openingDraft); document.getElementById('t10draft').style.display='block'; showRegenBtn('opening-draft'); }
   if (S.remindData)   { renderReminds();  showRegenBtn('remind');  }
-  if (S.remindDraft)  { renderRemindDraft(S.remindDraft); document.getElementById('t11draft').style.display='block'; showRegenBtn('remind-draft'); }
   if (S.titleData)    { renderTitles();   showRegenBtn('titles');  }
   renderArchive();
 
@@ -683,11 +689,10 @@ function restoreState() {
   if (S.tip)         setBtn('next4', false);
   if (S.tipDraft)    setBtn('next5', false);
   if (S.quizData)    setBtn('next6', false);
-  if (S.selNewsIdx && S.selNewsIdx.length > 0) setBtn('next7', false);
-  if (S.newsDraft)   setBtn('next8', false);
+  if (S.newsCandidates && S.newsCandidates.length > 0) setBtn('next7', false);
   if (S.openingDraft) setBtn('next9', false);
-  if (S.remindDraft)  setBtn('next10', false);
-  if (S.title)        setBtn('next11', false);
+  if (S.remindData)   setBtn('next10', false);
+  if (S.titleData)    setBtn('next11', false);
 
   /* 퀴즈 형식/난이도 UI 복원 */
   restoreOptGroup('quizFormatGroup', S.quizFormat);
@@ -716,11 +721,11 @@ function softReset() {
 
   S.subjectData=null; S.subject=null;
   S.storyData=null;   S.story=null;    S.storyDraft=null;
-  S.tipUserNews='';   S.tipData=null;  S.tip=null; S.tipDraft=null;
+  S.tipUserNews='';   S.tipData=null;  S.tip=null; S.tipDraft=null; S.benefitSearch=null; S.benefitTip=null;
   S.quizFormat='ox';  S.quizDiff='normal'; S.quizData=null;
-  S.newsInputs=[];    S.selNewsIdx=[];  S.newsDraft=null;
+  S.newsCandidates=[];
   S.openingData=null; S.opening=null;   S.openingDraft=null;
-  S.remindData=null;  S.remind=null;    S.remindDraft=null;
+  S.remindData=null;  S.remind=null;
   S.titleData=null;   S.title=null;
   S.activeTab=0; S.unlockedTabs=[0]; S.doneTabs=[];
 
@@ -729,20 +734,23 @@ function softReset() {
   pnls().forEach(function(p,i){ p.classList.toggle('active', i===0); });
 
   /* DOM 초기화 */
-  ['t2area','t3area','t4area','t5area','t6area','t7area','t8area','t9area','t10area','t11area','t12area'].forEach(function(id) {
+  ['t2area','t3area','t4area','t5area','t6area','t7area','t10area','t11area','t12area'].forEach(function(id) {
     var el=document.getElementById(id); if(el) el.innerHTML='<div class="skel"><p>앞 탭에서 생성 후 확인해주세요</p></div>';
   });
-  ['t4draft','t9area','t10draft','t11draft','t12selected','finalContent'].forEach(function(id) {
+  ['t4draft','t10draft','finalContent'].forEach(function(id) {
     var el=document.getElementById(id); if(el) el.style.display='none';
   });
-  initNewsInputs();
-  document.getElementById('newsSelectArea').innerHTML='<div class="skel"><p>위에서 뉴스를 입력하면 여기에 선택 카드가 표시됩니다</p></div>';
+  /* 뉴스 브리핑 원고 영역 초기화 */
+  var nbl = document.getElementById('newsBriefingList');
+  if (nbl) nbl.innerHTML = '';
+  var nbs = document.getElementById('newsBriefingSection');
+  if (nbs) nbs.style.display = 'none';
   document.getElementById('t5newsInput').value='';
 
   ['next1','next2','next3','next4','next5','next6','next7','next8','next9','next10','next11'].forEach(function(id){ setBtn(id,true); });
 
   /* 재생성 버튼 숨기기 */
-  ['subjects','stories','story-draft','tips','tip-draft','quiz','news-draft','opening','opening-draft','remind','remind-draft','titles'].forEach(function(k) {
+  ['subjects','stories','story-draft','tips','tip-draft','quiz','opening','opening-draft','remind','remind-draft','titles'].forEach(function(k) {
     var regen=document.getElementById('btn-regen-'+k); if(regen) regen.style.display='none';
     var orig=document.getElementById('btn-'+k); if(orig) orig.style.display='';
   });
@@ -814,13 +822,23 @@ document.querySelectorAll('.opt-btn').forEach(function(btn) {
 ══════════════════════════════════════ */
 function updateCarry(tabIdx) {
   var ids={1:'t2carry',2:'t3carry',3:'t4carry',4:'t5carry',5:'t6carry',
-           6:'t7carry',7:'t8carry',8:'t9carry',9:'t10carry',10:'t11carry',11:'t12carry'};
+           6:'t7carry',7:'t8carry',8:'t10carry',9:'t11carry',10:'t12carry'};
   var el = document.getElementById(ids[tabIdx]); if (!el) return;
   var parts = ['CTR ' + (S.ctr||0).toFixed(1) + '%'];
   if (S.analysis && S.analysis.topic) parts.push('직전주제: ' + S.analysis.topic);
   if (S.subject)    parts.push('주제: ' + S.subject.title);
   if (S.story)      parts.push('사연: ' + S.story.tone);
-  if (S.tip)        parts.push('꿀팁: ' + S.tip.title);
+  if (S.tip) {
+    /* 직접 입력 혜택형: [직접] 배지 + 밀당레터 톤 제목(display_title/title) 우선
+       자동 후보: 기존 source_locked_title → fetched_title → title 순 */
+    var tipTypeLabel = S.tip.is_user_provided ? '직접' : (S.tip.type || '');
+    var displayTipTitle = S.tip.is_user_provided
+      ? (S.tip.display_title || S.tip.title || S.tip.fetched_title
+          || (S.tip.benefit_facts && S.tip.benefit_facts.support_name) || '')
+      : (S.tip.source_locked_title || S.tip.fetched_title
+          || (S.tip.benefit_facts && S.tip.benefit_facts.support_name) || S.tip.title || '');
+    parts.push('꿀팁: [' + tipTypeLabel + '] ' + displayTipTitle);
+  }
   el.innerHTML = '<b>앞 탭 반영값</b>' + parts.join('  ·  ');
 }
 
@@ -891,11 +909,23 @@ async function runAnalyze() {
   S.share     = Math.max(0, parseInt(document.getElementById('t1share').value)||0);
   S.note      = document.getElementById('t1note').value.trim();
   S.prevTitle = document.getElementById('t1prevTitle').value.trim();
-  S.recType   = S.ctr>=4 ? '나해당형·반전형' : S.ctr>=3 ? '공감형·헷갈림형' : '공감형·현실질문형';
+
+  /* fetchedEntry 제목 fallback — 직접 입력이 없으면 자동 채움 */
+  if (!S.prevTitle && S.fetchedEntry && S.fetchedEntry.title) {
+    S.prevTitle = S.fetchedEntry.title;
+    document.getElementById('t1prevTitle').value = S.prevTitle;
+  }
+
+  S.recType = S.ctr>=4 ? '나해당형·반전형' : S.ctr>=3 ? '공감형·헷갈림형' : '공감형·현실질문형';
   saveState();
 
   var rawHtml  = document.getElementById('t1html').value.trim();
   var bodyText = rawHtml ? htmlToText(rawHtml) : '';
+
+  /* HTML 붙여넣기가 없으면 fetchedEntry.analysisText를 본문으로 활용 */
+  if (!bodyText && S.fetchedEntry && S.fetchedEntry.analysisText) {
+    bodyText = S.fetchedEntry.analysisText;
+  }
 
   document.getElementById('t1skel').style.display   = 'none';
   document.getElementById('t1result').style.display = 'none';
@@ -937,9 +967,11 @@ function renderAnalysisResult(r) {
   /* ② 직전 회차 참고·회피 자료 그리드 */
   var kwHtml    = (Array.isArray(r.keywords) ? r.keywords : []).map(function(k){ return '<span class="bdg">' + escHtml(k) + '</span>'; }).join('');
   var avoidHtml = (Array.isArray(r.avoid)    ? r.avoid    : []).map(function(a){ return '<span class="bdg w">' + escHtml(a) + '</span>'; }).join('');
+  /* fetchedEntry 필드를 AI 결과 fallback으로 활용 */
+  var fe = S.fetchedEntry || {};
   var prevGrid = [
-    { label:'직전 회차 제목',  value: escHtml(r.title  || '(없음)') },
-    { label:'직전 회차 주제',  value: escHtml(r.topic  || '(없음)') },
+    { label:'직전 회차 제목',  value: escHtml(r.title  || S.prevTitle || fe.title || '(없음)') },
+    { label:'직전 회차 주제',  value: escHtml(r.topic  || fe.tipTitle || '(없음)') },
     { label:'반복 키워드',     value: kwHtml    || '<span class="bdg">없음</span>' },
     { label:'오프닝 패턴',     value: escHtml(r.opening_pattern || '(없음)') },
     { label:'CTA 패턴',        value: escHtml(r.cta_pattern     || '(없음)') },
@@ -1074,11 +1106,14 @@ async function callFetchSingle() {
     var entry = data.results && data.results[0];
     if (!entry) throw new Error('결과가 없습니다');
 
-    /* htmlContent는 t1html에 넣고, fetchedEntry에는 저장하지 않음 */
-    var rawHtml = entry.htmlContent || '';
+    /* htmlContent → t1html 자동 채우기, analysisText → fetchedEntry에 보존, 아카이브엔 저장 안 함 */
+    var rawHtml      = entry.htmlContent  || '';
+    var analysisText = entry.analysisText || '';
     delete entry.htmlContent;
+    delete entry.analysisText;
 
     S.fetchedEntry = entry;
+    S.fetchedEntry.analysisText = analysisText;  // runAnalyze() fallback 전용
 
     /* 제목 자동 채우기 */
     if (entry.title && !document.getElementById('t1prevTitle').value.trim()) {
@@ -1217,11 +1252,11 @@ async function callSubjects() {
   /* 선택값 + 이후 단계 생성 결과 전체 초기화 */
   S.subject     = null; S.subjectData  = null;
   S.storyData   = null; S.story        = null; S.storyDraft  = null;
-  S.tipData     = null; S.tip          = null; S.tipDraft    = null;
+  S.tipData     = null; S.tip          = null; S.tipDraft    = null; S.benefitSearch = null; S.benefitTip = null;
   S.quizData    = null;
-  S.selNewsIdx  = [];   S.newsDraft    = null;
+  S.newsCandidates = [];
   S.openingData = null; S.opening      = null; S.openingDraft = null;
-  S.remindData  = null; S.remind       = null; S.remindDraft  = null;
+  S.remindData  = null; S.remind       = null;
   S.titleData   = null; S.title        = null;
   updateCarry(1);
   document.getElementById('t2area').innerHTML = loading();
@@ -1278,20 +1313,33 @@ function renderSubjects() {
           + '</div><div class="sc-meta">'
           + '<span class="sc-mi"><b>훅</b> ' + escHtml(s.hook||'') + '</span>'
           + '</div>'
-          + (s.duplicate_risk || s.new_angle ? (function() {
-              var riskCls = s.duplicate_risk === '낮음' ? 'tg' : s.duplicate_risk === '높음' ? 'tb2' : 'ta';
-              var archiveStr = (s.similar_archive && s.similar_archive !== '없음') ? escHtml(s.similar_archive) : '없음';
-              return '<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);display:flex;flex-direction:column;gap:5px">'
-                + (s.duplicate_risk
-                    ? '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-                      + '<span class="tag ' + riskCls + '" style="font-size:10px">중복 위험 ' + escHtml(s.duplicate_risk) + '</span>'
-                      + '<span style="font-size:11px;color:var(--text3)">유사 회차: ' + archiveStr + '</span>'
-                      + '</div>'
-                    : '')
-                + (s.new_angle ? '<div style="font-size:11px;color:var(--text2)"><b style="font-weight:500;color:var(--text)">새 관점</b>&nbsp; ' + escHtml(s.new_angle) + '</div>' : '')
-                + (s.why_not_duplicate ? '<div style="font-size:11px;color:var(--text3)"><b style="font-weight:500;color:var(--text2)">기존과 다른 점</b>&nbsp; ' + escHtml(s.why_not_duplicate) + '</div>' : '')
+          + (function() {
+              /* ── 중복 위험 섹션 — 항상 표시 (정보 공백 방지) ── */
+              var dr = s.duplicate_risk || '낮음';
+              var riskCls = dr === '낮음' ? 'tg' : dr === '높음' ? 'tb2' : 'ta';
+              /* similar_archive: "없음"이 아닌 경우만 표시, 줄바꿈 → <br> */
+              var archiveRaw = (s.similar_archive || '').replace(/^없음.*$/, '').trim();
+              var archiveHtml = archiveRaw
+                ? archiveRaw.split(/,\s*/).map(function(v){ return '<span style="display:inline-block;margin-right:4px">' + escHtml(v.trim()) + '</span>'; }).join('')
+                : '<span style="color:var(--text3)">없음</span>';
+              /* topic_cluster 표시 */
+              var clusterStr = (s.topic_cluster || '').replace(/\s*—.*$/, '').trim();
+              return '<div style="margin-top:9px;padding-top:9px;border-top:0.5px solid var(--border);display:flex;flex-direction:column;gap:6px">'
+                /* 행1: 중복 위험 배지 + 주제군 */
+                + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+                  + '<span class="tag ' + riskCls + '" style="font-size:10px;flex-shrink:0">중복 위험 ' + escHtml(dr) + '</span>'
+                  + (clusterStr ? '<span style="font-size:11px;color:var(--text2);background:var(--bg);border:0.5px solid var(--border);border-radius:3px;padding:1px 6px">주제군 ' + escHtml(clusterStr) + '</span>' : '')
+                + '</div>'
+                /* 행2: 유사 회차 목록 */
+                + '<div style="font-size:11px;color:var(--text2);line-height:1.6">'
+                  + '<b style="font-weight:500;color:var(--text);margin-right:4px">유사 회차</b>' + archiveHtml
+                + '</div>'
+                /* 행3: 새 관점 */
+                + (s.new_angle ? '<div style="font-size:11px;color:var(--text2);line-height:1.5"><b style="font-weight:500;color:var(--text);margin-right:4px">새 관점</b>' + escHtml(s.new_angle) + '</div>' : '')
+                /* 행4: 기존과 다른 점 */
+                + (s.why_not_duplicate ? '<div style="font-size:11px;color:var(--text3);line-height:1.5"><b style="font-weight:500;color:var(--text2);margin-right:4px">기존과 다른 점</b>' + escHtml(s.why_not_duplicate) + '</div>' : '')
                 + '</div>';
-            })() : '')
+            })()
           + '<div class="ck">✓</div></div>';
       }).join('') + '</div>';
 }
@@ -1425,6 +1473,31 @@ function renderStoryDraft(r) {
 /* ══════════════════════════════════════
    TAB 5 — 꿀팁 후보
 ══════════════════════════════════════ */
+
+/* ── 클라이언트 안전망: 서버 필터와 동일 목록 ── */
+var BANNED_TIP_KW = [
+  '경영안정 바우처','고정비 25만','안심통장','같이하는 소상공인',
+  '최대 3억','포괄양수도','창업감면','알바생 4대보험','4대보험 싫다',
+  '라면','시리얼','케이크','기장료 반값','연말정산 기본',
+];
+function validateTipsClient(tips) {
+  /* 금지 키워드 해당 건만 제거.
+     source_url 없는 혜택형은 "공고 확인 필요" 상태로 유지 — 제거하지 않음. */
+  var valid = [], removed = [];
+  (tips || []).forEach(function(tip) {
+    var text = [tip.title, tip.benefit, tip.background, tip.target,
+                tip.check_now, tip.caution, tip.search_keyword]
+               .filter(Boolean).join(' ');
+    var banned = BANNED_TIP_KW.find(function(kw){ return text.indexOf(kw) !== -1; });
+    if (banned) {
+      console.log('[tips-validate] client removed:', (tip.title||'').slice(0,40), '| reason: 금지 키워드 —', banned);
+      removed.push({ title: tip.title || '', reason: '금지 키워드: ' + banned }); return;
+    }
+    valid.push(tip);
+  });
+  return { valid: valid, removed: removed };
+}
+
 async function callTips() {
   if (!S.subject) { alert('탭 2에서 주제를 먼저 선택해주세요'); return; }
   S.tip = null; S.tipDraft = null;
@@ -1438,7 +1511,15 @@ async function callTips() {
       storyText:     S.story ? S.story.text : '',
       ctr:           S.ctr,
       userNewsInput: S.tipUserNews,
+      archive:       Array.isArray(S.archive) ? S.archive : [],
     });
+    /* ── 클라이언트 안전망: 서버 필터를 통과한 것도 재검증 ── */
+    var clientCheck = validateTipsClient(result.tips || []);
+    if (clientCheck.removed.length > 0) {
+      result.tips      = clientCheck.valid;
+      result._filtered = (result._filtered || []).concat(clientCheck.removed);
+      console.log('[tips-validate] client 추가 제외:', clientCheck.removed.length, '개');
+    }
     S.tipData = result;
     renderTips();
     showRegenBtn('tips');
@@ -1453,32 +1534,360 @@ function renderTips() {
   if (!data || !Array.isArray(data.tips) || !data.tips.length) {
     document.getElementById('t5area').innerHTML = errBox('꿀팁 데이터가 없습니다. 재생성해주세요.'); return;
   }
-  var typeColors = ['tg','tb2','ta','tgr'];
-  document.getElementById('t5area').innerHTML = '<div class="sel-grid">'
+
+  /* ── 필터 경고 배너 ── */
+  var filterBanner = '';
+  if (data._filtered && data._filtered.length > 0) {
+    var reasonLines = data._filtered.map(function(f){
+      return '<li style="margin:2px 0">✕ <b>' + escHtml(f.title || '?') + '</b>'
+           + ' <span style="color:var(--text3)">(' + escHtml(f.reason) + ')</span></li>';
+    }).join('');
+    filterBanner = '<div style="margin-bottom:14px;padding:10px 13px;background:#FFF8F0;'
+      + 'border:1px solid #F3C49C;border-radius:var(--radius);font-size:12px;color:#7A4A00">'
+      + '<div style="font-weight:700;margin-bottom:6px">⚠ ' + data._filtered.length
+      + '개 후보가 자동 제외되었습니다</div>'
+      + '<ul style="margin:0 0 6px 14px;padding:0">' + reasonLines + '</ul>'
+      + '<span style="color:var(--text3)">참고 메모에 공식 링크를 추가하거나 '
+      + '<b style="color:#C96A14;cursor:pointer" onclick="callTips()">재생성</b>하면 더 나은 후보가 생성됩니다.</span>'
+      + '</div>';
+  }
+
+  /* ── 3개 미만 안내 ── */
+  var countNote = '';
+  if (data.tips.length < 3) {
+    countNote = '<div style="margin-bottom:10px;font-size:12px;color:var(--text3);text-align:center">'
+      + '현재 ' + data.tips.length + '개 후보 — '
+      + '<span style="color:#C96A14;cursor:pointer;font-weight:600" onclick="callTips()">재생성</span>으로 3개를 채울 수 있습니다.'
+      + '</div>';
+  }
+  /* 유형별 배지 클래스 — 선택 카드 배경과 완전 분리 */
+  var typeBadge = { '혜택형':'tg', '이슈연결형':'tb2', '실무리스크형':'ta', '현금흐름형':'tgr' };
+  /* 유형별 benefit 박스 색 */
+  var benefitStyle = {
+    '혜택형':       { bg:'var(--tip-benefit-bg)', bd:'var(--tip-benefit-bd)', tx:'var(--tip-benefit-text)', lbl:'혜택' },
+    '이슈연결형':   { bg:'var(--tip-issue-bg)',   bd:'var(--tip-issue-bd)',   tx:'var(--tip-issue-text)',   lbl:'챙길 것' },
+    '실무리스크형': { bg:'var(--coral-bg)',        bd:'var(--coral-bd)',        tx:'var(--coral-text)',        lbl:'놓치면' },
+    '현금흐름형':   { bg:'var(--tip-cash-bg)',    bd:'var(--tip-cash-bd)',    tx:'var(--tip-cash-text)',    lbl:'지금 확인' },
+  };
+  document.getElementById('t5area').innerHTML = filterBanner + countNote + '<div class="sel-grid">'
     + data.tips.map(function(t, i) {
         var isOn = S.tip && S.tip.title === t.title;
-        var tc = typeColors[i % typeColors.length];
+        var tc   = typeBadge[t.type] || ['tg','tb2','ta','tgr'][i % 4];
+        var bs   = benefitStyle[t.type] || benefitStyle['현금흐름형'];
+        /* 카드 표시 제목: 공식 공고 제목 우선 */
+        var cardTitle = t.display_title || t.source_locked_title || t.fetched_title
+          || (t.benefit_facts && t.benefit_facts.support_name) || t.title || '';
         return '<div class="sc' + (isOn?' on':'') + '" id="tip'+i+'" onclick="selectTip('+i+')">'
-          + '<div style="margin-bottom:6px"><span class="tag '+tc+'">' + escHtml(t.type||'') + '</span></div>'
-          + '<div class="sc-t">' + escHtml(t.title||'') + '</div>'
-          + '<div class="sc-meta">'
-          + '<span class="sc-mi"><b>연결 이유</b> ' + escHtml(t.reason||'') + '</span>'
-          + '</div><div class="sc-meta">'
-          + '<span class="sc-mi"><b>사장님 실익</b> ' + escHtml(t.benefit||'') + '</span>'
-          + '</div><div class="sc-meta">'
-          + '<span class="sc-mi"><b>원고 방향</b> ' + escHtml(t.direction||'') + '</span>'
-          + '</div><div class="sc-meta">'
-          + '<span class="sc-mi"><b>주의할 점</b> ' + escHtml(t.caution||'') + '</span>'
-          + '</div>'
+          /* 유형 배지 — 선택 상태와 무관하게 고유 색 유지 */
+          + '<div style="margin-bottom:6px"><span class="tag ' + tc + '">' + escHtml(t.type||'') + '</span></div>'
+          /* 제목 — 링크 적용 후엔 공식 공고 제목 표시 */
+          + '<div class="sc-t">' + escHtml(cardTitle) + '</div>'
+          /* 혜택/손해 박스 — 유형별 색 */
+          + (t.benefit
+              ? '<div style="margin-top:7px;padding:6px 9px;background:' + bs.bg + ';border:0.5px solid ' + bs.bd + ';border-radius:var(--radius);font-size:12px;color:' + bs.tx + ';line-height:1.5"><b style="font-weight:600">' + bs.lbl + '</b>&nbsp;' + escHtml(t.benefit) + '</div>'
+              : '')
+          /* 배경·이슈 */
+          + (t.background ? '<div class="sc-meta" style="margin-top:6px"><span class="sc-mi"><b>왜 지금</b> ' + escHtml(t.background) + '</span></div>' : '')
+          /* 해당 사장님 */
+          + (t.target ? '<div class="sc-meta"><span class="sc-mi"><b>이런 사장님</b> ' + escHtml(t.target) + '</span></div>' : '')
+          /* 지금 확인 */
+          + (t.check_now ? '<div class="sc-meta"><span class="sc-mi"><b>지금 확인할 것</b> ' + escHtml(t.check_now) + '</span></div>' : '')
+          /* 주의 */
+          + (t.caution ? '<div class="sc-meta"><span class="sc-mi" style="color:var(--text3)"><b>주의</b> ' + escHtml(t.caution) + '</span></div>' : '')
+          /* 중복 체크 배지 */
+          + (t.duplicate_check ? (function(){
+              var dc = t.duplicate_check;
+              var dcColor, dcBg, dcBd;
+              if      (dc === '신규')         { dcColor='var(--sel-text)'; dcBg='var(--sel-bg)';  dcBd='var(--sel-bd)'; }
+              else if (dc === '재안내 가능')  { dcColor='#7A5800'; dcBg='#FFFBEA'; dcBd='#D4A72B'; }
+              else if (dc === '공고 확인 필요') { dcColor='var(--tip-issue-text)'; dcBg='var(--tip-issue-bg)'; dcBd='var(--tip-issue-bd)'; }
+              else                            { dcColor='var(--coral-text)'; dcBg='var(--coral-bg)'; dcBd='var(--coral-bd)'; }
+              return '<div class="sc-meta" style="margin-top:5px"><span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;background:' + dcBg + ';border:0.5px solid ' + dcBd + ';color:' + dcColor + '">' + escHtml(dc) + '</span>'
+                + (t.similar_issues && t.similar_issues !== '없음' ? ' <span class="sc-mi" style="color:var(--text3);font-size:11px">유사: ' + escHtml(t.similar_issues) + '</span>' : '')
+                + '</div>';
+            })() : '')
+          /* 공식 링크 패널 (있을 때만) */
+          + (function(){
+              if (!t.source_url) return '';
+              var hasFetched = !!(t.fetched_title && t.fetched_title.trim());
+              var conf = t.source_confidence || '';
+              var confColor = conf === '높음' ? '#2F8F68' : conf === '보통' ? '#7A5800' : '#C0392B';
+              var confBg    = conf === '높음' ? '#EAF8F1' : conf === '보통' ? '#FFFBEA' : '#FFF1F0';
+              var confBd    = conf === '높음' ? '#7BC7A3' : conf === '보통' ? '#D4A72B' : '#F3A8A3';
+              var hasWarning = !!(t.source_warning && t.source_warning.trim());
+              return '<div style="margin-top:6px;padding:8px 10px;background:#EAF3FF;border:0.5px solid #9FC7F3;border-radius:var(--radius)">'
+                + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:' + (hasFetched ? '5' : '0') + 'px">'
+                + '<a href="' + escHtml(t.source_url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" '
+                + 'style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;'
+                + 'background:#fff;border:0.5px solid #9FC7F3;color:#2563A8;text-decoration:none">🔗 공고 확인</a>'
+                + (t.source_name ? '<span style="font-size:11px;color:#2563A8;font-weight:600">' + escHtml(t.source_name) + '</span>' : '')
+                + (conf ? '<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;background:' + confBg + ';border:0.5px solid ' + confBd + ';color:' + confColor + '">' + escHtml(conf) + '</span>' : '')
+                + '</div>'
+                + (hasFetched
+                  ? '<div style="font-size:11px;color:var(--text2);margin-bottom:3px">'
+                    + '<span style="color:var(--text3);font-weight:600">읽은 공고&nbsp;</span>'
+                    + escHtml(t.fetched_title)
+                    + (t.fetched_date ? ' <span style="color:var(--text3)">(' + escHtml(t.fetched_date) + ')</span>' : '')
+                    + '</div>'
+                  : '')
+                + '<div style="font-size:10px;color:' + (hasWarning ? '#C96A14' : '#2F8F68') + '">'
+                + (hasWarning
+                  ? '⚠ ' + escHtml(t.source_warning)
+                  : hasFetched ? '✓ 내용 확인 완료 — Tab 6에서 원고를 생성할 수 있습니다' : '✓ 링크 적용 완료')
+                + '</div>'
+                + '</div>';
+            })()
           + '<div class="ck">✓</div></div>';
       }).join('') + '</div>';
 }
 
+function copyKw(i) {
+  var el = document.getElementById('kw_' + i);
+  if (!el) return;
+  var txt = el.textContent || '';
+  navigator.clipboard.writeText(txt).then(function(){
+    var btn = el.nextElementSibling;
+    if (btn) { var orig = btn.textContent; btn.textContent = '복사됨'; setTimeout(function(){ btn.textContent = orig; }, 1200); }
+  }).catch(function(){ /* fallback: 선택만 */ });
+}
+
+async function applyBenefitLink(i, url) {
+  if (!S.tipData || !S.tipData.tips[i]) return;
+  var trimmed = (url || '').trim();
+  if (!trimmed) { alert('공식 공고 URL을 입력해주세요'); return; }
+
+  /* 버튼 로딩 상태 */
+  var btn = document.getElementById('benefitApplyBtn_' + i);
+  var inp = document.getElementById('benefitUrl_' + i);
+  if (btn) { btn.textContent = '읽는 중…'; btn.disabled = true; btn.style.opacity = '0.6'; }
+  if (inp) { inp.disabled = true; }
+
+  try {
+    /* fetch-benefit-detail API 호출 */
+    var res = await fetch('/api/fetch-benefit-detail', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url:      trimmed,
+        tipTitle: S.tipData.tips[i].title || '',
+        tipType:  S.tipData.tips[i].type  || '',
+      }),
+    });
+    var data;
+    try { data = await res.json(); } catch(e) { throw new Error('응답 파싱 실패'); }
+
+    if (!data.ok) {
+      /* 비공식 도메인 / fetch 실패 등 */
+      alert(data.message || '링크를 처리할 수 없습니다.');
+      if (btn) { btn.textContent = '링크 적용'; btn.disabled = false; btn.style.opacity = ''; }
+      if (inp) { inp.disabled = false; }
+      return;
+    }
+
+    /* tip 데이터 갱신 */
+    var tip = S.tipData.tips[i];
+    tip.source_url           = data.source_url      || trimmed;
+    tip.source_name          = data.source_name     || '공식 공고';
+    tip.source_verified      = true;
+    tip.fetched_title        = data.fetched_title        || '';
+    tip.fetched_date         = data.fetched_date         || '';
+    tip.fetched_body_summary = data.fetched_body_summary || '';
+    tip.benefit_facts        = data.benefit_facts        || {};
+    tip.source_confidence    = data.confidence           || '보통';
+    tip.source_warning       = data.warning              || '';
+    /* source_locked: 공식 공고 내용이 실제로 읽혔으면 true → Tab 6에서 AI 생성 제목 금지 */
+    tip.source_locked        = !!(data.fetched_title || (data.benefit_facts && Object.keys(data.benefit_facts).length > 0));
+    tip.source_locked_title  = data.fetched_title || '';
+    /* display_title: 카드 표시용 제목 — 공식 공고 제목 우선 */
+    tip.display_title = tip.source_locked_title
+      || tip.fetched_title
+      || (tip.benefit_facts && tip.benefit_facts.support_name)
+      || tip.title || '';
+
+    /* 현재 선택된 tip이 같은 항목이면 동기화 */
+    if (S.tip && S.tip.title === tip.title) {
+      S.tip = tip;
+    }
+    saveState();
+    renderTips();
+  } catch(e) {
+    alert('공고 내용을 읽는 중 오류가 발생했습니다.\n' + e.message);
+    if (btn) { btn.textContent = '링크 적용'; btn.disabled = false; btn.style.opacity = ''; }
+    if (inp) { inp.disabled = false; }
+  }
+}
+
 function selectTip(i) {
   if (!S.tipData || !S.tipData.tips[i]) return;
-  document.querySelectorAll('#t5area .sc').forEach(function(c){ c.classList.remove('on'); });
+  document.querySelectorAll('#t5area .sc, #t5benefitArea .sc').forEach(function(c){ c.classList.remove('on'); });
   document.getElementById('tip'+i).classList.add('on');
   S.tip = S.tipData.tips[i];
+  setBtn('next4', false);
+  saveState();
+}
+
+/* ══════════════════════════════════════
+   혜택형 직접 입력 — PDF 핸들러
+══════════════════════════════════════ */
+var _benefitPdfBase64 = '';
+var _benefitPdfName   = '';
+
+function handleBenefitPdf(input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) {
+    alert('PDF 파일 크기는 10MB 이하여야 합니다.');
+    input.value = '';
+    return;
+  }
+  _benefitPdfName = file.name;
+  document.getElementById('t5pdfName').textContent = file.name;
+  document.getElementById('t5pdfClear').style.display = 'inline-block';
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var dataUrl = e.target.result || '';
+    // "data:application/pdf;base64,xxxx" → "xxxx"
+    _benefitPdfBase64 = dataUrl.split(',')[1] || '';
+    console.log('[benefit-pdf] loaded, size:', _benefitPdfBase64.length);
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearBenefitPdf() {
+  _benefitPdfBase64 = '';
+  _benefitPdfName   = '';
+  var input = document.getElementById('t5benefitPdf');
+  if (input) input.value = '';
+  document.getElementById('t5pdfName').textContent = '선택된 파일 없음';
+  document.getElementById('t5pdfClear').style.display = 'none';
+}
+
+function resetBenefitInput() {
+  document.getElementById('t5benefitUrl').value   = '';
+  document.getElementById('t5benefitPaste').value = '';
+  clearBenefitPdf();
+  S.benefitTip = null;
+  document.getElementById('t5benefitArea').innerHTML = '';
+  /* 선택된 꿀팁이 benefitTip이면 해제 */
+  if (S.tip && S.tip.is_user_provided) {
+    S.tip = null;
+    setBtn('next4', true);
+  }
+  saveState();
+}
+
+/* ── 혜택형 꿀팁 만들기 ── */
+async function callExtractBenefit() {
+  var url   = (document.getElementById('t5benefitUrl').value   || '').trim();
+  var paste = (document.getElementById('t5benefitPaste').value || '').trim();
+  var pdf   = _benefitPdfBase64;
+  var pdfName = _benefitPdfName;
+
+  if (!url && !paste && !pdf) {
+    alert('공식 URL, PDF 파일, 또는 공고 내용 붙여넣기 중 하나를 입력해주세요.');
+    return;
+  }
+
+  var btn = document.getElementById('btn-extract-benefit');
+  btn.disabled = true; btn.textContent = '분석 중…';
+  document.getElementById('t5benefitArea').innerHTML = loading();
+
+  try {
+    var res = await fetch('/api/extract-benefit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        officialUrl: url,
+        pastedText:  paste,
+        fileBase64:  pdf,
+        fileName:    pdfName,
+      }),
+    });
+    var data;
+    try { data = await res.json(); } catch(e) { throw new Error('응답 파싱 실패'); }
+
+    if (!data.ok) {
+      document.getElementById('t5benefitArea').innerHTML =
+        '<div style="padding:12px 14px;background:#FFF8F0;border:1px solid #F3C49C;border-radius:var(--radius);font-size:13px;color:#7A4A00">'
+        + '<b>처리 실패</b><br>' + escHtml(data.message || '알 수 없는 오류') + '</div>';
+      return;
+    }
+
+    S.benefitTip = data.tip;
+    saveState();
+    renderBenefitTip();
+  } catch(e) {
+    document.getElementById('t5benefitArea').innerHTML = errBox(e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '꿀팁 만들기';
+  }
+}
+
+/* ── 혜택형 카드 렌더링 ── */
+function renderBenefitTip() {
+  var t = S.benefitTip;
+  if (!t) { document.getElementById('t5benefitArea').innerHTML = ''; return; }
+
+  var isOn = S.tip && S.tip.is_user_provided;
+  var bs = { bg:'var(--tip-benefit-bg)', bd:'var(--tip-benefit-bd)', tx:'var(--tip-benefit-text)', lbl:'혜택' };
+  var cardTitle = t.display_title || t.source_locked_title || t.fetched_title
+    || (t.benefit_facts && t.benefit_facts.support_name) || t.title || '';
+  var hasFetched = !!(t.fetched_title && t.fetched_title.trim());
+  var conf = t.source_confidence || '';
+  var confColor = conf === '높음' ? '#2F8F68' : conf === '보통' ? '#7A5800' : '#C0392B';
+  var confBg    = conf === '높음' ? '#EAF8F1' : conf === '보통' ? '#FFFBEA' : '#FFF1F0';
+  var confBd    = conf === '높음' ? '#7BC7A3' : conf === '보통' ? '#D4A72B' : '#F3A8A3';
+  var hasWarning = !!(t.source_warning && t.source_warning.trim());
+
+  var linkPanel = '';
+  if (t.source_url) {
+    linkPanel = '<div style="margin-top:6px;padding:8px 10px;background:#EAF3FF;border:0.5px solid #9FC7F3;border-radius:var(--radius)">'
+      + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:' + (hasFetched ? '5' : '0') + 'px">'
+      + '<a href="' + escHtml(t.source_url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" '
+      + 'style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:#fff;border:0.5px solid #9FC7F3;color:#2563A8;text-decoration:none">🔗 공고 확인</a>'
+      + (t.source_name ? '<span style="font-size:11px;color:#2563A8;font-weight:600">' + escHtml(t.source_name) + '</span>' : '')
+      + (conf ? '<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;background:' + confBg + ';border:0.5px solid ' + confBd + ';color:' + confColor + '">' + escHtml(conf) + '</span>' : '')
+      + '</div>'
+      + (hasFetched
+        ? '<div style="font-size:11px;color:var(--text2);margin-bottom:3px"><span style="color:var(--text3);font-weight:600">읽은 공고&nbsp;</span>'
+          + escHtml(t.fetched_title)
+          + (t.fetched_date ? ' <span style="color:var(--text3)">(' + escHtml(t.fetched_date) + ')</span>' : '')
+          + '</div>'
+        : '')
+      + '<div style="font-size:10px;color:' + (hasWarning ? '#C96A14' : '#2F8F68') + '">'
+      + (hasWarning ? '⚠ ' + escHtml(t.source_warning) : '✓ 내용 확인 완료 — Tab 6에서 원고를 생성할 수 있습니다')
+      + '</div>'
+      + '</div>';
+  } else {
+    linkPanel = '<div style="margin-top:6px;padding:6px 9px;background:#EAF8F1;border:0.5px solid #7BC7A3;border-radius:var(--radius);font-size:11px;color:#2F8F68">'
+      + '✓ 붙여넣기/PDF 내용 기반 — Tab 6에서 원고를 생성할 수 있습니다</div>';
+  }
+
+  document.getElementById('t5benefitArea').innerHTML =
+    '<div style="margin-bottom:8px;font-size:12px;color:var(--text3);font-weight:600">✅ 꿀팁 생성 완료 — 아래 카드를 클릭해 선택하세요</div>'
+    + '<div class="sel-grid">'
+    + '<div class="sc' + (isOn ? ' on' : '') + '" id="benefitTipCard" onclick="selectBenefitTip()">'
+    /* 배지: [직접] 하나만 표시 */
+    + '<div style="margin-bottom:6px">'
+    + '<span style="display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;background:var(--tip-benefit-bg);border:0.5px solid var(--tip-benefit-bd);color:var(--tip-benefit-text)">직접</span>'
+    + '</div>'
+    + '<div class="sc-t">' + escHtml(cardTitle) + '</div>'
+    /* 혜택 요약 박스 제거 — 직접 입력 카드는 항목 정보로만 구성 */
+    + (t.background ? '<div class="sc-meta" style="margin-top:6px"><span class="sc-mi"><b>왜 지금</b> ' + escHtml(t.background) + '</span></div>' : '')
+    + (t.target ? '<div class="sc-meta"><span class="sc-mi"><b>이런 사장님</b> ' + escHtml(t.target) + '</span></div>' : '')
+    + (t.check_now ? '<div class="sc-meta"><span class="sc-mi"><b>지금 확인할 것</b> ' + escHtml(t.check_now) + '</span></div>' : '')
+    + (t.caution ? '<div class="sc-meta"><span class="sc-mi" style="color:var(--text3)"><b>주의</b> ' + escHtml(t.caution) + '</span></div>' : '')
+    + linkPanel
+    + '<div class="ck">✓</div></div>'
+    + '</div>';
+}
+
+function selectBenefitTip() {
+  if (!S.benefitTip) return;
+  document.querySelectorAll('#t5area .sc, #t5benefitArea .sc').forEach(function(c){ c.classList.remove('on'); });
+  var card = document.getElementById('benefitTipCard');
+  if (card) card.classList.add('on');
+  S.tip = S.benefitTip;
   setBtn('next4', false);
   saveState();
 }
@@ -1488,16 +1897,49 @@ function selectTip(i) {
 ══════════════════════════════════════ */
 async function callTipDraft() {
   if (!S.tip) { alert('탭 5에서 꿀팁을 먼저 선택해주세요'); return; }
+  /* ── 디버그: 선택된 꿀팁 확인 ── */
+  console.log('[tip-draft] selectedTip:', JSON.parse(JSON.stringify(S.tip)));
+
+  /* ── 혜택형 + 공식 내용 없음 → 원고 생성 차단 (사용자 제공 혜택형은 통과) ── */
+  if (S.tip.type === '혜택형' && !S.tip.is_user_provided
+      && !S.tip.benefit_facts && !S.tip.source_url) {
+    document.getElementById('t6area').innerHTML =
+      '<div style="padding:18px 20px;background:#FFF8F0;border:1px solid #F3C49C;border-radius:var(--radius);font-size:13px;line-height:1.7;color:#7A4A00">'
+      + '<div style="font-weight:700;font-size:14px;margin-bottom:8px">📋 공고 내용이 필요합니다</div>'
+      + '<p style="margin:0 0 10px">Tab 5 아래쪽 혜택형 직접 입력 섹션에서 공식 공고 URL, PDF, 또는 내용을 붙여넣은 뒤 [혜택형 꿀팁 만들기]를 눌러주세요.</p>'
+      + '</div>';
+    return;
+  }
+
   document.getElementById('t6area').innerHTML = loading();
   setBtn('next5', true);
   try {
+    /* ── 디버그: 선택된 꿀팁 + 공식 공고 데이터 확인 ── */
+    console.log('[tip-draft] selected tip with fetched data:', S.tip);
+
     var result = await callBackend('tip_draft', {
-      subjectTitle: S.subject ? S.subject.title : '',
-      tipType:      S.tip.type,
-      tipTitle:     S.tip.title,
-      tipDirection: S.tip.direction || '',
-      tipCaution:   S.tip.caution  || '',
-      storyText:    S.story ? S.story.text : '',
+      /* ★ 선택 꿀팁 — AI 생성 원본 데이터 (공식 공고 데이터가 있으면 서버에서 무시됨) */
+      tipType:        S.tip.type       || '',
+      tipTitle:       S.tip.title      || '',
+      tipBackground:  S.tip.background || '',
+      tipTarget:      S.tip.target     || '',
+      tipBenefit:     S.tip.benefit    || '',
+      tipCheckNow:    S.tip.check_now  || '',
+      tipCaution:     S.tip.caution    || '',
+      tipNewAngle:    S.tip.new_angle  || '',
+      tipSourceUrl:   S.tip.source_url  || '',
+      tipSourceName:  S.tip.source_name || '',
+      /* aiGeneratedTitle: 공식 공고와 다를 경우 서버에서 금지어로 등록 */
+      aiGeneratedTitle: S.tip.title || '',
+      /* ★ 공식 공고 fetch 데이터 — 혜택형 원고의 1순위 근거 */
+      fetchedTitle:        S.tip.fetched_title        || '',
+      fetchedDate:         S.tip.fetched_date         || '',
+      fetchedBodySummary:  S.tip.fetched_body_summary || '',
+      benefitFacts:        S.tip.benefit_facts        || null,
+      sourceWarning:       S.tip.source_warning       || '',
+      /* ★ 참고용 컨텍스트 (원고 주제 변경 금지) */
+      subjectTitle:  S.subject ? S.subject.title : '',
+      storyText:     S.story ? S.story.text : '',
     });
     S.tipDraft = result;
     renderTipDraft(result);
@@ -1511,11 +1953,12 @@ async function callTipDraft() {
 
 function renderTipDraft(r) {
   if (!r) return;
-  var fullText = '【 꿀팁 】 ' + (r.headline||'') + '\n\n'
+  var fullText = '🍯밀당 꿀팁🐝\n\n'
+    + (r.headline||'') + '\n\n'
     + (r.intro||'') + '\n\n'
     + (r.body||'') + '\n\n'
-    + (r.cta||'') + '\n\n'
-    + '💡 ' + (r.summary||'');
+    + (r.cta||'')
+    + (r.summary ? '\n\n💡 ' + r.summary : '');
   document.getElementById('t6area').innerHTML = '<div class="draft-box">'
     + '<div class="draft-box-hd">'
     + '<span class="draft-box-lbl">꿀팁 완성 원고</span>'
@@ -1534,11 +1977,13 @@ async function callQuiz() {
   setBtn('next6', true);
   try {
     var result = await callBackend('quiz', {
-      subjectTitle: S.subject ? S.subject.title : '',
-      storyText:    S.story ? S.story.text : '',
-      tipTitle:     S.tip   ? S.tip.title  : '',
-      format:       S.quizFormat,
-      difficulty:   S.quizDiff,
+      subjectTitle:     S.subject ? S.subject.title : '',
+      storyText:        S.story ? S.story.text : '',
+      tipTitle:         S.tip   ? (S.tip.display_title || S.tip.title) : '',
+      tipType:          S.tip   ? S.tip.type : '',
+      tipIsUserProvided: !!(S.tip && S.tip.is_user_provided),
+      format:           S.quizFormat,
+      difficulty:       S.quizDiff,
     });
     S.quizData = result;
     renderQuiz(result);
@@ -1553,240 +1998,251 @@ async function callQuiz() {
 function renderQuiz(r) {
   if (!r) return;
   var isOX = !Array.isArray(r.options);
-  var answerStr = isOX ? String(r.answer) : ((r.answer+1) + '번 ' + (Array.isArray(r.options) ? r.options[r.answer] : ''));
+  var answerIdx = isOX ? -1 : (typeof r.answer === 'number' ? r.answer : 0);
+  var answerLabel = isOX
+    ? String(r.answer || '').toUpperCase()
+    : (answerIdx + 1) + '번 ' + (Array.isArray(r.options) && r.options[answerIdx] ? r.options[answerIdx] : '');
 
+  /* ── 복사용 전문 텍스트 ── */
   var fullText = '【 세무내공 +1 퀴즈 】\n\n'
-    + (r.quiz_title||'') + '\n\n'
-    + 'Q. ' + (r.question||'') + '\n'
-    + (isOX ? 'O 또는 X로 답하세요\n' : (Array.isArray(r.options) ? r.options.map(function(o,i){ return (i+1)+'. '+o; }).join('\n') + '\n' : ''))
-    + '\n정답: ' + answerStr + '\n\n'
-    + '해설: ' + (r.explanation||'') + '\n\n'
-    + '💡 ' + (r.key_point||'');
+    + (r.quiz_title || '') + '\n\n'
+    + 'Q. ' + (r.question || '') + '\n'
+    + (isOX
+        ? 'O 또는 X로 답하세요\n'
+        : (Array.isArray(r.options) ? r.options.map(function(o, i){ return (i+1) + '. ' + o; }).join('\n') + '\n' : ''))
+    + '\n정답: ' + answerLabel + '\n\n'
+    + '해설: ' + (r.explanation || '') + '\n\n'
+    + '💡 ' + (r.key_point || '');
 
+  /* ── 선택지 HTML ── */
   var optsHtml = '';
   if (isOX) {
+    var correctOX = String(r.answer || '').toUpperCase();
     optsHtml = '<div style="display:flex;gap:8px;margin:10px 0">'
-      + '<button class="btn-sm" onclick="chkOX(this,\'' + String(r.answer).toUpperCase() + '\',\'O\')">O</button>'
-      + '<button class="btn-sm" onclick="chkOX(this,\'' + String(r.answer).toUpperCase() + '\',\'X\')">X</button>'
+      + '<button class="btn-sm" id="oxBtn_O" onclick="chkOX(\'' + correctOX + '\',\'O\')"'
+      + (correctOX === 'O' ? ' style="border-color:var(--teal-bd);background:var(--teal-bg)"' : '')
+      + '>O</button>'
+      + '<button class="btn-sm" id="oxBtn_X" onclick="chkOX(\'' + correctOX + '\',\'X\')"'
+      + (correctOX === 'X' ? ' style="border-color:var(--teal-bd);background:var(--teal-bg)"' : '')
+      + '>X</button>'
       + '</div>';
   } else if (Array.isArray(r.options)) {
     optsHtml = '<div class="quiz-opt">'
-      + r.options.map(function(o,i) {
-          return '<button class="btn-sm" style="text-align:left;padding:7px 10px;width:100%" onclick="chkMC('+i+','+r.answer+')">'
-            + (i+1) + '. ' + escHtml(o) + '</button>';
-        }).join('') + '</div>';
+      + r.options.map(function(o, i) {
+          var isCorrect = (i === answerIdx);
+          var style = isCorrect
+            ? 'text-align:left;padding:7px 10px;width:100%;border-color:var(--teal-bd);background:var(--teal-bg)'
+            : 'text-align:left;padding:7px 10px;width:100%';
+          return '<button class="btn-sm" style="' + style + '" onclick="chkMC(' + i + ',' + answerIdx + ')">'
+            + (i + 1) + '. ' + escHtml(o) + '</button>';
+        }).join('')
+      + '</div>';
   }
+
+  /* ── 정답·해설 항상 표시 (display:block) ── */
+  var explanationHtml = '<div style="margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);font-size:12px;color:var(--text2)">'
+    + '<b style="color:var(--text1)">정답: ' + escHtml(answerLabel) + '</b>'
+    + (r.explanation ? '<div style="margin-top:6px">' + escHtml(r.explanation) + '</div>' : '')
+    + '</div>';
+
+  var keyPointHtml = r.key_point
+    ? '<div style="margin-top:10px;font-size:12px;color:var(--teal-text);background:var(--teal-bg);padding:8px 10px;border-radius:var(--radius)">💡 ' + escHtml(r.key_point) + '</div>'
+    : '';
 
   document.getElementById('t7area').innerHTML = '<div class="draft-box">'
     + '<div class="draft-box-hd">'
     + '<span class="draft-box-lbl">세무퀴즈 완성 원고</span>'
     + '<button class="btn-copy" id="t7CopyBtn">복사</button>'
     + '</div>'
-    + '<div style="font-size:13px;font-weight:500;margin-bottom:8px">' + escHtml(r.quiz_title||'') + '</div>'
-    + '<div style="font-size:13px;margin-bottom:8px">Q. ' + escHtml(r.question||'') + '</div>'
+    + '<div style="font-size:13px;font-weight:500;margin-bottom:8px">' + escHtml(r.quiz_title || '') + '</div>'
+    + '<div style="font-size:13px;margin-bottom:8px">Q. ' + escHtml(r.question || '') + '</div>'
     + optsHtml
-    + '<div id="quizResBox" style="display:none;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);font-size:12px;color:var(--text2)">'
-    + '<b>정답: ' + escHtml(answerStr) + '</b><br>' + escHtml(r.explanation||'') + '</div>'
-    + (r.key_point ? '<div style="margin-top:10px;font-size:12px;color:var(--teal-text);background:var(--teal-bg);padding:8px 10px;border-radius:var(--radius)">💡 ' + escHtml(r.key_point) + '</div>' : '')
+    + explanationHtml
+    + keyPointHtml
     + '</div>';
   setupCopyBtn('t7CopyBtn', fullText);
 }
 
-function chkOX(btn, correct, chosen) {
-  document.getElementById('quizResBox').style.display='block';
-  document.getElementById('quizResBox').style.color = chosen===correct ? 'var(--teal-text)' : 'var(--coral-text)';
+function chkOX(correct, chosen) {
+  /* O/X 버튼 색 피드백 (정답은 항상 표시돼 있으므로 색상 강조만) */
+  var btnO = document.getElementById('oxBtn_O');
+  var btnX = document.getElementById('oxBtn_X');
+  if (!btnO || !btnX) return;
+  [btnO, btnX].forEach(function(b) {
+    b.style.borderColor = ''; b.style.background = '';
+  });
+  var clickedBtn = chosen === 'O' ? btnO : btnX;
+  var isRight = chosen === correct;
+  clickedBtn.style.borderColor = isRight ? 'var(--teal-bd)' : 'var(--coral-bd)';
+  clickedBtn.style.background  = isRight ? 'var(--teal-bg)' : 'var(--coral-bg)';
 }
 function chkMC(i, correct) {
   document.querySelectorAll('.quiz-opt button').forEach(function(b, idx) {
-    b.style.borderColor = idx===correct ? 'var(--teal-bd)' : idx===i&&i!==correct ? 'var(--coral-bd)' : '';
-    b.style.background  = idx===correct ? 'var(--teal-bg)' : idx===i&&i!==correct ? 'var(--coral-bg)' : '';
+    b.style.borderColor = idx === correct ? 'var(--teal-bd)' : idx === i && i !== correct ? 'var(--coral-bd)' : '';
+    b.style.background  = idx === correct ? 'var(--teal-bg)' : idx === i && i !== correct ? 'var(--coral-bg)' : '';
   });
-  document.getElementById('quizResBox').style.display='block';
 }
 
 /* ══════════════════════════════════════
-   TAB 8 — 뉴스 입력
+   TAB 8 — 뉴스 브리핑
 ══════════════════════════════════════ */
-function initNewsInputs() {
-  S.newsInputs = [emptyNewsItem()];
-  S.selNewsIdx = [];
-  renderNewsInputsFromState();
-  renderNewsSelectArea();
+
+/** 카드 데이터 → 복사용 완성 텍스트 */
+function formatNewsBriefingText(card) {
+  var lines = [
+    '📰 뉴스 한입 브리핑',
+    '',
+    card.briefing_title || card.original_title || '',
+    '',
+    card.briefing_text || '',
+  ];
+  if (Array.isArray(card.keywords) && card.keywords.length) {
+    lines.push('');
+    lines.push('주요 키워드:');
+    lines.push(card.keywords.map(function(k){ return '#' + k; }).join(' '));
+  }
+  lines.push('');
+  lines.push('원문:');
+  var sourceTitle = [card.source, card.original_title].filter(Boolean).join(' ');
+  if (sourceTitle) lines.push(sourceTitle);
+  if (card.url)    lines.push(card.url);
+  return lines.join('\n');
 }
 
-function emptyNewsItem() {
-  return { title:'', date:'', source:'', link:'', summary:'' };
+async function callFetchNews() {
+  var urlInput  = document.getElementById('newsUrlInput');
+  var memoInput = document.getElementById('newsMemoInput');
+  var url  = urlInput  ? urlInput.value.trim()  : '';
+  var memo = memoInput ? memoInput.value.trim() : '';
+
+  if (!url) { alert('뉴스 링크를 입력해주세요'); return; }
+  if (S.newsCandidates.length >= 5) { alert('최대 5개까지 추가할 수 있습니다'); return; }
+
+  setFetchNewsLoading(true);
+  try {
+    var res = await fetch('/api/fetch-news', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url, memo: memo }),
+    });
+    var data = await res.json();
+
+    if (!data.ok) {
+      /* 기사 읽기 실패 + 메모 없음: 안내 표시 */
+      alert(data.error || '기사 내용을 자동으로 읽지 못했습니다.\n메모칸에 기사 본문이나 핵심 내용을 붙여넣으면 브리핑 원고를 만들 수 있습니다.');
+      return;
+    }
+
+    data.id   = Date.now() + '_' + Math.floor(Math.random() * 10000);
+    data.memo = memo;
+    S.newsCandidates.push(data);
+    clearNewsInput();
+    renderNewsBriefingList();
+    setBtn('next7', false);
+    saveState();
+  } catch(e) {
+    alert('오류: ' + e.message);
+  } finally {
+    setFetchNewsLoading(false);
+  }
 }
 
-function renderNewsInputsFromState() {
-  var list = document.getElementById('newsInputList');
+function clearNewsInput() {
+  var urlInput  = document.getElementById('newsUrlInput');
+  var memoInput = document.getElementById('newsMemoInput');
+  if (urlInput)  urlInput.value  = '';
+  if (memoInput) memoInput.value = '';
+}
+
+function setFetchNewsLoading(on) {
+  var btn = document.getElementById('btnFetchNews');
+  if (!btn) return;
+  btn.disabled    = on;
+  btn.textContent = on ? '읽는 중...' : '뉴스 브리핑 원고 만들기';
+}
+
+function renderNewsBriefingList() {
+  var list    = document.getElementById('newsBriefingList');
+  var section = document.getElementById('newsBriefingSection');
   if (!list) return;
-  if (!S.newsInputs || S.newsInputs.length === 0) S.newsInputs = [emptyNewsItem()];
-  list.innerHTML = S.newsInputs.map(function(n, i) {
-    return '<div class="news-input-card" id="nic'+i+'">'
-      + '<div class="news-input-card-hd">'
-      + '<span class="news-input-card-num">뉴스 ' + (i+1) + '</span>'
-      + (S.newsInputs.length > 1 ? '<button class="btn-sm" onclick="removeNewsInput('+i+')">삭제</button>' : '')
-      + '</div>'
-      + '<div class="fg2">'
-      + '<div><div class="fl">뉴스 제목</div><input class="fi" value="'+escHtml(n.title)+'" oninput="setNewsField('+i+',\'title\',this.value)" placeholder="예: 소상공인 전기요금 특별지원 시작"></div>'
-      + '<div><div class="fl">발행일</div><input class="fi" value="'+escHtml(n.date)+'" oninput="setNewsField('+i+',\'date\',this.value)" placeholder="예: 2026.04.22"></div>'
-      + '</div>'
-      + '<div class="fg2">'
-      + '<div><div class="fl">출처/언론사</div><input class="fi" value="'+escHtml(n.source)+'" oninput="setNewsField('+i+',\'source\',this.value)" placeholder="예: 뉴시스"></div>'
-      + '<div><div class="fl">원문 링크</div><input class="fi" value="'+escHtml(n.link)+'" oninput="setNewsField('+i+',\'link\',this.value)" placeholder="https://..."></div>'
-      + '</div>'
-      + '<div><div class="fl">기사 요약 또는 메모</div>'
-      + '<textarea class="fi" rows="2" oninput="setNewsField('+i+',\'summary\',this.value)" placeholder="기사 핵심 내용을 간단히 메모해 주세요">'+escHtml(n.summary)+'</textarea>'
-      + '</div>'
-      + '</div>';
-  }).join('');
 
-  var btnAdd = document.getElementById('btnAddNews');
-  if (btnAdd) btnAdd.style.display = S.newsInputs.length >= 5 ? 'none' : '';
-}
-
-function setNewsField(idx, field, val) {
-  if (!S.newsInputs[idx]) return;
-  S.newsInputs[idx][field] = val;
-  refreshNewsSelectArea();
-  saveState();
-}
-
-function addNewsInput() {
-  if (S.newsInputs.length >= 5) return;
-  S.newsInputs.push(emptyNewsItem());
-  renderNewsInputsFromState();
-  refreshNewsSelectArea();
-  saveState();
-}
-
-function removeNewsInput(i) {
-  S.newsInputs.splice(i, 1);
-  S.selNewsIdx = S.selNewsIdx.filter(function(idx){ return idx !== i; }).map(function(idx){ return idx > i ? idx-1 : idx; });
-  renderNewsInputsFromState();
-  renderNewsSelectArea();
-  saveState();
-}
-
-function refreshNewsSelectArea() {
-  /* 제목이 있는 항목만 선택 카드에 표시 */
-  var hasAny = S.newsInputs.some(function(n){ return n.title.trim(); });
-  if (hasAny) renderNewsSelectArea();
-}
-
-function renderNewsSelectArea() {
-  var area = document.getElementById('newsSelectArea');
-  if (!area) return;
-  var valid = S.newsInputs.map(function(n,i){ return {n:n,i:i}; }).filter(function(x){ return x.n.title.trim(); });
-  if (!valid.length) {
-    area.innerHTML = '<div class="skel"><p>제목이 있는 뉴스가 선택 카드에 표시됩니다</p></div>';
+  if (!S.newsCandidates || !S.newsCandidates.length) {
+    list.innerHTML = '';
+    if (section) section.style.display = 'none';
     setBtn('next7', true);
     return;
   }
-  area.innerHTML = '<div class="sel-grid">'
-    + valid.map(function(x) {
-        var i = x.i; var n = x.n;
-        var isOn = S.selNewsIdx.indexOf(i) !== -1;
-        var daysOld = getDaysOld(n.date);
-        var warn = daysOld !== null && daysOld > 3 ? '<span class="tag ta" style="font-size:10px">⚠ ' + daysOld + '일 전 기사</span>' : '';
-        return '<div class="sc'+(isOn?' on':'')+'" id="nsc'+i+'" onclick="toggleNewsSelect('+i+')">'
-          + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">'
-          + '<div style="flex:1">'
-          + '<div style="font-size:13px;font-weight:500;margin-bottom:3px">' + escHtml(n.title) + '</div>'
-          + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:5px">'
-          + '<span style="font-size:11px;color:var(--text3)">' + escHtml(n.date||'날짜 없음') + '</span>'
-          + (n.source ? '<span style="font-size:11px;color:var(--text3)">· ' + escHtml(n.source) + '</span>' : '')
-          + warn
-          + '</div>'
-          + (n.link ? '<div style="font-size:11px;color:var(--blue-text);margin-bottom:4px;word-break:break-all">' + escHtml(n.link) + '</div>' : '<div style="font-size:11px;color:var(--coral-text);margin-bottom:4px">링크 없음</div>')
-          + (n.summary ? '<div style="font-size:12px;color:var(--text2)">' + escHtml(n.summary) + '</div>' : '')
-          + '</div><div class="ck">✓</div></div></div>';
-      }).join('') + '</div>';
+
+  if (section) section.style.display = '';
+
+  list.innerHTML = S.newsCandidates.map(function(card, i) {
+    /* 읽기 상태 배지 */
+    var badgeHtml = card.read_status === 'memo_only'
+      ? '<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:10px;background:var(--amber-bg);color:var(--amber-text)">메모 기반</span>'
+      : card.read_status === 'no_ai'
+      ? '<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:10px;background:var(--gray-bg);color:var(--gray-text)">AI 미설정</span>'
+      : '<span style="font-size:11px;font-weight:500;padding:2px 7px;border-radius:10px;background:var(--teal-bg);color:var(--teal-text)">읽기 완료</span>';
+
+    /* 키워드 */
+    var keywordsHtml = Array.isArray(card.keywords) && card.keywords.length
+      ? '<div style="margin-top:8px;font-size:12px;color:var(--blue-text)">'
+        + card.keywords.map(function(k){ return '<span style="margin-right:6px">#' + escHtml(k) + '</span>'; }).join('')
+        + '</div>'
+      : '';
+
+    /* 원문 정보 */
+    var sourceHtml = '<div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);font-size:11px;color:var(--text3);line-height:1.7">'
+      + (card.source ? escHtml(card.source) + ' ' : '')
+      + (card.published_at ? '· ' + escHtml(card.published_at) + '<br>' : '<br>')
+      + (card.original_title ? escHtml(card.original_title) + '<br>' : '')
+      + (card.url ? '<a href="' + escHtml(card.url) + '" target="_blank" rel="noopener" style="color:var(--blue-text);word-break:break-all">' + escHtml(card.url) + '</a>' : '')
+      + '</div>';
+
+    var fullText = formatNewsBriefingText(card);
+
+    return '<div class="draft-box" style="margin-bottom:12px" id="nbc_' + i + '">'
+      + '<div class="draft-box-hd">'
+      + '<div style="display:flex;align-items:center;gap:6px">' + badgeHtml + '</div>'
+      + '<div style="display:flex;gap:6px">'
+      + '<button class="btn-copy" id="nbcCopy_' + i + '">복사</button>'
+      + '<button class="btn-sm" onclick="deleteNewsBriefingCard(' + i + ')" style="font-size:11px">삭제</button>'
+      + '</div>'
+      + '</div>'
+      + '<div style="white-space:pre-wrap;font-size:13px;line-height:1.7;color:var(--text);padding-top:6px">'
+      + escHtml(
+          '📰 뉴스 한입 브리핑\n\n'
+          + (card.briefing_title || card.original_title || '') + '\n\n'
+          + (card.briefing_text || '')
+        )
+      + '</div>'
+      + keywordsHtml
+      + sourceHtml
+      + '</div>';
+  }).join('');
+
+  /* 복사 버튼 이벤트 연결 */
+  S.newsCandidates.forEach(function(card, i) {
+    var btn = document.getElementById('nbcCopy_' + i);
+    if (btn) btn.addEventListener('click', function() {
+      copyText(formatNewsBriefingText(card), this);
+    });
+  });
 }
 
-function getDaysOld(dateStr) {
-  if (!dateStr) return null;
-  var clean = dateStr.replace(/\./g, '-').replace(/\s/g,'');
-  var d = new Date(clean);
-  if (isNaN(d.getTime())) return null;
-  return Math.floor((Date.now() - d.getTime()) / 86400000);
-}
-
-function toggleNewsSelect(i) {
-  var idx = S.selNewsIdx.indexOf(i);
-  var el  = document.getElementById('nsc'+i);
-  if (idx > -1) {
-    S.selNewsIdx.splice(idx,1);
-    if (el) el.classList.remove('on');
-  } else {
-    if (S.selNewsIdx.length >= 2) { alert('최대 2개 선택 가능합니다'); return; }
-    S.selNewsIdx.push(i);
-    if (el) el.classList.add('on');
-  }
-  setBtn('next7', S.selNewsIdx.length === 0);
+function deleteNewsBriefingCard(i) {
+  S.newsCandidates.splice(i, 1);
+  renderNewsBriefingList();
+  setBtn('next7', S.newsCandidates.length === 0);
   saveState();
 }
 
 /* ══════════════════════════════════════
-   TAB 9 — 뉴스 원고
-══════════════════════════════════════ */
-async function callNewsDraft() {
-  if (!S.selNewsIdx.length) { alert('탭 8에서 뉴스를 먼저 선택해주세요'); return; }
-  var selectedNews = S.selNewsIdx.map(function(i){ return S.newsInputs[i]; }).filter(Boolean);
-  document.getElementById('t9area').innerHTML = loading();
-  setBtn('next8', true);
-  try {
-    var result = await callBackend('news_draft', {
-      subjectTitle: S.subject ? S.subject.title : '',
-      selectedNews: selectedNews,
-    });
-    S.newsDraft = result;
-    renderNewsDraft(result);
-    showRegenBtn('news-draft');
-    setBtn('next8', false);
-    saveState();
-  } catch(e) {
-    document.getElementById('t9area').innerHTML = errBox(e.message);
-  }
-}
-
-function renderNewsDraft(r) {
-  if (!r || !Array.isArray(r.briefing)) return;
-  var fullParts = r.briefing.map(function(b, i) {
-    return '【 뉴스 ' + (i+1) + ' 】 ' + (b.headline||'') + '\n'
-      + (b.date_label||'') + (b.source ? '  · ' + b.source : '') + '\n'
-      + (b.link ? b.link + '\n' : '')
-      + '\n' + (b.body||'') + '\n\n'
-      + '💡 ' + (b.ceo_point||'');
-  });
-  var fullText = fullParts.join('\n\n━━━━━━\n\n');
-
-  document.getElementById('t9area').innerHTML = '<div class="draft-box">'
-    + '<div class="draft-box-hd">'
-    + '<span class="draft-box-lbl">뉴스 한입 브리핑 완성 원고</span>'
-    + '<button class="btn-copy" id="t9CopyBtn">복사</button>'
-    + '</div>'
-    + r.briefing.map(function(b, i) {
-        return '<div style="margin-bottom:1.25rem'+(i>0?';padding-top:1.25rem;border-top:0.5px solid var(--border)':'')+'">'
-          + '<div style="font-size:13px;font-weight:500;margin-bottom:4px">' + escHtml(b.headline||'') + '</div>'
-          + '<div style="font-size:11px;color:var(--text3);margin-bottom:6px">'
-          + escHtml(b.date_label||'') + (b.source ? '  · ' + escHtml(b.source) : '')
-          + (b.link ? '  <a href="'+escHtml(b.link)+'" target="_blank" style="color:var(--blue-text)">원문 링크</a>' : '  <span style="color:var(--coral-text)">링크 없음</span>')
-          + '</div>'
-          + '<div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:6px">' + escHtml(b.body||'') + '</div>'
-          + '<div style="font-size:12px;color:var(--teal-text);background:var(--teal-bg);padding:6px 10px;border-radius:var(--radius)">💡 ' + escHtml(b.ceo_point||'') + '</div>'
-          + '</div>';
-      }).join('')
-    + '</div>';
-  setupCopyBtn('t9CopyBtn', fullText);
-}
-
-/* ══════════════════════════════════════
-   TAB 10 — 오프닝
+   TAB 9 — 오프닝
 ══════════════════════════════════════ */
 function getNewsTitles() {
-  return S.selNewsIdx.map(function(i){ return (S.newsInputs[i]||{}).title||''; }).filter(Boolean);
+  return (S.newsCandidates || []).map(function(card) {
+    return card.briefing_title || card.original_title || '';
+  }).filter(Boolean);
 }
 
 async function callOpening() {
@@ -1820,13 +2276,12 @@ function renderOpenings() {
     + data.openings.map(function(o, i) {
         var isOn = S.opening && S.opening.tone === o.tone;
         return '<div class="sc'+(isOn?' on':'')+'" id="opn'+i+'" onclick="selectOpening('+i+')">'
-          + '<div style="margin-bottom:6px;display:flex;gap:6px;flex-wrap:wrap">'
+          + '<div style="margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap">'
           + '<span class="tag tg">' + escHtml(o.tone||'') + '</span>'
           + '</div>'
-          + '<div class="sc-b" style="margin-bottom:6px;font-style:italic">"' + escHtml(o.preview||'') + '"</div>'
-          + '<div class="sc-b">' + escHtml(o.text||'') + '</div>'
-          + '<div class="sc-meta"><span class="sc-mi"><b>이번 주제와 맞는 이유</b> ' + escHtml(o.reason||'') + '</span></div>'
-          + '<div class="sc-meta"><span class="sc-mi"><b>예상 독자 반응</b> ' + escHtml(o.reader_reaction||'') + '</span></div>'
+          + '<div class="sc-b" style="margin-bottom:10px;font-size:13px;line-height:1.7;white-space:pre-wrap">' + escHtml(o.text||'') + '</div>'
+          + (o.reason ? '<div class="sc-meta" style="margin-bottom:3px"><span class="sc-mi"><b>메모</b> ' + escHtml(o.reason) + '</span></div>' : '')
+          + (o.reader_reaction ? '<div class="sc-meta"><span class="sc-mi"><b>예상 반응</b> ' + escHtml(o.reader_reaction) + '</span></div>' : '')
           + '<div class="ck">✓</div></div>';
       }).join('') + '</div>';
 }
@@ -1870,7 +2325,7 @@ function renderOpeningDraft(r) {
     + '<span class="draft-box-lbl">오프닝 완성 원고</span>'
     + '<button class="btn-copy" id="t10CopyBtn">복사</button>'
     + '</div>'
-    + '<div class="draft-body">' + escHtml(r.full_text) + '</div>'
+    + '<div class="draft-body" style="white-space:pre-wrap">' + escHtml(r.full_text) + '</div>'
     + '</div>';
   setupCopyBtn('t10CopyBtn', r.full_text);
 }
@@ -1879,19 +2334,22 @@ function renderOpeningDraft(r) {
    TAB 11 — 리마인드
 ══════════════════════════════════════ */
 async function callRemind() {
-  S.remind = null; S.remindDraft = null;
+  S.remind = null;
   document.getElementById('t11area').innerHTML = loading();
-  document.getElementById('t11draft').style.display = 'none';
   setBtn('next10', true);
   try {
     var result = await callBackend('remind', {
-      subjectTitle: S.subject ? S.subject.title : '',
-      tipTitle:     S.tip     ? S.tip.title     : '',
-      ctr:          S.ctr,
+      subjectTitle:   S.subject ? S.subject.title : '',
+      tipTitle:       S.tip     ? S.tip.title     : '',
+      storyText:      S.story   ? (S.story.situation || '').slice(0, 60) : '',
+      openingPreview: S.opening ? (S.opening.text  || '').slice(0, 60) : '',
+      newsTitles:     Array.isArray(S.newsCandidates) ? S.newsCandidates.map(function(c){ return c.briefing_title || c.original_title || ''; }).filter(Boolean) : [],
+      ctr:            S.ctr,
     });
     S.remindData = result;
     renderReminds();
     showRegenBtn('remind');
+    setBtn('next10', false);
     saveState();
   } catch(e) {
     document.getElementById('t11area').innerHTML = errBox(e.message);
@@ -1907,10 +2365,23 @@ function renderReminds() {
     + data.reminds.map(function(r, i) {
         var isOn = S.remind && S.remind.type === r.type;
         return '<div class="sc'+(isOn?' on':'')+'" id="rmd'+i+'" onclick="selectRemind('+i+')">'
-          + '<div style="margin-bottom:6px"><span class="tag ta">' + escHtml(r.type||'') + '</span></div>'
-          + '<div class="sc-b">' + escHtml(r.text||'') + '</div>'
-          + '<div class="ck">✓</div></div>';
+          + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+          +   '<span class="tag ta">' + escHtml(r.type||'') + '</span>'
+          +   '<button class="btn-copy" id="rmd-copy'+i+'" onclick="event.stopPropagation();copyRemindCard('+i+',this)">복사</button>'
+          + '</div>'
+          + '<div class="sc-b" style="font-size:14px;font-weight:600;line-height:1.7;white-space:pre-wrap">' + escHtml(r.text||'') + '</div>'
+          + (r.click_point ? '<div class="sc-meta" style="margin-top:6px"><b>선택 포인트</b> ' + escHtml(r.click_point) + '</div>' : '')
+          + '</div>';
       }).join('') + '</div>';
+}
+
+function copyRemindCard(i, btn) {
+  var r = S.remindData && S.remindData.reminds[i];
+  if (!r) return;
+  navigator.clipboard.writeText(r.text).then(function() {
+    btn.textContent = '복사됨';
+    setTimeout(function(){ btn.textContent = '복사'; }, 1300);
+  });
 }
 
 function selectRemind(i) {
@@ -1918,41 +2389,7 @@ function selectRemind(i) {
   document.querySelectorAll('#t11area .sc').forEach(function(c){ c.classList.remove('on'); });
   document.getElementById('rmd'+i).classList.add('on');
   S.remind = S.remindData.reminds[i];
-  document.getElementById('t11draft').style.display = 'block';
   saveState();
-}
-
-async function callRemindDraft() {
-  if (!S.remind) { alert('리마인드 후보를 먼저 선택해주세요'); return; }
-  document.getElementById('t11draftArea').innerHTML = loading();
-  setBtn('next10', true);
-  try {
-    var result = await callBackend('remind_draft', {
-      subjectTitle: S.subject ? S.subject.title : '',
-      remindType:   S.remind.type,
-      remindText:   S.remind.text,
-      tipTitle:     S.tip ? S.tip.title : '',
-    });
-    S.remindDraft = result;
-    renderRemindDraft(result);
-    showRegenBtn('remind-draft');
-    setBtn('next10', false);
-    saveState();
-  } catch(e) {
-    document.getElementById('t11draftArea').innerHTML = errBox(e.message);
-  }
-}
-
-function renderRemindDraft(r) {
-  if (!r || !r.full_text) return;
-  document.getElementById('t11draftArea').innerHTML = '<div class="draft-box">'
-    + '<div class="draft-box-hd">'
-    + '<span class="draft-box-lbl">리마인드 완성 원고</span>'
-    + '<button class="btn-copy" id="t11CopyBtn">복사</button>'
-    + '</div>'
-    + '<div class="draft-body">' + escHtml(r.full_text) + '</div>'
-    + '</div>';
-  setupCopyBtn('t11CopyBtn', r.full_text);
 }
 
 /* ══════════════════════════════════════
@@ -1961,21 +2398,22 @@ function renderRemindDraft(r) {
 async function callTitles() {
   S.title = null;
   document.getElementById('t12area').innerHTML = loading();
-  document.getElementById('t12selected').style.display = 'none';
   setBtn('next11', true);
   try {
     var result = await callBackend('titles', {
       subjectTitle:    S.subject ? S.subject.title : '',
       tipTitle:        S.tip     ? S.tip.title     : '',
-      openingPreview:  S.opening ? S.opening.preview : '',
+      storyText:       S.story   ? (S.story.situation || '').slice(0, 80) : '',
+      newsTitles:      Array.isArray(S.newsCandidates) ? S.newsCandidates.map(function(c){ return c.briefing_title || c.original_title || ''; }).filter(Boolean) : [],
+      openingPreview:  S.opening ? (S.opening.text  || '').slice(0, 60) : '',
       ctr:             S.ctr,
       prevTitle:       S.prevTitle || (S.analysis ? S.analysis.title : ''),
       prevTopic:       S.analysis  ? S.analysis.topic : '',
-      recType:         S.recType,
     });
     S.titleData = result;
     renderTitles();
     showRegenBtn('titles');
+    setBtn('next11', false);
     saveState();
   } catch(e) {
     document.getElementById('t12area').innerHTML = errBox(e.message);
@@ -1996,7 +2434,11 @@ function renderTitles() {
         return '<div class="sc'+(isOn?' on':'')+'" id="ttl'+i+'" onclick="selectTitle('+i+')">'
           + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px">'
           + '<div class="sc-t">' + escHtml(t.title||'') + '</div>'
-          + '<div style="display:flex;gap:4px;flex-shrink:0">' + lenWarn + '<span class="tag '+sc+'">추천 '+escHtml(t.score||'')+'</span></div>'
+          + '<div style="display:flex;gap:4px;flex-shrink:0;align-items:center">'
+          +   lenWarn
+          +   '<span class="tag '+sc+'">추천 '+escHtml(t.score||'')+'</span>'
+          +   '<button class="btn-copy" onclick="event.stopPropagation();copyTitleCard('+i+',this)">복사</button>'
+          + '</div>'
           + '</div>'
           + '<div class="sc-meta">'
           + '<span class="sc-mi"><b>훅 유형</b> ' + escHtml(t.hook_type||'') + '</span>'
@@ -2004,8 +2446,17 @@ function renderTitles() {
           + '</div><div class="sc-meta">'
           + '<span class="sc-mi"><b>겹치지 않는 이유</b> ' + escHtml(t.novelty_reason||'') + '</span>'
           + '</div>'
-          + '<div class="ck">✓</div></div>';
+          + '</div>';
       }).join('') + '</div>';
+}
+
+function copyTitleCard(i, btn) {
+  var t = S.titleData && S.titleData.titles[i];
+  if (!t) return;
+  navigator.clipboard.writeText(t.title).then(function() {
+    btn.textContent = '복사됨';
+    setTimeout(function(){ btn.textContent = '복사'; }, 1300);
+  });
 }
 
 function selectTitle(i) {
@@ -2013,9 +2464,6 @@ function selectTitle(i) {
   document.querySelectorAll('#t12area .sc').forEach(function(c){ c.classList.remove('on'); });
   document.getElementById('ttl'+i).classList.add('on');
   S.title = S.titleData.titles[i].title;
-  document.getElementById('t12selected').style.display = 'block';
-  document.getElementById('t12finalTitle').textContent = S.title;
-  setBtn('next11', false);
   saveState();
 }
 
@@ -2027,12 +2475,12 @@ function buildFinal() {
     {
       lbl: '① 카카오 플친 제목',
       body: S.title || null,
-      warn: '탭 12에서 제목을 선택해주세요'
+      warn: '탭 11에서 제목을 선택해주세요'
     },
     {
       lbl: '② 오프닝 멘트',
       body: S.openingDraft ? S.openingDraft.full_text : null,
-      warn: '탭 10에서 오프닝 완성 원고를 생성해주세요'
+      warn: '탭 9에서 오프닝 완성 원고를 생성해주세요'
     },
     {
       lbl: '③ 이번주 밀당레터는?',
@@ -2040,18 +2488,13 @@ function buildFinal() {
       warn: '탭 2에서 주제를 선택해주세요'
     },
     {
-      lbl: '④ 뉴스 한입 브리핑',
-      body: (function() {
-        if (!S.newsDraft || !Array.isArray(S.newsDraft.briefing)) return null;
-        return S.newsDraft.briefing.map(function(b, i) {
-          return '【 뉴스 ' + (i+1) + ' 】 ' + (b.headline||'') + '\n'
-            + (b.date_label||'') + (b.source ? '  · ' + b.source : '') + '\n'
-            + (b.link ? b.link + '\n' : '')
-            + '\n' + (b.body||'') + '\n'
-            + '💡 ' + (b.ceo_point||'');
+      lbl: '④ 뉴스 한입 브리핑',      body: (function() {
+        if (!S.newsCandidates || !S.newsCandidates.length) return null;
+        return S.newsCandidates.map(function(card) {
+          return formatNewsBriefingText(card);
         }).join('\n\n━━━━━━\n\n');
       })(),
-      warn: '탭 9에서 뉴스 브리핑 원고를 생성해주세요'
+      warn: '탭 8에서 뉴스 브리핑 원고를 생성해주세요'
     },
     {
       lbl: '⑤ 사연모음 Zip',
@@ -2091,9 +2534,9 @@ function buildFinal() {
       warn: '탭 7에서 세무퀴즈를 생성해주세요'
     },
     {
-      lbl: '⑧ 리마인드 멘트',
-      body: S.remindDraft ? S.remindDraft.full_text : null,
-      warn: '탭 11에서 리마인드 완성 원고를 생성해주세요'
+      lbl: '⑧ 미리보기 문구',
+      body: S.remind ? S.remind.text : null,
+      warn: '탭 10에서 미리보기 문구를 선택해주세요'
     },
   ];
 
@@ -2276,8 +2719,8 @@ function addToArchive() {
     storySummary:     S.storyDraft ? (S.storyDraft.title || '') : '',
     tipSummary:       S.tipDraft   ? (S.tipDraft.headline || '') : '',
     quizSummary:      S.quizData   ? (S.quizData.quiz_title || '') : '',
-    newsSummary:      (S.newsDraft && Array.isArray(S.newsDraft.briefing) && S.newsDraft.briefing.length)
-                        ? S.newsDraft.briefing.map(function(b){ return b.headline || ''; }).join(', ')
+    newsSummary:      Array.isArray(S.newsCandidates) && S.newsCandidates.length
+                        ? S.newsCandidates.map(function(c){ return c.briefing_title || c.original_title || ''; }).join(', ')
                         : '',
     ctr:              S.ctr   || 0,
     share:            S.share || 0,
@@ -2295,6 +2738,15 @@ function deleteArchiveItem(realIdx) {
   S.archive.splice(realIdx, 1);
   saveState();
   renderArchive();
+}
+
+function toggleArchive() {
+  var sec = document.getElementById('archiveSection');
+  var btn = document.getElementById('btn-toggle-archive');
+  if (!sec) return;
+  var isOpen = sec.style.display !== 'none';
+  sec.style.display = isOpen ? 'none' : 'block';
+  btn.textContent = isOpen ? '▶ 과거 회차 아카이브 보기' : '▼ 과거 회차 아카이브 닫기';
 }
 
 function toggleArchiveForm() {
@@ -2334,10 +2786,6 @@ function saveArchiveManual() {
 ══════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', function() {
   restoreState();
-  /* 뉴스 입력이 없으면 빈 카드 1개 초기화 */
-  if (!S.newsInputs || S.newsInputs.length === 0) {
-    initNewsInputs();
-  }
   /* 앱 시작 시 공용 아카이브 자동 병합 (silent — 알림 없음) */
   loadPublicArchive({ silent: true });
 });
