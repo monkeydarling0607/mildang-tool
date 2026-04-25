@@ -208,17 +208,21 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <div><div class="fl">비고</div><input class="fi" id="t1note" placeholder="예: 캐러셀 피드형 전환"></div>
   </div>
 
-  <div class="fl" style="margin-top:4px">직전 회차 제목 직접 입력 <span style="font-weight:400;text-transform:none;color:var(--text3)">(HTML 제목 추출이 어려울 때)</span></div>
-  <input class="fi" id="t1prevTitle" placeholder="예: 사장님, 이 지출 비용처리 못 하면 손해입니다" style="margin-bottom:10px">
-
-  <div class="fl" style="margin-top:8px">스티비 회차 링크로 자동 불러오기 <span style="font-weight:400;text-transform:none;color:var(--text3)">(선택 — HTML 없이 링크만으로 제목·구성 추출)</span></div>
+  <!-- ① 스티비 링크로 자동 불러오기 (필수) -->
+  <div class="fl" style="margin-top:8px">(필수) 스티비 회차 링크로 자동 불러오기</div>
   <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px">
     <input class="fi" id="t1stibeeUrl" placeholder="https://saemmil.stibee.com/p/26/" style="flex:1">
     <button class="btn-main" id="btn-fetch-single" onclick="callFetchSingle()" style="white-space:nowrap;flex-shrink:0">링크로 불러오기</button>
   </div>
   <div id="t1fetchResult"></div>
 
-  <div class="fl" style="margin-top:8px">직전 회차 HTML 붙여넣기 <span style="font-weight:400;text-transform:none;color:var(--text3)">(선택)</span></div>
+  <!-- ② 직전 회차 제목 직접 입력 (선택) -->
+  <div class="fl" style="margin-top:12px">(선택) 직전 회차 제목 직접 입력</div>
+  <div style="font-size:12px;color:var(--text3);margin-bottom:5px">자동 불러오기가 어려운 경우 직접 입력하세요.</div>
+  <input class="fi" id="t1prevTitle" placeholder="예: 사장님, 이 지출 비용처리 못 하면 손해입니다" style="margin-bottom:10px">
+
+  <!-- ③ HTML 붙여넣기 (선택) -->
+  <div class="fl" style="margin-top:4px">(선택) 직전 회차 HTML 붙여넣기</div>
   <div class="paste-area-wrap" id="pasteWrap">
     <textarea class="fi paste-area" id="t1html"
       placeholder="직전 회차 뉴스레터 HTML 전체를 여기에 붙여넣으세요.&#10;제목·주제·키워드·오프닝·CTA 패턴이 자동으로 추출됩니다."
@@ -242,17 +246,25 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     </div>
   </div>
 
+  <!-- ④ 과거 회차 일괄 등록 (접힘/펼침) -->
   <div style="margin-top:1.5rem">
     <div class="divider"></div>
-    <div class="slbl">과거 회차 일괄 등록 <span style="text-transform:none;font-weight:400;font-size:11px;color:var(--text3)">스티비 링크 여러 개를 한 번에 아카이브에 저장합니다</span></div>
-    <div class="fl" style="margin-top:4px">스티비 회차 링크 목록 <span style="font-weight:400;text-transform:none;color:var(--text3)">(한 줄에 하나씩, 최대 20개)</span></div>
-    <textarea class="fi" id="t1bulkUrls" rows="5"
-      placeholder="https://saemmil.stibee.com/p/24/&#10;https://saemmil.stibee.com/p/23/&#10;https://saemmil.stibee.com/p/22/"
-      style="margin-bottom:6px"></textarea>
-    <div class="btn-row" style="margin-top:0">
-      <button class="btn-main" id="btn-bulk-archive" onclick="callBulkArchive()">아카이브에 일괄 등록</button>
+    <button class="btn-sm" onclick="toggleBulkArchive()" id="btn-bulk-toggle"
+      style="font-size:12px;font-weight:500;color:var(--text2);display:flex;align-items:center;gap:5px">
+      <span id="bulk-toggle-icon">▶</span> 과거 회차 일괄 등록
+    </button>
+    <div id="t1bulkWrap" style="display:none;margin-top:12px">
+      <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px">과거 회차 일괄 등록</div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">여러 회차 링크를 한 번에 아카이브에 저장할 수 있습니다.</div>
+      <div class="fl">스티비 회차 링크 목록 <span style="font-weight:400;text-transform:none;color:var(--text3)">(한 줄에 하나씩, 최대 20개)</span></div>
+      <textarea class="fi" id="t1bulkUrls" rows="5"
+        placeholder="https://saemmil.stibee.com/p/24/&#10;https://saemmil.stibee.com/p/23/&#10;https://saemmil.stibee.com/p/22/"
+        style="margin-bottom:6px"></textarea>
+      <div class="btn-row" style="margin-top:0">
+        <button class="btn-main" id="btn-bulk-archive" onclick="callBulkArchive()">아카이브에 일괄 등록</button>
+      </div>
+      <div id="t1bulkResult"></div>
     </div>
-    <div id="t1bulkResult"></div>
   </div>
 </div>
 
@@ -1091,6 +1103,14 @@ function renderFetchResult(entry, containerId) {
         : '')
     + '<div style="font-size:11px;color:var(--teal-text);margin-top:8px;opacity:.75">HTML이 아래 붙여넣기 영역에 자동으로 채워졌습니다. 분석 생성 후 아카이브에 저장하거나, 바로 아카이브 저장 버튼을 누르세요.</div>'
     + '</div>';
+}
+
+function toggleBulkArchive() {
+  var wrap = document.getElementById('t1bulkWrap');
+  var icon = document.getElementById('bulk-toggle-icon');
+  var open = wrap.style.display === 'none';
+  wrap.style.display = open ? 'block' : 'none';
+  icon.textContent   = open ? '▼' : '▶';
 }
 
 async function callBulkArchive() {
