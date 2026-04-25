@@ -1278,6 +1278,20 @@ function renderSubjects() {
           + '</div><div class="sc-meta">'
           + '<span class="sc-mi"><b>훅</b> ' + escHtml(s.hook||'') + '</span>'
           + '</div>'
+          + (s.duplicate_risk || s.new_angle ? (function() {
+              var riskCls = s.duplicate_risk === '낮음' ? 'tg' : s.duplicate_risk === '높음' ? 'tb2' : 'ta';
+              var archiveStr = (s.similar_archive && s.similar_archive !== '없음') ? escHtml(s.similar_archive) : '없음';
+              return '<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);display:flex;flex-direction:column;gap:5px">'
+                + (s.duplicate_risk
+                    ? '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+                      + '<span class="tag ' + riskCls + '" style="font-size:10px">중복 위험 ' + escHtml(s.duplicate_risk) + '</span>'
+                      + '<span style="font-size:11px;color:var(--text3)">유사 회차: ' + archiveStr + '</span>'
+                      + '</div>'
+                    : '')
+                + (s.new_angle ? '<div style="font-size:11px;color:var(--text2)"><b style="font-weight:500;color:var(--text)">새 관점</b>&nbsp; ' + escHtml(s.new_angle) + '</div>' : '')
+                + (s.why_not_duplicate ? '<div style="font-size:11px;color:var(--text3)"><b style="font-weight:500;color:var(--text2)">기존과 다른 점</b>&nbsp; ' + escHtml(s.why_not_duplicate) + '</div>' : '')
+                + '</div>';
+            })() : '')
           + '<div class="ck">✓</div></div>';
       }).join('') + '</div>';
 }
@@ -1301,12 +1315,14 @@ async function callStories() {
   setBtn('next2', true);
   try {
     var result = await callBackend('stories', {
-      subjectTitle:   S.subject.title,
-      subjectSummary: S.subject.summary || '',
-      protagonist:    S.subject.protagonist || '',
-      concern:        S.subject.concern || '',
-      conflict:       S.subject.conflict || '',
-      taxQuestion:    S.subject.tax_question || '',
+      subjectTitle:      S.subject.title,
+      subjectSummary:    S.subject.summary || '',
+      protagonist:       S.subject.protagonist || '',
+      concern:           S.subject.concern || '',
+      conflict:          S.subject.conflict || '',
+      taxQuestion:       S.subject.tax_question || '',
+      newAngle:          S.subject.new_angle || '',
+      whyNotDuplicate:   S.subject.why_not_duplicate || '',
       ctr: S.ctr
     });
     S.storyData = result;
@@ -1366,12 +1382,14 @@ async function callStoryDraft() {
   setBtn('next3', true);
   try {
     var result = await callBackend('story_draft', {
-      subjectTitle:    S.subject ? S.subject.title     : '',
+      subjectTitle:    S.subject ? S.subject.title          : '',
       storyTone:       S.story.tone,
       storyText:       S.story.text,
       narratorProfile: S.story.narrator_profile || '',
-      taxQuestion:     S.subject ? (S.subject.tax_question || '') : '',
-      conflict:        S.subject ? (S.subject.conflict      || '') : '',
+      taxQuestion:     S.subject ? (S.subject.tax_question  || '') : '',
+      conflict:        S.subject ? (S.subject.conflict       || '') : '',
+      newAngle:        S.subject ? (S.subject.new_angle      || '') : '',
+      whyNotDuplicate: S.subject ? (S.subject.why_not_duplicate || '') : '',
     });
     S.storyDraft = result;
     renderStoryDraft(result);
