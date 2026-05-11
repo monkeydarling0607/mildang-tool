@@ -1377,6 +1377,28 @@ async function callBulkArchive() {
    TAB 2 — 주제 후보
 ══════════════════════════════════════ */
 async function callSubjects() {
+  /* ── 재생성 회피용: 직전 후보를 제외 목록으로 추출 ── */
+  var excludeTitles = [], excludeKeywords = [], excludeAxes = [];
+  if (S.subjectData && Array.isArray(S.subjectData.subjects)) {
+    S.subjectData.subjects.forEach(function(s) {
+      if (s.title)         excludeTitles.push(s.title);
+      if (s.problem_axis)  excludeAxes.push(s.problem_axis);
+      [s.title, s.summary, s.hook, s.topic_cluster].forEach(function(v) {
+        String(v || '').replace(/[!?.,…]+/g,' ').split(/\s+/).forEach(function(t) {
+          if (t.length >= 2) excludeKeywords.push(t);
+        });
+      });
+    });
+  }
+  /* 중복 제거 + 길이 제한 */
+  excludeTitles   = Array.from(new Set(excludeTitles)).slice(-12);
+  excludeKeywords = Array.from(new Set(excludeKeywords)).slice(-30);
+  excludeAxes     = Array.from(new Set(excludeAxes)).slice(-8);
+
+  /* 재생성마다 매번 변화를 강제하는 시드 */
+  var variationSeed = (S.subjectRegenCount || 0) + 1;
+  S.subjectRegenCount = variationSeed;
+
   /* 선택값 + 이후 단계 생성 결과 전체 초기화 */
   S.subject     = null; S.subjectData  = null;
   S.storyData   = null; S.story        = null; S.storyDraft  = null;
@@ -1399,6 +1421,10 @@ async function callSubjects() {
       openingPattern:  S.analysis ? (S.analysis.opening_pattern || '') : '',
       ctaPattern:      S.analysis ? (S.analysis.cta_pattern     || '') : '',
       archive:         Array.isArray(S.archive) ? S.archive.slice(-15) : [],
+      excludeTitles:   excludeTitles,
+      excludeKeywords: excludeKeywords,
+      excludeAxes:     excludeAxes,
+      variationSeed:   variationSeed,
     });
     S.subjectData = result;
     renderSubjects();
@@ -1416,7 +1442,22 @@ function renderSubjects() {
     document.getElementById('t2area').innerHTML = errBox('주제 데이터가 없습니다. 재생성해주세요.'); return;
   }
 
-  /* ── 중복 위험도 기준 정렬: 낮음/(없음) → 보통 → 높음 ── */
+  /* ── 1단계: 실효 축 기준 자동 교체/하향 ──
+     같은 축이 2개 이상이면 첫 번째만 유지하고 나머지는 duplicate_risk="높음"으로 강등.
+     특히 지원사업·정책자금 축은 5개 중 최대 1개만 정상 후보로 인정. */
+  var seenAxis = {};
+  data.subjects.forEach(function(s) {
+    var ax = effectiveAxisClient(s);
+    if (!ax) return;
+    if (seenAxis[ax]) {
+      s.duplicate_risk = '높음';
+      s._axis_dedup_reason = '축 중복 — "' + ax + '" 축이 이미 한 번 사용됨';
+    } else {
+      seenAxis[ax] = true;
+    }
+  });
+
+  /* ── 2단계: 중복 위험도 기준 정렬: 낮음/(없음) → 보통 → 높음 ── */
   var riskRank = { '낮음': 0, '보통': 1, '높음': 2 };
   var sorted = data.subjects.slice().sort(function(a, b) {
     var ra = riskRank[a.duplicate_risk] !== undefined ? riskRank[a.duplicate_risk] : 0;
@@ -1425,62 +1466,66 @@ function renderSubjects() {
   });
   data.subjects = sorted;
 
-  /* ── 클라이언트 중복 검증 (룰 기반) ── */
+  /* ── 내부 검증은 계속 수행 (정렬/축 강등에 사용) ── */
   var subjReport = validateSubjectsClient(data.subjects);
 
-  var warnBanner = '';
-  if (subjReport.warnings.length > 0) {
-    warnBanner = '<div style="margin-bottom:12px;padding:10px 13px;background:#FFF8F0;border:1px solid #F3C49C;border-radius:var(--radius);font-size:12px;color:#7A4A00;line-height:1.65">'
-      + '<div style="font-weight:600;margin-bottom:4px">⚠ 중복 가능성이 감지되었습니다</div>'
-      + '<ul style="margin:0 0 0 14px;padding:0">'
-      + subjReport.warnings.map(function(w){ return '<li style="margin:1px 0">' + escHtml(w) + '</li>'; }).join('')
-      + '</ul>'
-      + '<div style="margin-top:6px"><span style="color:#C96A14;cursor:pointer;font-weight:600" onclick="callSubjects()">재생성</span>으로 더 다양한 주제를 받아볼 수 있습니다.</div>'
-      + '</div>';
-  }
+  /* ── 상단 경고 배너는 진짜 위험할 때만 — 2가지 케이스만 노출 ──
+     ① 구조 중복 위험: 같은 problem_axis 2개 이상 감지
+     ② 최근 회차와 매우 유사: duplicate_risk === '높음' 후보 존재 */
+  var hasHighRisk = data.subjects.some(function(s){ return s.duplicate_risk === '높음'; });
+  var hasAxisDup  = subjReport.axisDupIdx && subjReport.axisDupIdx.length > 0;
 
-  /* 구조 중복 강조 배너 — 사용자 요청 문구 */
   var structuralBanner = '';
-  if (subjReport.axisDupIdx && subjReport.axisDupIdx.length > 0) {
+  if (hasAxisDup) {
     structuralBanner = '<div style="margin-bottom:12px;padding:10px 13px;background:#FDECEC;border:1px solid #E5A2A2;border-radius:var(--radius);font-size:12px;color:#7A1F1F;line-height:1.65">'
       + '<div style="font-weight:600;margin-bottom:4px">⚠ 구조 중복 위험</div>'
-      + '비슷한 문제 축의 주제가 함께 생성되었습니다. 표현만 다르고 같은 축일 수 있으니 재생성을 권장합니다.'
+      + '비슷한 문제 구조의 주제가 함께 생성되었습니다. 재생성을 권장합니다.'
       + ' <span style="color:#A23535;cursor:pointer;font-weight:600;margin-left:4px" onclick="callSubjects()">재생성</span>'
       + '</div>';
   }
 
-  document.getElementById('t2area').innerHTML = structuralBanner + warnBanner + '<div class="sel-grid">'
+  var archiveSimBanner = '';
+  if (hasHighRisk) {
+    archiveSimBanner = '<div style="margin-bottom:12px;padding:10px 13px;background:#FDECEC;border:1px solid #E5A2A2;border-radius:var(--radius);font-size:12px;color:#7A1F1F;line-height:1.65">'
+      + '<div style="font-weight:600;margin-bottom:4px">⚠ 최근 회차와 매우 유사</div>'
+      + '아카이브와 거의 같은 구조의 후보가 포함되어 있습니다. 재생성을 권장합니다.'
+      + ' <span style="color:#A23535;cursor:pointer;font-weight:600;margin-left:4px" onclick="callSubjects()">재생성</span>'
+      + '</div>';
+  }
+
+  /* 노이즈 배너(중복 가능성 ul)는 더 이상 표시하지 않음 — 내부 데이터로만 유지 */
+  var warnBanner = '';
+
+  document.getElementById('t2area').innerHTML = archiveSimBanner + structuralBanner + warnBanner + '<div class="sel-grid">'
     + data.subjects.map(function(s, i) {
         var isOn = S.subject && S.subject.title === s.title;
         var cardId = 'sbj' + i;
         var isAxisDup = subjReport.axisDupIdx && subjReport.axisDupIdx.indexOf(i) !== -1;
 
-        /* ── 기본 노출 영역: 카테고리·중복위험 배지 + 제목 + 한 줄 훅 + 왜 지금 + 아카이브와 다른 점 ── */
-        var dr = s.duplicate_risk || '낮음';
-        var riskCls = dr === '낮음' ? 'tg' : dr === '높음' ? 'tb2' : 'ta';
+        /* ── 카드 기본 노출: 카테고리 / 제목 / 한 줄 설명 / 왜 지금 만 ──
+           내부 검증 결과(문제 축·중복 위험 낮음·보통·축 자동 강등·아카이브와 다른 점 등)는
+           데이터로는 유지하되 화면에는 노출하지 않음. */
         var catBadge = s.subject_category
           ? '<span class="tag tpr" style="flex-shrink:0;font-size:10px">' + escHtml(s.subject_category) + '</span>'
           : '';
-        var axisBadge = s.problem_axis
-          ? '<span class="tag tgr" style="flex-shrink:0;font-size:10px">문제 축 ' + escHtml(s.problem_axis) + '</span>'
+
+        /* 진짜 위험할 때만 카드에 작은 경고 배지.
+           ─ "최근 아카이브와 매우 유사": duplicate_risk === '높음'
+           ─ "구조 중복 위험": axisDupIdx에 포함 */
+        var archiveSimBadge = s.duplicate_risk === '높음'
+          ? '<span class="sc-struct-badge" style="background:#FDECEC;border-color:#E5A2A2;color:#7A1F1F">최근 회차와 매우 유사</span>'
           : '';
-        var riskBadge = '<span class="tag ' + riskCls + '" style="flex-shrink:0;font-size:10px">중복 위험 ' + escHtml(dr) + '</span>';
         var structBadge = isAxisDup ? '<span class="sc-struct-badge">구조 중복 위험</span>' : '';
 
-        /* 아카이브와 다른 점: why_not_duplicate 우선, 없으면 new_angle */
-        var diffText = s.why_not_duplicate || s.new_angle || '';
-
         return '<div class="sc' + (isOn?' on':'') + '" id="' + cardId + '" onclick="selectSubject('+i+')">'
-          /* 1행: 배지 (카테고리 + 문제 축 + 중복위험 + 구조 중복 위험) */
-          + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">' + catBadge + axisBadge + riskBadge + structBadge + '</div>'
+          /* 1행: 카테고리(+ 진짜 위험할 때만 경고 배지) */
+          + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">' + catBadge + archiveSimBadge + structBadge + '</div>'
           /* 2행: 제목 */
           + '<div class="sc-t" style="margin-bottom:6px">' + escHtml(s.title) + '</div>'
-          /* 3행: 한 줄 훅 (summary) */
+          /* 3행: 한 줄 설명 */
           + (s.summary ? '<div class="sc-b" style="margin-bottom:4px">' + escHtml(s.summary) + '</div>' : '')
           /* 4행: 왜 지금 */
           + (s.why_now ? '<div class="sc-key"><b>왜 지금</b>' + escHtml(s.why_now) + '</div>' : '')
-          /* 5행: 아카이브와 다른 점 */
-          + (diffText ? '<div class="sc-key"><b>아카이브와 다른 점</b>' + escHtml(diffText) + '</div>' : '')
           + '<div class="ck">✓</div></div>';
       }).join('') + '</div>';
 }
@@ -1504,6 +1549,29 @@ function normalizeProblemAxisClient(raw) {
   if (/(매출|정산|현금흐름|통장|고정비|플랫폼)/.test(s))             return '매출·정산·현금흐름';
   if (/(명의|주소|계약|임대|폐업|휴업|동업|양수도|등록)/.test(s))    return '사업자 정보·명의·주소·계약';
   return s;
+}
+
+/* ── 주제 후보 실효 축(effective axis) 산정 ──
+   problem_axis 필드만으로는 "지원금 언제 올까요?", "지원금이라도 챙겨야죠" 같이
+   제목·요약에 지원사업 소재가 명백한데 축이 다른 값으로 분류되는 경우를 못 잡는다.
+   title/summary/hook/topic_cluster의 텍스트도 같이 보고 한 번 더 분류한다. */
+function effectiveAxisClient(s) {
+  var fromField = normalizeProblemAxisClient(s && s.problem_axis);
+  if (fromField === '지원사업·정책자금') return fromField;
+  var blob = String((s && s.title) || '') + ' ' + String((s && s.summary) || '') + ' '
+           + String((s && s.hook) || '')  + ' ' + String((s && s.topic_cluster) || '');
+  blob = blob.replace(/\s+/g, '');
+  /* 지원/정책 소재는 사용자 경험상 제목·요약에 가장 자주 흘러나오므로 우선 감지 */
+  if (/(지원금|지원사업|정책자금|바우처|보조금|융자|소상공인지원|챙겨야죠|챙기세요|언제\s?받|언제\s?오나|신청\s?마감|공고|보조사업)/.test(blob)) {
+    return '지원사업·정책자금';
+  }
+  if (fromField) return fromField;
+  /* problem_axis가 비어 있어도 텍스트로 분류 시도 */
+  if (/(카드|증빙|영수증|경비|적격증빙|세금계산서)/.test(blob))           return '카드·증빙·경비';
+  if (/(직원|급여|4대보험|원천|인건|알바|노무|프리랜서)/.test(blob))       return '직원·급여·4대보험';
+  if (/(매출|정산|현금흐름|통장|고정비|플랫폼)/.test(blob))                 return '매출·정산·현금흐름';
+  if (/(명의|주소|계약|임대|폐업|휴업|동업|양수도|등록)/.test(blob))        return '사업자 정보·명의·주소·계약';
+  return '';
 }
 
 /* ── 주제 후보 클라이언트 룰 기반 중복 검증 ── */
@@ -1538,10 +1606,12 @@ function validateSubjectsClient(subjects) {
     if (clCount[c] >= 2) warnings.push('주제군 "' + c + '"가 ' + clCount[c] + '회 반복됩니다');
   });
 
-  /* 4) problem_axis 중복 (정규화) — "카드 사용 이력"·"경비 누락"·"영수증 정리" 같은 표현만 다른 후보 잡기 */
+  /* 4) problem_axis 중복 (정규화 + 실효 축) — "카드 사용 이력"·"경비 누락"·"영수증 정리"·
+        "지원금 언제 올까요" 같이 표현만 다른 후보 잡기.
+        지원사업·정책자금 축은 한 후보군 안에서 최대 1개만 허용 → 두 번째부터는 즉시 중복 표시. */
   var axisIdxMap = {};
   subjects.forEach(function(s, i) {
-    var norm = normalizeProblemAxisClient(s.problem_axis);
+    var norm = effectiveAxisClient(s);
     if (!norm) return;
     (axisIdxMap[norm] = axisIdxMap[norm] || []).push(i);
   });
@@ -1552,6 +1622,10 @@ function validateSubjectsClient(subjects) {
       list.forEach(function(idx){ axisDupIdx.push(idx); });
     }
   });
+  /* 지원사업·정책자금 단일 후보 강제 — 두 번째 등장부터 axisDup으로 처리 */
+  if (axisIdxMap['지원사업·정책자금'] && axisIdxMap['지원사업·정책자금'].length >= 2) {
+    warnings.push('지원사업·정책자금 후보가 ' + axisIdxMap['지원사업·정책자금'].length + '개 — 후보 5개 중 최대 1개만 허용. 다른 축의 주제로 교체 권장');
+  }
 
   /* 5) 핵심 키워드 중복 — 제목 토큰화해서 2개 이상 겹치는 후보 쌍 검출 */
   function tokens(s) {
@@ -1949,10 +2023,23 @@ async function callStoryDraft() {
   setBtn('next3', true);
   try {
     var result = await callBackend('story_draft', {
-      subjectTitle:    S.subject ? S.subject.title          : '',
-      storyTone:       S.story.tone,
-      storyText:       S.story.text,
-      narratorProfile: S.story.narrator_profile || '',
+      subjectTitle:      S.subject ? S.subject.title          : '',
+      subjectSummary:    S.subject ? (S.subject.summary || '') : '',
+      problemAxis:       S.subject ? (S.subject.problem_axis || '') : '',
+      storyTone:         S.story.tone,
+      storyTitle:        S.story.title || '',
+      storyText:         S.story.text,
+      storyIndustry:     S.story.industry || '',
+      narratorProfile:   S.story.narrator_profile || '',
+      storyConflictAxis: S.story.conflict_axis || '',
+      storyProblemStructure: S.story.problem_structure || '',
+      storyTaxQuestionAxis:  S.story.tax_question_axis || '',
+      storyResolutionAxis:   S.story.resolution_axis || '',
+      storyEmotionPoint:     S.story.emotion_point || '',
+      storyQuestion:         S.story.question || '',
+      storyConcern:          S.story.concern || '',
+      storyEmpathyPoint:     S.story.empathy_point || '',
+      storyDifferentiator:   S.story.differentiator || '',
       taxQuestion:     S.subject ? (S.subject.tax_question  || '') : '',
       conflict:        S.subject ? (S.subject.conflict       || '') : '',
       newAngle:        S.subject ? (S.subject.new_angle      || '') : '',
