@@ -421,6 +421,83 @@ function buildStoriesPrompt(p) {
 → 같은 주제라도 "비용처리 설명형"이나 "몰라서 손해형"으로 자동 회귀하지 마세요.\n`
     : '';
 
+  /* ── 선택 주제 키워드 기반 업종 적합성 가이드 ──
+     주제 제목·요약·문제 축에서 키워드를 보고 어떤 업종/상황이 우선되어야 하는지를
+     프롬프트에 명시. "학원 원장이 매출 보고서를 늦게 봐서 정산을 놓쳤다" 같은
+     맥락이 어긋난 사연을 차단한다. */
+  const subjectBlob = `${p.subjectTitle || ''} ${p.subjectSummary || ''} ${p.problemAxis || ''} ${p.conflict || ''} ${p.taxQuestion || ''}`;
+
+  let industryGuide = '';
+
+  if (/(플랫폼|정산|입점|스마트스토어|쿠팡|배민|배달의민족|요기요|네이버\s?페이|오픈마켓|수수료|판매대금|정산금|판매\s?수수료|예약\s?플랫폼)/.test(subjectBlob)
+      || (/(현금흐름|자금\s?부족|입금\s?지연|통장)/.test(subjectBlob) && /(매출|정산|판매)/.test(subjectBlob))) {
+    industryGuide = `
+[★ 선택 주제 업종/상황 적합성 — "플랫폼 정산·현금흐름" 주제]
+이 주제는 "플랫폼 매출은 늘었지만 정산금은 늦게 들어오고, 광고비·수수료·재고비·인건비·배송비가 먼저 빠져나가 현금흐름이 압박되는" 구조입니다.
+
+▶ 반드시 사용해야 하는 업종/상황 (5개 사연 중 최소 4개는 여기서):
+  - 온라인 쇼핑몰 / 스마트스토어 판매자
+  - 쿠팡·네이버·오픈마켓 입점 사업자
+  - 배달 음식점 / 배달 플랫폼 이용 사업자
+  - 예약 플랫폼 이용 미용실·숙박업
+  - 플랫폼 기반 프리랜서·서비스 판매자
+  - 정산 주기가 있는 거래 구조를 가진 사업자
+
+▶ 절대 금지 또는 매우 신중하게 (이 주제에서 부적합):
+  × 일반 학원 (플랫폼 정산 구조 없음)
+  × 플랫폼 정산이 드러나지 않는 오프라인 매장
+  × "매출 보고서에서 늦게 발견" 같은 단순 장부 확인 미스
+  × "장부를 늦게 봤다"·"보고서를 늦게 봤다"는 식의 단순 확인 지연
+  × 플랫폼/정산/수수료/입금 지연/현금흐름이 사연에 전혀 등장하지 않는 사연
+
+▶ 사연 첫 문장·본문에 반드시 드러나야 하는 핵심 키워드 중 하나 이상:
+  플랫폼 / 정산 / 수수료 / 판매대금 / 입금 지연 / 정산 주기 / 광고비 먼저 / 통장에 안 들어옴 / 현금흐름
+
+▶ 좋은 첫 문장 예 (이런 톤으로):
+  - "이번 달 주문은 늘었는데, 정산금은 아직 안 들어오고 광고비는 먼저 빠져나갔어요."
+  - "배달 매출은 분명 늘었는데, 수수료와 정산 주기를 빼고 보니 통장에는 남는 게 없더라고요."
+  - "판매량이 늘어서 좋아했는데, 재고비와 배송비를 먼저 내고 나니 정산일까지 버티기가 힘들었습니다."
+  - "예약은 꽉 찼는데 플랫폼 정산일이 밀리니까 월세랑 급여일이 먼저 와버렸어요."
+
+▶ 나쁜 사연 예 (이런 식이면 즉시 다른 사연으로 교체):
+  × 학원 원장이 매출 보고서 확인이 늦었다
+  × 일반 매장에서 장부를 늦게 확인했다
+  × 정산과 무관한 단순 자료 확인 지연
+`;
+  } else if (/(직원|급여|4대보험|원천징수|채용|알바|아르바이트|인건비|노무)/.test(subjectBlob)) {
+    industryGuide = `
+[★ 선택 주제 업종/상황 적합성 — "직원·급여·4대보험" 주제]
+▶ 반드시 사용해야 하는 업종/상황:
+  - 직원이 있는 매장 (음식점, 카페, 병원·의원, 학원, 미용실, 제조·도소매, 쇼핑몰 등)
+  - 알바생을 쓰는 1인 사업자
+  - 직원 채용·급여·4대보험·원천징수가 실제로 발생하는 구조
+
+▶ 사연에 반드시 드러나야 하는 키워드 중 하나 이상:
+  직원 / 급여 / 4대보험 / 원천징수 / 채용 / 알바 / 인건비 / 월급
+
+▶ 절대 금지:
+  × 직원이 없는 1인 사업자가 "급여/4대보험"을 고민하는 사연
+  × 인건비 맥락이 전혀 없는 단순 비용 처리 사연
+`;
+  } else if (/(지원사업|정책자금|보조금|바우처|융자|소상공인\s?지원|공고)/.test(subjectBlob)) {
+    industryGuide = `
+[★ 선택 주제 업종/상황 적합성 — "지원사업·정책자금" 주제]
+▶ 우선 업종/상황: 소상공인, 창업자, 지역 사업자, 영세 사업자 (온라인/오프라인 모두 가능)
+▶ 사연에 반드시 드러나야 하는 키워드 중 하나 이상:
+  지원사업 / 정책자금 / 보조금 / 바우처 / 융자 / 공고 / 신청
+▶ 금지: 구체 공고가 없는데 임의의 금액·기간·접수처를 만들어내는 것 (반드시 "공고 확인 필요"로 표기)
+`;
+  } else if (/(카드\s?사용|적격증빙|세금계산서|영수증|경비\s?처리|증빙|현금영수증)/.test(subjectBlob)) {
+    industryGuide = `
+[★ 선택 주제 업종/상황 적합성 — "카드·증빙·경비" 주제]
+▶ 반드시 사용해야 하는 업종/상황:
+  - 카드 사용이 많은 업종 (온라인 쇼핑몰, 카페, 음식점, 미용실, 프리랜서, 도소매, 학원, 병원)
+▶ 사연에 반드시 드러나야 하는 키워드 중 하나 이상:
+  카드 / 영수증 / 증빙 / 세금계산서 / 경비 / 적격증빙 / 현금영수증
+▶ 금지: 카드·증빙·경비 맥락이 전혀 등장하지 않는 단순 신고/납부 사연
+`;
+  }
+
   return `당신은 세무법인 밀당레터 사연 기획자입니다.
 선택된 주제를 기반으로 사연 후보 카드 5개를 생성하세요.
 완성형 원고는 불필요합니다. 후보 카드 선택용 정보만 작성하세요.
@@ -428,7 +505,10 @@ function buildStoriesPrompt(p) {
 ★ 핵심 원칙: "주제 유사성"보다 "이야기 구조의 다양성"이 더 중요합니다.
 같은 주제 안에서도 인물·업종·상황·갈등·감정 구조가 분명히 다르게 느껴져야 합니다.
 업종과 인물만 바꾸고 같은 문제 구조를 반복하는 것은 중복입니다.
-${newAngleBlock}
+단, 다양성 이전에 "선택 주제의 업종·상황 맥락"이 사연에 자연스럽게 살아 있어야 합니다.
+주제의 핵심 키워드(예: 플랫폼 정산, 직원 급여, 카드 증빙 등)가 사연에서 사라지면
+업종만 그럴듯해 보여도 부적합한 사연으로 간주됩니다.
+${newAngleBlock}${industryGuide}
 [선택 주제]
 주제명: ${p.subjectTitle}
 요약: ${p.subjectSummary || ''}
@@ -453,8 +533,11 @@ ${newAngleBlock}
 
 ▶ 유형6 "반전형" — 괜찮다고 생각했는데 알고 보니 확인할 게 남아 있는 구조
 
-[★ 사연 5개의 업종·상황 — 최대한 다르게]
-아래 업종 중 서로 다른 5개를 선택해 사연을 구성하세요. 같은 업종 2개 이상 금지.
+[★ 사연 5개의 업종·상황 — 최대한 다르게, 단 위 "선택 주제 업종/상황 적합성"을 반드시 우선]
+같은 업종 2개 이상 금지. 단, 위에서 "반드시 사용해야 하는 업종/상황" 가이드가 있다면
+다양성보다 그 가이드가 더 우선입니다. 가이드에 등장하지 않는 업종을 채택하기 전에
+주제의 핵심 키워드가 그 업종에서 자연스럽게 발생할 수 있는지 확인하세요.
+일반 업종 풀(주제 적합성 가이드가 없을 때만 사용):
 음식점 / 온라인 쇼핑몰 / 미용실 / 학원 / 프리랜서 / 제조·도소매 /
 카페 / 병원·의원 / 배달·플랫폼 사업자 / 1인 사업자
 
@@ -606,7 +689,13 @@ E. 거래처에서 세금계산서/영수증을 못 받음
 7. "증빙·영수증·경비 누락" 가족(주체만 사장님/직원/거래처/카드 내역/결산 시점으로 바꾼 변형 포함)이
    2개 이상 들어가 있지 않은가? → 1개만 남기고 나머지는 다른 conflict_axis로 교체
 8. "납부 지연·기한 놓침" 가족이 2개 이상 들어가 있지 않은가? → 1개만 남기고 교체
-9. 모든 사연에서 differentiator/diff_from_prev/empathy_point가 채워졌는가?`;
+9. 모든 사연에서 differentiator/diff_from_prev/empathy_point가 채워졌는가?
+10. 선택 주제의 핵심 키워드(플랫폼/정산/직원/급여/카드/증빙/지원사업 등 위 "업종/상황 적합성" 블록 기준)가
+    각 사연의 첫 문장·본문·conflict_axis 중 어디엔가 자연스럽게 드러나는가?
+    → 핵심 키워드가 사연에서 사라진 경우(예: 플랫폼 정산 주제인데 "학원 원장이 매출 보고서를 늦게 봤다")
+       즉시 적합한 업종/상황의 사연으로 교체.
+11. 각 사연의 industry 값이 위 "반드시 사용해야 하는 업종/상황" 가이드에 부합하는가?
+    → 가이드의 "절대 금지" 업종/상황이 채택됐다면 즉시 교체.`;
 }
 
 function buildStoryDraftPrompt(p) {
@@ -1189,6 +1278,76 @@ function checkStoriesDuplicate(stories) {
   });
 
   return warnings;
+}
+
+/* ── 선택 주제 기반 사연 적합성 검증 ──
+   주제 키워드 / 문제 축에 따라 어떤 업종·맥락이 필수인지를 판단해서
+   "학원 원장이 매출 보고서를 늦게 봤다" 같은 맥락 어긋남 사연을 감지한다.
+   결과는 경고로만 전달 (클라이언트가 배지/배너로 표시). */
+function computeSubjectFitRulesServer(payload) {
+  if (!payload) return null;
+  const blob = `${payload.subjectTitle || ''} ${payload.subjectSummary || ''} ${payload.problemAxis || ''} ${payload.conflict || ''} ${payload.taxQuestion || ''}`;
+
+  if (/(플랫폼|정산|입점|스마트스토어|쿠팡|배민|배달의민족|요기요|네이버\s?페이|오픈마켓|수수료|판매대금|정산금|판매\s?수수료|예약\s?플랫폼)/.test(blob)
+      || (/(현금흐름|자금\s?부족|입금\s?지연|통장)/.test(blob) && /(매출|정산|판매)/.test(blob))) {
+    return {
+      label: '플랫폼 정산·현금흐름',
+      mustIndustryRe: /(쇼핑몰|스마트스토어|쿠팡|오픈마켓|배달|배민|요기요|플랫폼|예약|네이버|온라인|입점|판매자|프리랜서|도소매)/,
+      mustContextRe:  /(플랫폼|정산|수수료|입금|판매대금|판매\s?수수료|예약\s?플랫폼|광고비|배송비|재고|현금흐름|통장|입금\s?지연|정산\s?주기)/,
+      excludeIndustryRe: /(학원|미용실|병원|의원|카페|음식점|제조|매장|오프라인)/,
+      excludeContextRe:  /(매출\s?보고서|장부\s?확인|보고서.*늦게|보고서.*뒤늦)/,
+    };
+  }
+  if (/(직원|급여|4대보험|원천징수|채용|알바|아르바이트|인건비|노무)/.test(blob)) {
+    return {
+      label: '직원·급여·4대보험',
+      mustIndustryRe: /(음식점|카페|병원|의원|학원|제조|도소매|매장|미용실|쇼핑몰|회사|법인|사무실)/,
+      mustContextRe:  /(직원|급여|4대보험|원천징수|채용|알바|아르바이트|인건비|노무|월급)/,
+    };
+  }
+  if (/(지원사업|정책자금|보조금|바우처|융자|소상공인\s?지원|공고)/.test(blob)) {
+    return {
+      label: '지원사업·정책자금',
+      mustContextRe: /(지원|정책|보조|바우처|융자|공고|신청|소상공인|창업|영세)/,
+    };
+  }
+  if (/(카드\s?사용|적격증빙|세금계산서|영수증|경비\s?처리|증빙|현금영수증)/.test(blob)) {
+    return {
+      label: '카드·증빙·경비',
+      mustIndustryRe: /(쇼핑몰|카페|음식점|미용실|프리랜서|도소매|학원|병원|온라인)/,
+      mustContextRe:  /(카드|영수증|증빙|세금계산서|경비|적격증빙|현금영수증)/,
+    };
+  }
+  return null;
+}
+
+function checkSubjectFitStories(stories, rule) {
+  const warnings = [];
+  const misfitIdx = [];
+  if (!rule || !Array.isArray(stories)) return { warnings, misfitIdx };
+  stories.forEach((s, i) => {
+    const text = `${s.text || ''} ${s.title || ''} ${s.industry || ''} ${s.narrator_profile || ''} `
+               + `${s.conflict_axis || ''} ${s.problem_structure || ''} ${s.concern || ''} ${s.question || ''}`;
+    const industry = String(s.industry || '').replace(/\s+/g, '');
+    let reason = '';
+    if (rule.excludeIndustryRe && industry && rule.excludeIndustryRe.test(industry)
+        && (!rule.mustContextRe || !rule.mustContextRe.test(text))) {
+      reason = `주제와 맞지 않는 업종(${industry}) + 핵심 맥락 누락`;
+    } else if (rule.excludeContextRe && rule.excludeContextRe.test(text)
+        && (!rule.mustContextRe || !rule.mustContextRe.test(text))) {
+      reason = '주제 핵심과 무관한 단순 확인·장부 지연 패턴';
+    } else if (rule.mustIndustryRe && industry && !rule.mustIndustryRe.test(industry)
+        && (!rule.mustContextRe || !rule.mustContextRe.test(text))) {
+      reason = '주제에 적합한 업종 아님 + 핵심 맥락 누락';
+    } else if (rule.mustContextRe && !rule.mustContextRe.test(text)) {
+      reason = `주제 핵심 키워드(${rule.label})가 사연에 드러나지 않음`;
+    }
+    if (reason) {
+      misfitIdx.push(i + 1);
+      warnings.push(`사연 #${i + 1} 적합성 낮음: ${reason}`);
+    }
+  });
+  return { warnings, misfitIdx };
 }
 
 /* ── caution 정규화 — 빈 값/"없음"/"해당 없음" 등은 기본 안내 문구로 대체 ── */
@@ -2545,6 +2704,17 @@ export default async function handler(req, res) {
     if (dupCheck.length > 0) {
       console.log('[stories-validate] 서버 중복 경고:', dupCheck);
       result._dup_warnings = dupCheck;
+    }
+    /* 선택 주제 적합성 검증 — payload 기반 */
+    const fitRule = computeSubjectFitRulesServer(payload || {});
+    if (fitRule) {
+      const fit = checkSubjectFitStories(result.stories, fitRule);
+      if (fit.warnings.length > 0) {
+        console.log('[stories-validate] 서버 적합성 경고:', fit.warnings);
+        result._fit_warnings = fit.warnings;
+        result._fit_misfit_idx = fit.misfitIdx;
+        result._fit_label = fitRule.label;
+      }
     }
   }
 

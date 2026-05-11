@@ -189,13 +189,6 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .sc-key + .sc-key{margin-top:6px}
 .sc-key b{display:block;font-size:11px;font-weight:600;color:var(--text);margin-bottom:2px;letter-spacing:.01em}
 
-/* 자세히 보기 토글 — 펼쳐지면 상세 메타 노출 */
-.sc-detail{display:none;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border)}
-.sc.detail-open .sc-detail{display:block}
-.sc-detail-btn{margin-top:10px;font-size:11px;font-weight:500;padding:4px 10px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg);color:var(--text2);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px}
-.sc-detail-btn:hover{border-color:var(--text3);color:var(--text)}
-.sc.on .sc-detail-btn{background:var(--bg);color:var(--text2)}
-
 /* 과거 회차 아카이브 */
 .archive-wrap{margin-top:2rem;padding-top:1.5rem;border-top:0.5px solid var(--border)}
 .archive-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px}
@@ -327,7 +320,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 <!-- ══════ TAB 2 — 주제 선정 ══════ -->
 <div class="panel" id="p1">
   <div class="ph"><span class="ph-title">주제 선정</span></div>
-  <p class="ph-sub">이번 회차의 큰 기둥이 될 주제 후보 5개를 생성합니다. 5개 후보는 서로 성격이 다른 카테고리(세무 리스크 / 사업 운영 / 직원·노무 / 지원·정책 / 의외성·생활)에서 한 개씩 뽑힙니다. 과거 회차는 중복 회피 필터로만 사용됩니다. 카드는 의사결정에 필요한 핵심만 노출되며, 세부 정보는 [자세히 보기]를 눌러 확인할 수 있습니다.</p>
+  <p class="ph-sub">이번 회차의 큰 기둥이 될 주제 후보 5개를 생성합니다. 5개 후보는 서로 성격이 다른 카테고리(세무 리스크 / 사업 운영 / 직원·노무 / 지원·정책 / 의외성·생활)에서 한 개씩 뽑힙니다. 과거 회차는 중복 회피 필터로만 사용됩니다. 카드 정보만 보고 빠르게 선택하세요.</p>
   <div class="carry" id="t2carry"></div>
   <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
     <button class="btn-main" id="btn-subjects" onclick="callSubjects()">주제 후보 생성</button>
@@ -340,7 +333,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 <!-- ══════ TAB 3 — 사연 후보 ══════ -->
 <div class="panel" id="p2">
   <div class="ph"><span class="ph-title">사연 후보</span></div>
-  <p class="ph-sub">선택한 주제를 서로 다른 에피소드 5개로 풀어냅니다. 같은 주제 안에서도 업종·상황·갈등·감정이 모두 다르게 보이도록 구성되며, 27화 「신고 마치고 세금이 더 나왔어요」 같은 최근 회차 구조는 자동으로 회피합니다. 카드는 선택 판단에 필요한 정보만 보여주고, 세부 메모는 [자세히 보기]를 눌러 확인할 수 있습니다.</p>
+  <p class="ph-sub">선택한 주제를 서로 다른 에피소드 5개로 풀어냅니다. 같은 주제 안에서도 업종·상황·갈등·감정이 모두 다르게 보이도록 구성되며, 27화 「신고 마치고 세금이 더 나왔어요」 같은 최근 회차 구조는 자동으로 회피합니다. 선택 주제의 업종·상황 맥락과 자연스럽게 맞물리는 사연만 생성됩니다.</p>
   <div class="carry" id="t3carry"></div>
   <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
     <button class="btn-main" id="btn-stories" onclick="callStories()">사연 후보 생성</button>
@@ -1417,16 +1410,6 @@ async function callSubjects() {
   }
 }
 
-/* ── 후보 카드 "자세히 보기" 토글 (Tab2 주제 / Tab3 사연 공용) ── */
-function toggleScDetail(ev, cardId) {
-  if (ev && ev.stopPropagation) ev.stopPropagation();
-  var card = document.getElementById(cardId);
-  if (!card) return;
-  var open = card.classList.toggle('detail-open');
-  var btn = ev && ev.currentTarget;
-  if (btn) btn.textContent = open ? '접기' : '자세히 보기';
-}
-
 function renderSubjects() {
   var data = S.subjectData;
   if (!data || !Array.isArray(data.subjects) || !data.subjects.length) {
@@ -1487,38 +1470,6 @@ function renderSubjects() {
         /* 아카이브와 다른 점: why_not_duplicate 우선, 없으면 new_angle */
         var diffText = s.why_not_duplicate || s.new_angle || '';
 
-        /* ── 자세히 보기 영역: 후속 단계용 세부 정보 ── */
-        var clusterStr = (s.topic_cluster || '').replace(/\s*—.*$/, '').trim();
-        var archiveRaw = (s.similar_archive || '').replace(/^없음.*$/, '').trim();
-        var archiveHtml = archiveRaw
-          ? archiveRaw.split(/,\s*/).map(function(v){ return '<span style="display:inline-block;margin-right:4px">' + escHtml(v.trim()) + '</span>'; }).join('')
-          : '<span style="color:var(--text3)">없음</span>';
-
-        var detailRows = [];
-        if (s.hook)               detailRows.push(['핵심 훅', s.hook]);
-        if (s.expected_reaction)  detailRows.push(['예상 독자 반응', s.expected_reaction]);
-        if (s.story_potential)    detailRows.push(['사연화 가능성', s.story_potential]);
-        if (s.protagonist)        detailRows.push(['예상 주인공', s.protagonist]);
-        if (s.concern)            detailRows.push(['예상 고민', s.concern]);
-        if (s.conflict)           detailRows.push(['갈등/문제', s.conflict]);
-        if (s.tax_question)       detailRows.push(['세무 질문', s.tax_question]);
-        if (s.tip_quiz_direction) detailRows.push(['꿀팁/퀴즈 방향', s.tip_quiz_direction]);
-        if (s.reason)             detailRows.push(['사연으로 쓰면 좋은 이유', s.reason]);
-        if (s.risk)               detailRows.push(['리스크', s.risk]);
-        if (s.type)               detailRows.push(['유형', s.type]);
-
-        var detailHtml = ''
-          + '<div class="sc-detail">'
-          /* 메타: 주제군 + 유사 회차 */
-          + '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">'
-            + (clusterStr ? '<div style="font-size:11px;color:var(--text2)"><b style="font-weight:500;color:var(--text);margin-right:4px">주제군</b>' + escHtml(clusterStr) + '</div>' : '')
-            + '<div style="font-size:11px;color:var(--text2);line-height:1.6"><b style="font-weight:500;color:var(--text);margin-right:4px">유사 회차</b>' + archiveHtml + '</div>'
-          + '</div>'
-          + detailRows.map(function(r){
-              return '<div class="sc-meta"><span class="sc-mi"><b>' + escHtml(r[0]) + '</b> ' + escHtml(r[1]) + '</span></div>';
-            }).join('')
-          + '</div>';
-
         return '<div class="sc' + (isOn?' on':'') + '" id="' + cardId + '" onclick="selectSubject('+i+')">'
           /* 1행: 배지 (카테고리 + 문제 축 + 중복위험 + 구조 중복 위험) */
           + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">' + catBadge + axisBadge + riskBadge + structBadge + '</div>'
@@ -1530,9 +1481,6 @@ function renderSubjects() {
           + (s.why_now ? '<div class="sc-key"><b>왜 지금</b>' + escHtml(s.why_now) + '</div>' : '')
           /* 5행: 아카이브와 다른 점 */
           + (diffText ? '<div class="sc-key"><b>아카이브와 다른 점</b>' + escHtml(diffText) + '</div>' : '')
-          /* 6행: 자세히 보기 토글 */
-          + '<button type="button" class="sc-detail-btn" onclick="toggleScDetail(event,\'' + cardId + '\')">자세히 보기</button>'
-          + detailHtml
           + '<div class="ck">✓</div></div>';
       }).join('') + '</div>';
 }
@@ -1661,7 +1609,14 @@ function renderStories() {
   }
 
   /* ── 클라이언트 중복 검증 (룰 기반) ── */
-  var dupReport = validateStoriesClient(data.stories);
+  var subjectCtx = {
+    title:        S.subject ? (S.subject.title || '') : '',
+    summary:      S.subject ? (S.subject.summary || '') : '',
+    problemAxis:  S.subject ? (S.subject.problem_axis || '') : '',
+    conflict:     S.subject ? (S.subject.conflict || '') : '',
+    taxQuestion:  S.subject ? (S.subject.tax_question || '') : ''
+  };
+  var dupReport = validateStoriesClient(data.stories, subjectCtx);
 
   /* 일반 경고 배너 */
   var warnBanner = '';
@@ -1685,7 +1640,18 @@ function renderStories() {
       + '</div>';
   }
 
-  document.getElementById('t3area').innerHTML = structuralBanner + warnBanner + '<div class="sel-grid">'
+  /* 주제 적합성 배너 — 선택 주제와 업종/상황 연결성이 약한 사연 감지 */
+  var misfitBanner = '';
+  if (dupReport.misfitIdx && dupReport.misfitIdx.length > 0) {
+    misfitBanner = '<div style="margin-bottom:12px;padding:10px 13px;background:#FDECEC;border:1px solid #E5A2A2;border-radius:var(--radius);font-size:12px;color:#7A1F1F;line-height:1.65">'
+      + '<div style="font-weight:600;margin-bottom:4px">⚠ 선택한 주제와 업종/상황 연결성이 약한 사연입니다</div>'
+      + '#' + dupReport.misfitIdx.map(function(n){return n+1;}).join(', #')
+      + ' 카드가 선택 주제의 핵심 맥락(업종·갈등 구조)과 어긋날 수 있습니다. 재생성을 권장합니다.'
+      + ' <span style="color:#A23535;cursor:pointer;font-weight:600;margin-left:4px" onclick="callStories()">재생성</span>'
+      + '</div>';
+  }
+
+  document.getElementById('t3area').innerHTML = misfitBanner + structuralBanner + warnBanner + '<div class="sel-grid">'
     + data.stories.map(function(s, i) {
         var isOn = S.story && S.story.tone === s.tone && S.story.title === s.title;
         var isDup    = dupReport.duplicateIdx.indexOf(i) !== -1;
@@ -1699,22 +1665,9 @@ function renderStories() {
           ? '<span class="tag tpr" style="font-size:10px">문제 축 ' + escHtml(s.conflict_axis) + '</span>'
           : '';
 
-        /* ── 자세히 보기 영역: 차별 포인트·세무 질문·구조 메타 ── */
-        var detailRows = [];
-        if (s.differentiator)    detailRows.push(['차별 포인트', s.differentiator]);
-        if (s.problem_structure) detailRows.push(['문제 구조', s.problem_structure]);
-        if (s.tax_question_axis) detailRows.push(['세무 질문 축', s.tax_question_axis]);
-        if (s.resolution_axis)   detailRows.push(['해결 방향 축', s.resolution_axis]);
-        if (s.concern)           detailRows.push(['가장 걸리는 건', s.concern]);
-        if (s.emotion_point)     detailRows.push(['솔직히 이런 마음', s.emotion_point]);
-        if (s.question)          detailRows.push(['세무 질문 (제일 궁금한 건)', s.question]);
-        if (s.reason)            detailRows.push(['이 사연이 좋은 이유', s.reason]);
-
-        var detailHtml = '<div class="sc-detail">'
-          + detailRows.map(function(r){
-              return '<div class="sc-meta"><span class="sc-mi"><b>' + escHtml(r[0]) + '</b> ' + escHtml(r[1]) + '</span></div>';
-            }).join('')
-          + '</div>';
+        /* 주제 적합성 낮음 배지 */
+        var isMisfit = dupReport.misfitIdx && dupReport.misfitIdx.indexOf(i) !== -1;
+        var misfitBadge = isMisfit ? '<span class="sc-warn-badge">주제 적합성 낮음</span>' : '';
 
         return '<div class="sc' + (isOn?' on':'') + '" id="' + cardId + '" onclick="selectStory('+i+')">'
           /* 1행: 사연 유형 + 업종 + 문제 축 + 위험 배지 */
@@ -1724,6 +1677,7 @@ function renderStories() {
             + axisBadge
             + dupBadge
             + structBadge
+            + misfitBadge
           + '</div>'
           /* 2행: 사연 제목 */
           + '<div class="sc-t">' + escHtml(s.title||'') + '</div>'
@@ -1735,9 +1689,6 @@ function renderStories() {
           + (s.diff_from_prev ? '<div class="sc-key"><b>기존 회차와 다른 점</b>' + escHtml(s.diff_from_prev) + '</div>' : '')
           /* 6행: 예상 공감 포인트 */
           + (s.empathy_point ? '<div class="sc-key"><b>예상 공감 포인트</b>' + escHtml(s.empathy_point) + '</div>' : '')
-          /* 7행: 자세히 보기 토글 */
-          + '<button type="button" class="sc-detail-btn" onclick="toggleScDetail(event,\'' + cardId + '\')">자세히 보기</button>'
-          + detailHtml
           + '<div class="ck">✓</div></div>';
       }).join('') + '</div>';
 }
@@ -1749,12 +1700,13 @@ function renderStories() {
      structuralIdx   — "구조 중복 위험" 카드(축/구조 가족 일치) 인덱스
      hasStructural   — 구조 중복 배너를 띄울지 여부
 */
-function validateStoriesClient(stories) {
+function validateStoriesClient(stories, subjectCtx) {
   var warnings = [];
   var duplicateIdx = [];
   var structuralIdx = [];
+  var misfitIdx = [];
   if (!Array.isArray(stories) || stories.length < 2) {
-    return { warnings: warnings, duplicateIdx: duplicateIdx, structuralIdx: structuralIdx, hasStructural: false };
+    return { warnings: warnings, duplicateIdx: duplicateIdx, structuralIdx: structuralIdx, misfitIdx: misfitIdx, hasStructural: false };
   }
 
   /* 첫 단어 5자 정규화 */
@@ -1876,14 +1828,107 @@ function validateStoriesClient(stories) {
     }
   });
 
+  /* 8) 선택 주제 적합성 검증 — 업종/맥락 미스매치 감지 */
+  var subjectFit = computeSubjectFitRules(subjectCtx);
+  if (subjectFit) {
+    stories.forEach(function(s, i) {
+      var text = String(s.text || '') + ' ' + String(s.title || '') + ' '
+               + String(s.industry || '') + ' ' + String(s.narrator_profile || '') + ' '
+               + String(s.conflict_axis || '') + ' ' + String(s.problem_structure || '') + ' '
+               + String(s.concern || '') + ' ' + String(s.question || '');
+      var normIndustry = String(s.industry || '').replace(/\s+/g,'');
+      var fit = checkStoryFit(text, normIndustry, subjectFit);
+      if (!fit.ok) {
+        misfitIdx.push(i);
+        warnings.push('#' + (i+1) + ' 사연이 선택 주제(' + subjectFit.label + ')의 업종/상황과 어긋남: ' + fit.reason);
+      }
+    });
+  }
+
   duplicateIdx  = Array.from(new Set(duplicateIdx));
   structuralIdx = Array.from(new Set(structuralIdx));
+  misfitIdx     = Array.from(new Set(misfitIdx));
   return {
     warnings:      warnings,
     duplicateIdx:  duplicateIdx,
     structuralIdx: structuralIdx,
+    misfitIdx:     misfitIdx,
     hasStructural: structuralIdx.length > 0
   };
+}
+
+/* ── 선택 주제 기반 업종 적합성 규칙 산출 ──
+   주제 제목·요약·문제 축의 키워드를 보고 어떤 업종/상황이 우선되어야 하는지 정의.
+   매칭되는 카테고리가 없으면 null 반환 → 적합성 검증 비활성. */
+function computeSubjectFitRules(ctx) {
+  if (!ctx) return null;
+  var blob = ((ctx.title || '') + ' ' + (ctx.summary || '') + ' '
+            + (ctx.problemAxis || '') + ' ' + (ctx.conflict || '') + ' '
+            + (ctx.taxQuestion || '')).replace(/\s+/g, ' ');
+
+  /* 플랫폼 정산 / 현금흐름 */
+  if (/(플랫폼|정산|입점|스마트스토어|쿠팡|배민|배달의민족|요기요|네이버\s?페이|오픈마켓|수수료|판매대금|정산금|판매\s?수수료|예약\s?플랫폼)/.test(blob)
+      || (/(현금흐름|자금\s?부족|입금\s?지연|통장)/.test(blob) && /(매출|정산|판매)/.test(blob))) {
+    return {
+      label: '플랫폼 정산·현금흐름',
+      mustIndustryRe: /(쇼핑몰|스마트스토어|쿠팡|오픈마켓|배달|배민|요기요|플랫폼|예약|네이버|온라인|입점|판매자|프리랜서|도소매)/,
+      mustContextRe:  /(플랫폼|정산|수수료|입금|판매대금|판매\s?수수료|예약\s?플랫폼|광고비|배송비|재고|현금흐름|통장|입금\s?지연|정산\s?주기)/,
+      excludeIndustryRe: /(학원|미용실|병원|의원|카페|음식점|제조|매장|오프라인)/,
+      excludeContextRe:  /(매출\s?보고서|장부\s?확인|보고서.*늦게|보고서.*뒤늦)/
+    };
+  }
+
+  /* 직원·급여·4대보험 */
+  if (/(직원|급여|4대보험|원천징수|채용|알바|아르바이트|인건비|노무|프리랜서\s?계약)/.test(blob)) {
+    return {
+      label: '직원·급여·4대보험',
+      mustIndustryRe: /(음식점|카페|병원|의원|학원|제조|도소매|매장|미용실|쇼핑몰|회사|법인|사무실)/,
+      mustContextRe:  /(직원|급여|4대보험|원천징수|채용|알바|아르바이트|인건비|노무|월급)/
+    };
+  }
+
+  /* 지원사업·정책자금 */
+  if (/(지원사업|정책자금|보조금|바우처|융자|소상공인\s?지원|공고)/.test(blob)) {
+    return {
+      label: '지원사업·정책자금',
+      mustContextRe: /(지원|정책|보조|바우처|융자|공고|신청|소상공인|창업|영세)/
+    };
+  }
+
+  /* 카드·증빙·경비 */
+  if (/(카드\s?사용|적격증빙|세금계산서|영수증|경비\s?처리|증빙|현금영수증)/.test(blob)) {
+    return {
+      label: '카드·증빙·경비',
+      mustIndustryRe: /(쇼핑몰|카페|음식점|미용실|프리랜서|도소매|학원|병원|온라인)/,
+      mustContextRe:  /(카드|영수증|증빙|세금계산서|경비|적격증빙|현금영수증)/
+    };
+  }
+
+  return null;
+}
+
+function checkStoryFit(text, industry, rule) {
+  if (!rule) return { ok: true, reason: '' };
+  if (rule.excludeIndustryRe && industry && rule.excludeIndustryRe.test(industry)) {
+    /* 제외 업종이라도 맥락 키워드가 살아 있으면 통과 */
+    if (!rule.mustContextRe || !rule.mustContextRe.test(text)) {
+      return { ok: false, reason: '주제와 맞지 않는 업종(' + industry + ')에 핵심 맥락도 누락' };
+    }
+  }
+  if (rule.excludeContextRe && rule.excludeContextRe.test(text)) {
+    if (!rule.mustContextRe || !rule.mustContextRe.test(text)) {
+      return { ok: false, reason: '주제 핵심과 무관한 단순 확인/장부 지연 패턴' };
+    }
+  }
+  if (rule.mustIndustryRe && industry && !rule.mustIndustryRe.test(industry)) {
+    if (!rule.mustContextRe || !rule.mustContextRe.test(text)) {
+      return { ok: false, reason: '주제에 적합한 업종 아님 + 핵심 맥락 누락' };
+    }
+  }
+  if (rule.mustContextRe && !rule.mustContextRe.test(text)) {
+    return { ok: false, reason: '주제 핵심 키워드(' + rule.label + ')가 사연에 드러나지 않음' };
+  }
+  return { ok: true, reason: '' };
 }
 
 function selectStory(i) {
