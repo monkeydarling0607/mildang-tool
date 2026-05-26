@@ -457,6 +457,37 @@ export function extractHashtags(text, max = 8) {
   return out;
 }
 
+/* 파일명/URL source에서 제목 추출 — 마지막 fallback.
+   본문에 og:title/<title>/[밀당레터 #N]/메뉴 🍯 항목이 모두 없을 때 사용.
+   - 경로/쿼리/확장자 제거
+   - 선행 "(광고)" 같은 접두 제거
+   - 후행 날짜 표기(YYYY.M.D / YYYY-MM-DD / YYYY년 M월 D일) 제거
+   - 한글이 없으면 (URL의 숫자뿐인 경우 등) 빈 값 반환 */
+export function extractTitleFromSourceName(source) {
+  if (!source) return '';
+  let s = String(source);
+
+  /* 1. URL 쿼리만 제거 — 파일명의 "#N"은 보존해야 함 (밀당레터 #4 등) */
+  s = s.replace(/\?.*$/, '');
+  /* 2. 경로 제거 — 마지막 / 또는 \ 뒤만 사용 */
+  const lastSlash = Math.max(s.lastIndexOf('/'), s.lastIndexOf('\\'));
+  if (lastSlash >= 0) s = s.slice(lastSlash + 1);
+  /* 3. 확장자 제거 */
+  s = s.replace(/\.(txt|html?|htm|json)$/i, '');
+  /* 4. 선행 "(광고)" 등 제거 */
+  s = s.replace(/^\s*\(?\s*광고\s*\)?\s*/, '');
+  /* 5. 후행 날짜 표기 제거
+        예: " 2025. 5. 28.", "_2025. 6. 11.", " 2025-06-11", " 2025년 6월 11일" */
+  s = s.replace(/[\s_·\-,]*\(?\s*20\d{2}\s*[.\-\s]\s*\d{1,2}\s*[.\-\s]\s*\d{1,2}\.?\s*\)?\s*$/, '');
+  s = s.replace(/[\s_·\-,]*20\d{2}\s*년\s*\d{1,2}\s*월\s*\d{1,2}\s*일\s*$/, '');
+  /* 6. 끝의 공백/구두점 정리 */
+  s = s.replace(/[\s._\-]+$/, '').trim();
+  /* 7. 가드 — 한글이 없으면 사용하지 않음 (URL의 숫자 path 등 거름) */
+  if (!s || !/[가-힣]/.test(s)) return '';
+  /* 8. 길이 제한 */
+  return s.slice(0, 100);
+}
+
 export function extractTopicFromTitle(title) {
   if (!title) return '';
   let t = String(title)
@@ -509,9 +540,15 @@ export function extractArchiveEntryFromNewsletter(html, source = '') {
     createdAt: new Date().toISOString()
   };
 
-  /* issueNo (URL의 /p/N/ 우선, 다음 source 안의 #N) */
+  /* issueNo — URL의 /p/N/ 우선, 없으면 source(파일명) 안의 #N.
+     아래 title 추출 fallback이 issueNo를 prefix로 붙이는 경우가 있어 먼저 잡아둠. */
   const urlNumMatch = String(source).match(/\/p\/(\d+)\//);
-  if (urlNumMatch) entry.issueNo = urlNumMatch[1];
+  if (urlNumMatch) {
+    entry.issueNo = urlNumMatch[1];
+  } else {
+    const srcHashMatch = String(source).match(/#\s*(\d+)/);
+    if (srcHashMatch) entry.issueNo = srcHashMatch[1];
+  }
 
   /* title — 우선순위: og:title → <title> → 본문 안의 [밀당레터 #N] 패턴 fallback.
      Stibee가 발송한 회차별 HTML 파일에는 og:title/<title>이 없는 경우가 있음. */
@@ -542,24 +579,41 @@ export function extractArchiveEntryFromNewsletter(html, source = '') {
       }
     }
   }
-  entry.kakaoTitle = entry.title;
-  entry.topic      = extractTopicFromTitle(entry.title);
 
+  /* issueNo 보충 추출 — title 안의 #N, 본문 안의 [밀당레터 #N], source(파일명) 안의 #N
+     아래 source 기반 title fallback에서 issueLabel을 붙이려면 issueNo가 먼저 잡혀 있어야 함 */
   if (!entry.issueNo && entry.title) {
     const noMatch = entry.title.match(/#\s*(\d+)/);
     if (noMatch) entry.issueNo = noMatch[1];
   }
-  /* issueNo 최후 fallback — 본문 안의 [밀당레터 #N] */
   if (!entry.issueNo) {
     const plain = normalizeNewsletterText(html);
     const inBody = plain.match(/밀당레터\s*#\s*(\d+)/);
     if (inBody) entry.issueNo = inBody[1];
   }
-  /* issueNo 최후의 최후 — source(파일명) 안의 #N */
   if (!entry.issueNo) {
     const srcMatch = String(source).match(/#\s*(\d+)/);
     if (srcMatch) entry.issueNo = srcMatch[1];
   }
+
+  /* title 최후 fallback — source(파일명)에서 추출.
+     #3, #4 같은 옛 회차는 본문에 og:title/<title>/메뉴 🍯 항목이 모두 없을 수 있음.
+     파일명에는 "[밀당레터 #N] 본제목 [날짜].txt" 형식으로 제목이 보통 들어 있음. */
+  if (!entry.title) {
+    const fromFile = extractTitleFromSourceName(source);
+    if (fromFile) {
+      /* 파일명에 이미 [밀당레터 #N] 형식이 들어있으면 그대로, 아니면 issueLabel 부착 */
+      if (/밀당레터\s*#?\s*\d+/.test(fromFile) || /^\s*\[?\s*#\s*\d+/.test(fromFile)) {
+        entry.title = fromFile;
+      } else {
+        const issueLabel = entry.issueNo ? `[밀당레터 #${entry.issueNo}] ` : '';
+        entry.title = (issueLabel + fromFile).slice(0, 100);
+      }
+    }
+  }
+
+  entry.kakaoTitle = entry.title;
+  entry.topic      = extractTopicFromTitle(entry.title);
 
   /* date — 우선순위: 본문 "YYYY.M.D" → "YYYY-MM-DD" → "YYYY년 M월 D일" → 파일명 동일 패턴
      Stibee 발송일 표기가 회차마다 다름 (#21~#26: dot, #27: 년월일).
