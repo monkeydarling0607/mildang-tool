@@ -1,12 +1,16 @@
-// api/fetch-archive.js — 스티비 회차 링크에서 뉴스레터를 섹션별로 분리 추출
-// POST /api/fetch-archive  { urls: [...], includeHtml?: boolean }
+// api/fetch-archive.js — 스티비 회차 링크 또는 raw HTML을 섹션별로 분리 추출
+//
+// 두 가지 입력 모드 지원:
+//   1. URL fetch     : POST { urls: [...], includeHtml?: boolean }
+//   2. HTML 직접 파싱 : POST { htmlPayloads: [{ name, html }, ...] }
+//      (브라우저에서 사용자가 선택한 회차별 txt/html 파일을 보낼 때 사용)
 //
 // 반환 필드 (entry):
 //   - issueNo, date, url, title, kakaoTitle, topic
 //   - storySummary, tipSummary, quizSummary, newsSummary
 //   - avoidExpressions
 //   - tipTitle, storyTitle, quizTitle  (백워드 호환 — 각 섹션의 첫 문장)
-//   - htmlContent, analysisText        (includeHtml=true 일 때만)
+//   - htmlContent, analysisText        (includeHtml=true & URL 모드일 때만)
 //
 // 핵심 원칙:
 //   섹션 분리에 실패한 필드는 빈 문자열을 반환.
@@ -21,14 +25,47 @@ export default async function handler(req, res) {
   if (req.method !== 'POST')
     return res.status(405).json({ error: 'Method not allowed' });
 
-  const { urls, includeHtml } = req.body || {};
-  if (!Array.isArray(urls) || urls.length === 0)
-    return res.status(400).json({ error: 'urls 배열이 필요합니다' });
-  if (urls.length > 20)
-    return res.status(400).json({ error: '한 번에 최대 20개까지 처리 가능합니다' });
+  const { urls, includeHtml, htmlPayloads } = req.body || {};
+
+  /* 모드 분기 — htmlPayloads(파일 직접 파싱)와 urls(원격 fetch) */
+  const hasPayloads = Array.isArray(htmlPayloads) && htmlPayloads.length > 0;
+  const hasUrls     = Array.isArray(urls) && urls.length > 0;
+
+  if (!hasPayloads && !hasUrls) {
+    return res.status(400).json({ error: 'urls 배열 또는 htmlPayloads 배열이 필요합니다' });
+  }
 
   const results = [];
   const errors  = [];
+
+  /* 모드 1: htmlPayloads — 브라우저가 보낸 raw HTML을 그대로 파싱 */
+  if (hasPayloads) {
+    if (htmlPayloads.length > 50) {
+      return res.status(400).json({ error: '한 번에 최대 50개까지 파싱 가능합니다' });
+    }
+    for (const payload of htmlPayloads) {
+      const name = (payload && payload.name) || '';
+      const html = (payload && payload.html) || '';
+      try {
+        if (!html || typeof html !== 'string' || html.length < 50) {
+          throw new Error('빈 파일이거나 HTML이 너무 짧습니다');
+        }
+        const entry = extractArchiveEntryFromNewsletter(html, name);
+        if (!entry.issueNo && !entry.title) {
+          throw new Error('issueNo/title 추출 실패 — 파일명이나 본문에 식별 정보가 없습니다');
+        }
+        results.push(entry);
+      } catch (e) {
+        errors.push({ name, message: e.message });
+      }
+    }
+    console.log('[fetch-archive][payloads]', results.length, 'ok /', errors.length, 'fail');
+    return res.status(200).json({ ok: true, results, errors });
+  }
+
+  /* 모드 2: urls — 기존 원격 fetch */
+  if (urls.length > 20)
+    return res.status(400).json({ error: 'urls는 한 번에 최대 20개까지 처리 가능합니다' });
 
   for (const rawUrl of urls) {
     const url = (rawUrl || '').trim();
@@ -458,9 +495,10 @@ function firstSentence(s, maxLen = 100) {
    6. extractArchiveEntryFromNewsletter — 최종 entry 조립
    ══════════════════════════════════════════════════════════════ */
 
-export function extractArchiveEntryFromNewsletter(html, url = '') {
+export function extractArchiveEntryFromNewsletter(html, source = '') {
+  /* source는 URL("https://saemmil.stibee.com/p/27/") 또는 파일명("[밀당레터 #27] ... 2026. 4. 15.txt") */
   const entry = {
-    issueNo: '', url, title: '', kakaoTitle: '', date: '',
+    issueNo: '', url: source, title: '', kakaoTitle: '', date: '',
     topic: '',
     storySummary: '', tipSummary: '', quizSummary: '', newsSummary: '',
     avoidExpressions: '',
@@ -471,8 +509,8 @@ export function extractArchiveEntryFromNewsletter(html, url = '') {
     createdAt: new Date().toISOString()
   };
 
-  /* issueNo (URL 우선) */
-  const urlNumMatch = String(url).match(/\/p\/(\d+)\//);
+  /* issueNo (URL의 /p/N/ 우선, 다음 source 안의 #N) */
+  const urlNumMatch = String(source).match(/\/p\/(\d+)\//);
   if (urlNumMatch) entry.issueNo = urlNumMatch[1];
 
   /* title — 우선순위: og:title → <title> → 본문 안의 [밀당레터 #N] 패턴 fallback.
@@ -517,22 +555,27 @@ export function extractArchiveEntryFromNewsletter(html, url = '') {
     const inBody = plain.match(/밀당레터\s*#\s*(\d+)/);
     if (inBody) entry.issueNo = inBody[1];
   }
+  /* issueNo 최후의 최후 — source(파일명) 안의 #N */
+  if (!entry.issueNo) {
+    const srcMatch = String(source).match(/#\s*(\d+)/);
+    if (srcMatch) entry.issueNo = srcMatch[1];
+  }
 
-  /* date — 우선순위: "YYYY.M.D" → "YYYY-MM-DD" → "YYYY년 M월 D일"
-     Stibee 발송일 표기가 회차마다 다름 (#21~#26: dot, #27: 년월일) */
+  /* date — 우선순위: 본문 "YYYY.M.D" → "YYYY-MM-DD" → "YYYY년 M월 D일" → 파일명 동일 패턴
+     Stibee 발송일 표기가 회차마다 다름 (#21~#26: dot, #27: 년월일).
+     파일명 export(예: "... 2026. 4. 15.txt")에는 본문에 날짜 없을 때가 있어 fallback. */
   {
-    const dateKo  = html.match(/20\d{2}\.\s*\d{1,2}\.\s*\d{1,2}/);
-    const dateIso = html.match(/20\d{2}-\d{2}-\d{2}/);
-    const dateKor = html.match(/20\d{2}\s*년\s*\d{1,2}\s*월\s*\d{1,2}\s*일/);
-    if (dateKo) {
-      entry.date = dateKo[0].replace(/\s/g, '');
-    } else if (dateIso) {
-      entry.date = dateIso[0];
-    } else if (dateKor) {
-      /* "2026년 1월 1일" → "2026.1.1" 로 정규화 (다른 회차와 표기 통일) */
-      const m = dateKor[0].match(/(\d{4})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일/);
-      if (m) entry.date = `${m[1]}.${parseInt(m[2], 10)}.${parseInt(m[3], 10)}`;
-    }
+    const tryDate = (s) => {
+      if (!s) return '';
+      const dot = s.match(/(20\d{2})\.\s*(\d{1,2})\.\s*(\d{1,2})/);
+      if (dot) return `${dot[1]}.${parseInt(dot[2],10)}.${parseInt(dot[3],10)}`;
+      const iso = s.match(/(20\d{2})-(\d{2})-(\d{2})/);
+      if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+      const kor = s.match(/(20\d{2})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일/);
+      if (kor) return `${kor[1]}.${parseInt(kor[2],10)}.${parseInt(kor[3],10)}`;
+      return '';
+    };
+    entry.date = tryDate(html) || tryDate(source);
   }
 
   /* 본문 구조 보존 텍스트 → 섹션 분리 → 정리 → 검증 */
