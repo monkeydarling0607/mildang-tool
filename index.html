@@ -562,16 +562,15 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <div class="btn-row" style="margin-top:0;margin-bottom:6px;flex-wrap:wrap;gap:6px">
     <button class="btn-next" id="btn-archive-current" onclick="addToArchive()">이번 회차 아카이브 저장</button>
     <button class="btn-main" onclick="toggleArchiveForm()">수동 입력 추가</button>
-    <button class="btn-sm" onclick="loadPublicArchive({silent:false})">아카이브 파일 불러오기</button>
+    <button class="btn-sm" onclick="openArchiveImportModal()">아카이브 파일 불러오기</button>
     <button class="btn-sm" onclick="openArchiveExport()">아카이브 백업하기</button>
-    <button type="button" class="btn-danger" style="font-size:12px;padding:5px 12px" onclick="rebuildArchive()">아카이브 전체 교체</button>
-    <input type="file" id="rebuildFileInput" multiple accept=".json,.txt,.html,.htm" style="display:none">
+    <input type="file" id="archiveFileInput" multiple accept=".json,.txt,.html,.htm" style="display:none">
   </div>
   <div id="archive-current-hint" style="display:none;font-size:12px;color:var(--text3);margin-bottom:1rem;line-height:1.55">
     현재 회차 저장에 필요한 내용이 부족합니다. 주제 또는 제목을 생성한 뒤 저장해주세요.
   </div>
   <div style="font-size:11.5px;color:var(--text3);line-height:1.55;margin-bottom:1rem">
-    <b style="font-weight:600;color:var(--coral-text)">아카이브 전체 교체</b>: 기존 아카이브와 삭제 기록을 비우고, 선택한 파일(JSON 또는 회차별 txt/html) 기준으로 다시 등록합니다. 새 파서로 정리된 깨끗한 아카이브를 만들 때 사용하세요. 시작 전 <b>아카이브 백업하기</b>로 한 번 받아두는 것을 권장합니다.
+    파일을 불러와 아카이브에 추가하거나, 전체 교체할 수 있습니다.
   </div>
 
   <!-- 수동 입력 폼 (기본 접힘) -->
@@ -630,6 +629,31 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 
   <!-- 아카이브 목록 -->
   <div id="archiveList" style="max-height:500px;overflow-y:auto"></div>
+
+  <!-- 아카이브 불러오기 방식 선택 모달 -->
+  <div class="arc-modal-overlay" id="arcImportModal" onclick="if(event.target===this)closeArchiveImportModal()">
+    <div class="arc-modal" style="width:min(440px,92vw);min-height:auto">
+      <div class="arc-modal-hd">
+        <span class="arc-modal-title">아카이브 파일 불러오기</span>
+        <button class="arc-modal-close" onclick="closeArchiveImportModal()">✕</button>
+      </div>
+      <p style="font-size:12px;color:var(--text2);margin:0">JSON 백업 또는 회차별 txt/html 파일을 불러올 수 있습니다.</p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
+        <button type="button" onclick="runArchiveImport('merge')"
+          style="text-align:left;padding:11px 14px;border-radius:var(--radius);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text);cursor:pointer;font-family:inherit;transition:background .1s"
+          onmouseover="this.style.background='#EAEAE5'" onmouseout="this.style.background='var(--bg2)'">
+          <div style="font-size:13px;font-weight:600">기존 아카이브에 추가</div>
+          <div style="font-size:11.5px;color:var(--text3);margin-top:3px;line-height:1.5">현재 아카이브는 유지하고 선택한 파일의 새 항목만 추가합니다.</div>
+        </button>
+        <button type="button" onclick="runArchiveImport('replace')"
+          style="text-align:left;padding:11px 14px;border-radius:var(--radius);border:0.5px solid var(--coral-bd);background:var(--coral-bg);color:var(--coral-text);cursor:pointer;font-family:inherit;transition:background .1s"
+          onmouseover="this.style.background='#F5D6CB'" onmouseout="this.style.background='var(--coral-bg)'">
+          <div style="font-size:13px;font-weight:600">전체 교체</div>
+          <div style="font-size:11.5px;color:var(--coral-text);opacity:.85;margin-top:3px;line-height:1.5">기존 아카이브와 삭제 기록을 비우고, 선택한 파일 기준으로 다시 만듭니다.</div>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- 아카이브 JSON 내보내기 모달 -->
   <div class="arc-modal-overlay" id="arcExportModal" onclick="if(event.target===this)closeArchiveExport()">
@@ -3424,26 +3448,36 @@ async function loadPublicArchive(opts) {
 }
 
 /* ══════════════════════════════════════
-   아카이브 전체 교체 (재구축)
-   파일 선택 → 파싱 → 확인 → atomic 교체 → archiveDeletedKeys 초기화
+   아카이브 파일 불러오기 — 추가/교체 통합 진입점
    ══════════════════════════════════════ */
-function rebuildArchive() {
-  var input = document.getElementById('rebuildFileInput');
+function openArchiveImportModal() {
+  var el = document.getElementById('arcImportModal');
+  if (el) el.classList.add('open');
+}
+function closeArchiveImportModal() {
+  var el = document.getElementById('arcImportModal');
+  if (el) el.classList.remove('open');
+}
+
+/* 모달에서 mode 선택 → 파일 picker → 모드별 실행 */
+function runArchiveImport(mode) {
+  closeArchiveImportModal();
+  var input = document.getElementById('archiveFileInput');
   if (!input) { alert('파일 입력 요소를 찾을 수 없습니다.'); return; }
-  /* 파일 선택 매번 새로 받기 위해 value 초기화 */
   input.value = '';
   input.onchange = null;
-  input.onchange = function() { runArchiveRebuild(Array.from(input.files || [])); };
+  input.onchange = function() {
+    var files = Array.from(input.files || []);
+    if (!files.length) return;
+    if (mode === 'replace') runArchiveRebuild(files);
+    else                    runArchiveMerge(files);
+  };
   input.click();
 }
 
-async function runArchiveRebuild(files) {
-  if (!files || !files.length) return;
-
-  var beforeLen     = Array.isArray(S.archive) ? S.archive.length : 0;
-  var beforeDeleted = Array.isArray(S.archiveDeletedKeys) ? S.archiveDeletedKeys.length : 0;
-
-  /* 1. 기존 archive에서 issueNo→date 맵 스냅샷 (date fallback에 사용) */
+/* 선택한 파일들을 파싱해 표준 archive item 배열과 실패 목록을 반환.
+   merge/replace 모두 이 단계를 공유한다. */
+async function parseArchiveFiles(files) {
   var existingDateByIssueNo = {};
   (Array.isArray(S.archive) ? S.archive : []).forEach(function(a) {
     if (a && a.issueNo != null && a.issueNo !== '' && a.date) {
@@ -3451,7 +3485,6 @@ async function runArchiveRebuild(files) {
     }
   });
 
-  /* 2. 파일 분류 — JSON은 클라이언트에서 직접 파싱, txt/html은 서버 파서로 */
   var jsonFiles = [];
   var htmlFiles = [];
   files.forEach(function(f) {
@@ -3460,28 +3493,26 @@ async function runArchiveRebuild(files) {
     else                         htmlFiles.push(f);
   });
 
-  var parsedEntries = []; /* 모두 archive item 형태로 모음 */
-  var failed        = []; /* { name, reason } */
+  var entries = [];
+  var failed  = [];
 
-  /* 2a. JSON 파일들 */
+  /* JSON 파일들 — 클라이언트에서 직접 파싱 */
   for (var i = 0; i < jsonFiles.length; i++) {
-    var f = jsonFiles[i];
+    var jf = jsonFiles[i];
     try {
-      var text = await f.text();
+      var text = await jf.text();
       var json = JSON.parse(text);
       var items = Array.isArray(json)
         ? json
         : (Array.isArray(json.archive) ? json.archive : null);
       if (!items) throw new Error('JSON 형식 오류 — 배열 또는 { archive: [...] } 구조 필요');
-      items.forEach(function(it) {
-        if (it && typeof it === 'object') parsedEntries.push(it);
-      });
+      items.forEach(function(it) { if (it && typeof it === 'object') entries.push(it); });
     } catch (e) {
-      failed.push({ name: f.name, reason: 'JSON 파싱 실패: ' + e.message });
+      failed.push({ name: jf.name, reason: 'JSON 파싱 실패: ' + e.message });
     }
   }
 
-  /* 2b. txt/html 파일들 → 서버 한 번에 호출 */
+  /* txt/html 파일들 — 서버 파서 1회 호출 */
   if (htmlFiles.length > 0) {
     try {
       var payloads = [];
@@ -3497,27 +3528,21 @@ async function runArchiveRebuild(files) {
       });
       var data = await res.json();
       if (!res.ok || !data.ok) throw new Error((data && data.error) || ('HTTP ' + res.status));
-      (data.results || []).forEach(function(entry) { parsedEntries.push(entry); });
+      (data.results || []).forEach(function(entry) { entries.push(entry); });
       (data.errors  || []).forEach(function(err)   { failed.push({ name: err.name || err.url || '(unknown)', reason: err.message || '파싱 실패' }); });
     } catch (e) {
-      /* 네트워크 자체 실패 — 모든 html 파일을 실패로 기록 */
       htmlFiles.forEach(function(hf) {
         failed.push({ name: hf.name, reason: 'API 호출 실패: ' + e.message });
       });
     }
   }
 
-  /* 3. 새 archive 후보 정리 — 중복 제거 + date fallback */
-  var seen = {};
-  var duplicates = [];
-  var newArchive = [];
-  parsedEntries.forEach(function(p) {
-    /* date fallback: parsed.date → 기존 issueNo 매핑 → 빈 값 (오늘 날짜 자동 채움 금지) */
+  /* 표준 archive item 모양 + date fallback (오늘 날짜 자동 채움 금지) */
+  var normalized = entries.map(function(p) {
     if (!p.date && p.issueNo && existingDateByIssueNo[String(p.issueNo)]) {
       p.date = existingDateByIssueNo[String(p.issueNo)];
     }
-    /* 기존 컨슈머와 동일한 archive item 모양 보정 — 필드 누락 시 빈 값 */
-    var candidate = {
+    return {
       issueNo:          p.issueNo || '',
       date:             p.date || '',
       kakaoTitle:       p.kakaoTitle || p.title || '',
@@ -3531,57 +3556,100 @@ async function runArchiveRebuild(files) {
       share:            p.share || 0,
       note:             p.note  || ''
     };
-    var key = archiveItemKey(candidate);
-    if (key && seen[key]) { duplicates.push(p.kakaoTitle || p.title || p.issueNo || '(unknown)'); return; }
-    if (key) seen[key] = true;
-    newArchive.push(candidate);
   });
 
-  var missingDate = newArchive.filter(function(a){ return !a.date; }).length;
+  return { entries: normalized, failed: failed };
+}
 
-  /* 4. 사용자 confirm */
-  var stats = '선택 파일: ' + files.length + '개\n'
-    + '파싱 성공: ' + parsedEntries.length + '개\n'
-    + '등록 예정: ' + newArchive.length + '개\n'
-    + '중복 제외: ' + duplicates.length + '개\n'
-    + '파싱 실패: ' + failed.length + '개\n'
-    + '날짜 없음: ' + missingDate + '개\n\n'
-    + '※ 기존 아카이브: ' + beforeLen + '개, 삭제 기록: ' + beforeDeleted + '개\n'
-    + '※ 시작 전 "아카이브 백업하기"로 백업해두는 것을 권장합니다.';
+/* 추가 모드 — 기존 아카이브에 병합. tombstone/중복은 mergeArchive가 처리 */
+async function runArchiveMerge(files) {
+  if (!files || !files.length) return;
+  var result = await parseArchiveFiles(files);
+  var entries = result.entries;
+  var failed  = result.failed;
 
-  if (newArchive.length === 0 && failed.length > 0) {
-    alert('등록 가능한 항목이 없습니다.\n\n' + stats + '\n\n작업이 중단되었습니다. 기존 아카이브는 그대로 유지됩니다.');
+  if (entries.length === 0 && failed.length > 0) {
+    var lines0 = ['추가할 항목이 없습니다.', ''];
+    failed.slice(0, 10).forEach(function(f){ lines0.push('- ' + f.name + ': ' + f.reason); });
+    alert(lines0.join('\n'));
     return;
   }
 
-  var msg = '현재 저장된 아카이브와 삭제 기록이 모두 초기화되고, 선택한 파일 기준으로 새로 등록됩니다.\n계속할까요?\n\n' + stats;
-  if (!confirm(msg)) return;
+  var added = mergeArchive(entries);
+  saveState();
+  renderArchive();
 
-  /* 5. atomic 교체 — 여기서 처음 S를 손댐 */
+  var skipped = entries.length - added;
+  var lines = ['아카이브 파일 추가 완료', '', '- 선택 파일: ' + files.length + '개', '- 추가: ' + added + '개'];
+  if (skipped > 0) lines.push('- 중복/삭제기록 제외: ' + skipped + '개');
+  if (failed.length) lines.push('- 실패: ' + failed.length + '개');
+  alert(lines.join('\n'));
+}
+
+/* 교체 모드 — 파싱 후 confirm → atomic 교체 → archiveDeletedKeys 초기화 */
+async function runArchiveRebuild(files) {
+  if (!files || !files.length) return;
+  var result = await parseArchiveFiles(files);
+  var entries = result.entries;
+  var failed  = result.failed;
+
+  /* 중복 dedup — 동일 키 항목은 첫 등장만 채택 */
+  var seen = {};
+  var dupCount = 0;
+  var newArchive = [];
+  entries.forEach(function(candidate) {
+    var key = archiveItemKey(candidate);
+    if (key && seen[key]) { dupCount++; return; }
+    if (key) seen[key] = true;
+    newArchive.push(candidate);
+  });
+  var missingDate = newArchive.filter(function(a){ return !a.date; }).length;
+
+  if (newArchive.length === 0) {
+    var lines0 = ['등록 가능한 항목이 없습니다. 기존 아카이브는 유지됩니다.', ''];
+    failed.slice(0, 10).forEach(function(f){ lines0.push('- ' + f.name + ': ' + f.reason); });
+    alert(lines0.join('\n'));
+    return;
+  }
+
+  /* confirm — 0인 항목은 숨김 */
+  var msgLines = [
+    '아카이브를 전체 교체할까요?',
+    '',
+    '현재 아카이브는 선택한 파일 기준으로 새로 만들어집니다.',
+    '기존 아카이브와 삭제 기록은 초기화됩니다.',
+    '',
+    '선택 파일: ' + files.length + '개',
+    '등록 예정: ' + newArchive.length + '개'
+  ];
+  if (dupCount > 0)     msgLines.push('중복 제외: ' + dupCount + '개');
+  if (failed.length)    msgLines.push('실패: ' + failed.length + '개');
+  if (missingDate > 0)  msgLines.push('날짜 없음: ' + missingDate + '개');
+  msgLines.push('', '계속하려면 확인을 눌러주세요.');
+  if (!confirm(msgLines.join('\n'))) return;
+
+  /* atomic 교체 */
   S.archive            = newArchive;
   S.archiveDeletedKeys = [];
   saveState();
   renderArchive();
 
-  /* 6. 결과 보고 */
-  var lines = [
-    '아카이브 재구축 완료',
-    '',
-    '- 선택 파일: ' + files.length + '개',
-    '- 등록 성공: ' + newArchive.length + '개',
-    '- 중복 제외: ' + duplicates.length + '개',
-    '- 파싱 실패: ' + failed.length + '개',
-    '- 날짜 없음: ' + missingDate + '개'
-  ];
-  if (failed.length) {
-    lines.push('', '실패 파일:');
-    failed.slice(0, 20).forEach(function(f) { lines.push('- ' + f.name + ': ' + f.reason); });
-    if (failed.length > 20) lines.push('... 외 ' + (failed.length - 20) + '건');
+  /* 결과 alert — 0인 항목은 숨김 */
+  var resultLines = ['아카이브 교체가 완료되었습니다.', '총 ' + newArchive.length + '개 회차가 등록되었습니다.'];
+  var extras = [];
+  if (dupCount > 0)    extras.push('- 중복 제외: ' + dupCount + '개');
+  if (failed.length)   extras.push('- 실패: ' + failed.length + '개');
+  if (missingDate > 0) extras.push('- 날짜 없음: ' + missingDate + '개');
+  if (extras.length) {
+    resultLines.push('');
+    resultLines = resultLines.concat(extras);
   }
-  alert(lines.join('\n'));
-  console.log('[archive rebuild] before:', { archive: beforeLen, deletedKeys: beforeDeleted },
-              '/ after:', { archive: newArchive.length, deletedKeys: 0 },
-              '/ duplicates:', duplicates.length, '/ failed:', failed.length);
+  if (failed.length) {
+    resultLines.push('', '실패 파일:');
+    failed.slice(0, 10).forEach(function(f){ resultLines.push('- ' + f.name + ': ' + f.reason); });
+    if (failed.length > 10) resultLines.push('... 외 ' + (failed.length - 10) + '건');
+  }
+  alert(resultLines.join('\n'));
 }
 
 /* JSON 내보내기 모달 */
