@@ -3831,11 +3831,16 @@ function isCleanArchiveSection(text, sectionType) {
 }
 
 /* 카드 노출용 키워드 추출 — 최대 5개.
-   avoidExpressions(사용자가 직접 정한 회피 소재 목록)만 사용.
-   tipSummary/storySummary 해시태그 추출은 제거 — bulk-import된 항목에선 뉴스 브리핑 해시태그
-   (#국세청, #고액상습체납자단속 등)가 섞여 들어와 소재 판단에 방해됨. */
+   avoidExpressions를 후보로 쓰되, 주제/사연/꿀팁/퀴즈 본문(news + avoidExpressions 제외)에
+   실제 등장하는 키워드만 표시. newsSummary에만 등장하는 키워드(예: 뉴스 브리핑 해시태그)는
+   소재 판단에 방해되므로 카드 배지에서 제외.
+   주의: collectArchiveTopicText는 avoidExpressions를 포함하므로 자체 매칭이 됨 — 별도 텍스트 사용. */
 function extractArchiveKeywords(a) {
   if (!a) return [];
+  /* news + avoidExpressions 둘 다 제외한 비교용 본문 */
+  var compareText = [a.kakaoTitle, a.topic, a.storySummary, a.tipSummary, a.quizSummary, a.note]
+    .filter(Boolean).join(' ').toLowerCase();
+  if (!compareText) return [];
   var out = [];
   var seen = {};
   function push(s) {
@@ -3844,6 +3849,7 @@ function extractArchiveKeywords(a) {
     if (!t || t.length < 2 || t.length > 14) return;
     var k = t.toLowerCase();
     if (seen[k]) return;
+    if (compareText.indexOf(k) === -1) return;   /* news에만 등장 또는 어디에도 없음 → 제외 */
     seen[k] = 1; out.push(t);
   }
   String(a.avoidExpressions || '').split(/[,\/·;|]+/).forEach(push);
