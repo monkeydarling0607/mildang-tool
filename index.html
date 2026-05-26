@@ -193,10 +193,39 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .archive-wrap{margin-top:2rem;padding-top:1.5rem;border-top:0.5px solid var(--border)}
 .archive-card{background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:8px}
 .archive-card-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px}
-.archive-card-title{font-size:13px;font-weight:500;color:var(--text)}
+.archive-card-title{font-size:13px;font-weight:500;color:var(--text);line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
 .archive-card-meta{font-size:11px;color:var(--text3);line-height:1.6}
+.archive-card-row{margin-top:5px;font-size:11.5px;color:var(--text2);line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.archive-card-row b{font-weight:500;color:var(--text);margin-right:4px;font-size:11px}
+.archive-card-kw{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.archive-kw-badge{font-size:10.5px;font-weight:500;padding:2px 7px;border-radius:99px;background:var(--bg);border:0.5px solid var(--border);color:var(--text2);white-space:nowrap}
+.archive-cat-badge{font-size:10.5px;font-weight:500;padding:2px 7px;border-radius:99px;background:var(--purple-bg);color:var(--purple-text);border:0.5px solid transparent;white-space:nowrap}
+.archive-card-tagrow{display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-top:7px}
+.archive-card-tagrow .tagrow-label{font-size:10px;font-weight:500;color:var(--text3);letter-spacing:.03em;margin-right:2px;text-transform:uppercase}
+.archive-tag-badge{font-size:10.5px;font-weight:500;padding:2px 8px;border-radius:99px;background:var(--blue-bg);color:var(--blue-text);border:0.5px solid rgba(55,138,221,.2);white-space:nowrap}
+.archive-tag-more{font-size:10.5px;font-weight:500;padding:2px 7px;border-radius:99px;background:var(--bg2);color:var(--text3);border:0.5px solid var(--border);white-space:nowrap}
+.arc-filter-hint{font-size:11px;color:var(--text3);line-height:1.55;margin:-2px 4px 8px}
+.arc-filter-label{font-size:11px;font-weight:500;color:var(--text3);letter-spacing:.03em;margin:0 4px 6px;text-transform:uppercase}
 .archive-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
 @media(max-width:600px){.archive-form-grid{grid-template-columns:1fr}}
+/* 아카이브 컨트롤 바 */
+.arc-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px;padding:10px 12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius)}
+.arc-controls .arc-search{flex:1;min-width:200px;font-size:12.5px;padding:6px 10px;border:0.5px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none;font-family:inherit}
+.arc-controls .arc-search:focus{border-color:var(--border2)}
+.arc-controls .arc-sort{font-size:12.5px;padding:6px 28px 6px 10px;border:0.5px solid var(--border);border-radius:var(--radius);background:var(--bg);color:var(--text);outline:none;font-family:inherit;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.arc-filter-row{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.arc-filter-btn{font-size:11.5px;font-weight:500;padding:4px 10px;border-radius:99px;border:0.5px solid var(--border);background:var(--bg);color:var(--text2);cursor:pointer;font-family:inherit;transition:background .1s,border-color .1s,color .1s}
+.arc-filter-btn:hover{background:var(--bg2)}
+.arc-filter-btn.active{background:var(--teal-bg);border-color:var(--teal-bd);color:var(--teal-text)}
+.arc-count{font-size:11.5px;color:var(--text3);margin:0 4px 8px;line-height:1.5}
+.arc-empty{padding:1.25rem;border:0.5px dashed var(--border);border-radius:var(--radius);text-align:center;font-size:12.5px;color:var(--text3);line-height:1.7}
+/* 유사 과거 회차 박스 */
+.arc-similar{background:var(--blue-bg);border:0.5px solid rgba(55,138,221,.22);border-radius:var(--radius);padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--blue-text);line-height:1.55}
+.arc-similar-title{font-size:11.5px;font-weight:600;color:var(--blue-text);margin-bottom:6px;letter-spacing:.01em}
+.arc-similar-item{padding:6px 0;border-top:0.5px solid rgba(55,138,221,.18)}
+.arc-similar-item:first-of-type{border-top:none;padding-top:2px}
+.arc-similar-item .as-title{font-weight:500;color:var(--blue-text);display:block;margin-bottom:2px}
+.arc-similar-item .as-kw{font-size:11px;color:var(--blue-text);opacity:.75}
 /* 아카이브 JSON 내보내기 모달 */
 .arc-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center}
 .arc-modal-overlay.open{display:flex}
@@ -571,6 +600,30 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     </div>
   </div>
 
+  <!-- 유사 과거 회차 (현재 선택된 주제 기준) -->
+  <div id="archiveSimilar"></div>
+
+  <!-- 검색 / 정렬 컨트롤 -->
+  <div class="arc-controls">
+    <input type="text" class="arc-search" id="arc-search-input"
+      placeholder="과거 회차 제목, 주제, 사연, 꿀팁 검색"
+      oninput="onArchiveControlChange()">
+    <select class="arc-sort" id="arc-sort-select" onchange="onArchiveControlChange()">
+      <option value="latest">최신순</option>
+      <option value="oldest">오래된순</option>
+      <option value="issue_desc">회차 높은순</option>
+      <option value="issue_asc">회차 낮은순</option>
+    </select>
+  </div>
+
+  <!-- 포함 소재 필터 -->
+  <div class="arc-filter-label">포함 소재</div>
+  <div class="arc-filter-row" id="arc-filter-row"></div>
+  <div class="arc-filter-hint">여러 소재가 포함된 회차는 여러 필터에 함께 표시됩니다.</div>
+
+  <!-- 결과 개수 -->
+  <div class="arc-count" id="arc-count"></div>
+
   <!-- 아카이브 목록 -->
   <div id="archiveList" style="max-height:500px;overflow-y:auto"></div>
 
@@ -628,7 +681,12 @@ var S = {
   /* UI 상태 */
   activeTab: 0, unlockedTabs: [0, 11], doneTabs: [],
   /* 과거 회차 아카이브 */
-  archive: []
+  archive: [],
+  /* 삭제된 아카이브 키 묶음 — 페이지 새로고침 시 공용 archive.json이 재병합되며
+     삭제 항목이 부활하던 문제를 막기 위한 tombstone. 키는 issueNo 우선, 없으면 kakaoTitle. */
+  archiveDeletedKeys: [],
+  /* 아카이브 UI 상태 (정렬/검색/필터) */
+  archiveUI: { sort: 'latest', search: '', category: 'all' }
 };
 
 var API_ENDPOINT = '/api/generate';
@@ -655,6 +713,10 @@ function restoreState() {
   Object.keys(S).forEach(function(k) {
     if (saved[k] !== undefined) S[k] = saved[k];
   });
+
+  /* 배열 보장 — 저장된 값이 null/문자열 등으로 손상돼도 정상 동작하도록 */
+  if (!Array.isArray(S.archive))            S.archive = [];
+  if (!Array.isArray(S.archiveDeletedKeys)) S.archiveDeletedKeys = [];
 
   /* DOM 복원 — 탭1 입력값 */
   if (S.ctr)       document.getElementById('t1ctr').value       = S.ctr;
@@ -743,8 +805,10 @@ function hardReset() {
     + '정말 전체 초기화할까요?'
   )) return;
 
-  /* 아카이브만 보존 */
-  var preservedArchive = Array.isArray(S.archive) ? S.archive.slice() : [];
+  /* 아카이브 + 삭제 tombstone 보존 — tombstone이 사라지면 다음 페이지 로드 때
+     공용 archive.json에서 삭제했던 항목이 다시 살아남 */
+  var preservedArchive      = Array.isArray(S.archive)            ? S.archive.slice()            : [];
+  var preservedDeletedKeys  = Array.isArray(S.archiveDeletedKeys) ? S.archiveDeletedKeys.slice() : [];
 
   /* 상태 객체 전체 초기화 */
   S.ctr = 0; S.share = 0; S.note = ''; S.prevTitle = '';
@@ -761,7 +825,8 @@ function hardReset() {
   S.remindData = null;  S.remind  = null;
   S.titleData = null;   S.title   = null;
   S.activeTab = 0; S.unlockedTabs = [0, 11]; S.doneTabs = [];
-  S.archive = preservedArchive;
+  S.archive            = preservedArchive;
+  S.archiveDeletedKeys = preservedDeletedKeys;
 
   /* DOM 입력값 초기화 */
   ['t1ctr','t1share','t1note','t1prevTitle','t1html','t1stibeeUrl','t1bulkUrls',
@@ -897,8 +962,8 @@ function goTab(i) {
   pnls().forEach(function(p,idx){ p.classList.toggle('active', idx===i); });
   S.activeTab = i;
   updateCarry(i);
-  /* 12 아카이브 탭 진입 시 — 현재 회차 저장 버튼 상태 갱신 */
-  if (i === 11) updateArchiveCurrentBtn();
+  /* 12 아카이브 탭 진입 시 — 현재 회차 저장 버튼 상태 + 유사 회차/리스트 갱신 */
+  if (i === 11) renderArchive();
   saveState();
 }
 function unlockTab(i) {
@@ -1325,18 +1390,14 @@ async function callBulkArchive() {
     var results = Array.isArray(data.results) ? data.results : [];
     var errors  = Array.isArray(data.errors)  ? data.errors  : [];
 
-    /* 중복 체크 후 아카이브에 추가 */
-    if (!Array.isArray(S.archive)) S.archive = [];
+    /* 중복 체크 + tombstone 체크 후 아카이브에 추가 */
+    if (!Array.isArray(S.archive))            S.archive = [];
+    if (!Array.isArray(S.archiveDeletedKeys)) S.archiveDeletedKeys = [];
+    var deletedSet = new Set(S.archiveDeletedKeys.filter(Boolean));
     var added = 0;
     var skipped = 0;
     results.forEach(function(entry) {
-      var titleKey = entry.title || entry.kakaoTitle || '';
-      var isDup = S.archive.some(function(a) {
-        return (entry.issueNo && a.issueNo && a.issueNo === entry.issueNo)
-            || (titleKey && a.kakaoTitle && a.kakaoTitle === titleKey);
-      });
-      if (isDup) { skipped++; return; }
-      S.archive.push({
+      var candidate = {
         issueNo:          entry.issueNo || '',
         date:             entry.date    || new Date().toISOString().slice(0, 10),
         kakaoTitle:       entry.title   || '',
@@ -1349,7 +1410,15 @@ async function callBulkArchive() {
         share:            0,
         note:             '',
         avoidExpressions: ''
+      };
+      var key = archiveItemKey(candidate);
+      if (key && deletedSet.has(key)) { skipped++; return; }   /* tombstone — 부활 금지 */
+      var isDup = S.archive.some(function(a) {
+        var ak = archiveItemKey(a);
+        return key && ak && ak === key;
       });
+      if (isDup) { skipped++; return; }
+      S.archive.push(candidate);
       added++;
     });
 
@@ -3275,17 +3344,55 @@ function copyAll() {
 ══════════════════════════════════════ */
 var ARCHIVE_URL = '/archive.json';
 
-/* 원격 배열을 S.archive에 병합 (중복 제외). 추가된 개수 반환 */
+/* 아카이브 키 정규화 — 공백/이모지/따옴표/대괄호 같은 표기 차이로 키가 어긋나지 않도록 */
+function normalizeArchiveKeyText(v) {
+  return String(v == null ? '' : v)
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[‘’'`"\[\]【】#·•|]/g, '')
+    .replace(/[^\wㄱ-ㅎ가-힣\s.-]/g, '')
+    .trim();
+}
+
+/* 아카이브 항목의 고유 키.
+   issueNo 우선 → (title + date) → title-only → null.
+   같은 데이터가 deleteArchiveItem과 mergeArchive에서 정확히 같은 키를 만들도록 정규화. */
+function archiveItemKey(a) {
+  if (!a) return null;
+  var issueNo = String(a.issueNo == null ? '' : a.issueNo).trim();
+  if (issueNo) return 'issue:' + issueNo;
+  var title = normalizeArchiveKeyText(a.kakaoTitle || a.title || '');
+  var date  = normalizeArchiveKeyText(a.date || '');
+  if (title && date) return 'td:' + date + '::' + title;
+  if (title)         return 'title:' + title;
+  return null;
+}
+
+/* 원격 배열을 S.archive에 병합 (중복 + tombstone 제외). 추가된 개수 반환.
+   - tombstone 체크가 중복 체크보다 먼저 실행됨
+   - 키 정규화로 표기 차이에 강건 */
 function mergeArchive(remoteArr) {
   if (!Array.isArray(remoteArr) || !remoteArr.length) return 0;
-  if (!Array.isArray(S.archive)) S.archive = [];
+  if (!Array.isArray(S.archive))            S.archive = [];
+  if (!Array.isArray(S.archiveDeletedKeys)) S.archiveDeletedKeys = [];
+
+  var deletedSet  = new Set(S.archiveDeletedKeys.filter(Boolean));
+  var existingSet = new Set(S.archive.map(archiveItemKey).filter(Boolean));
+
   var added = 0;
   remoteArr.forEach(function(remote) {
-    var isDup = S.archive.some(function(local) {
-      if (remote.issueNo && local.issueNo) return String(remote.issueNo) === String(local.issueNo);
-      return remote.kakaoTitle && local.kakaoTitle && remote.kakaoTitle === local.kakaoTitle;
-    });
-    if (!isDup) { S.archive.push(remote); added++; }
+    var key = archiveItemKey(remote);
+    if (key && deletedSet.has(key)) {
+      console.log('[archive merge] skip deleted item', key);
+      return;
+    }
+    if (key && existingSet.has(key)) return;
+    /* 키 생성 실패 (issueNo/title 둘 다 없음) — 안전하게 중복은 아니라고 보고 push.
+       이 경우는 데이터가 본래 깨진 상태이므로 별도 경고. */
+    if (!key) console.warn('[archive merge] item has no usable key, pushing anyway:', remote);
+    S.archive.push(remote);
+    if (key) existingSet.add(key);
+    added++;
   });
   return added;
 }
@@ -3351,32 +3458,443 @@ function updateArchiveCurrentBtn() {
   if (hint) hint.style.display = hasContent ? 'none' : 'block';
 }
 
-function renderArchive() {
-  updateArchiveCurrentBtn();
-  var list = document.getElementById('archiveList');
-  if (!list) return;
-  if (!Array.isArray(S.archive) || !S.archive.length) {
-    list.innerHTML = '<p style="font-size:12px;color:var(--text3);padding:4px 0">저장된 과거 회차가 없습니다. 최종 초안 완료 후 저장하거나 수동으로 입력하세요.</p>';
+/* ───── 아카이브 헬퍼: 날짜/회차/카테고리/검색 ───── */
+
+/* 다양한 형식("2026-04-24","2026.4.15","2026/4/15")의 날짜를 timestamp로 변환. 실패시 null */
+function parseArchiveDate(s) {
+  if (!s) return null;
+  var str = String(s).trim();
+  if (!str) return null;
+  var norm = str.replace(/\./g, '-').replace(/\//g, '-');
+  var m = norm.match(/^(\d{4})-(\d{1,2})(?:-(\d{1,2}))?/);
+  if (!m) return null;
+  var y = parseInt(m[1], 10);
+  var mo = parseInt(m[2], 10);
+  var d = m[3] ? parseInt(m[3], 10) : 1;
+  if (!y || !mo) return null;
+  var t = new Date(y, mo - 1, d).getTime();
+  return isNaN(t) ? null : t;
+}
+
+/* 회차 번호 추출 — issueNo 우선, 없으면 제목 #숫자에서 fallback */
+function getIssueNoNum(a) {
+  if (a == null) return null;
+  if (a.issueNo != null && a.issueNo !== '') {
+    var n = parseInt(String(a.issueNo).replace(/[^\d]/g,''), 10);
+    if (!isNaN(n)) return n;
+  }
+  var m = String(a.kakaoTitle || '').match(/#\s*(\d+)/);
+  if (m) {
+    var n2 = parseInt(m[1], 10);
+    if (!isNaN(n2)) return n2;
+  }
+  return null;
+}
+
+/* 항목의 키워드 검색용 텍스트 묶음 (소문자). newsSummary 포함 — 뉴스 본문 검색 가능 */
+function collectArchiveText(a) {
+  if (!a) return '';
+  var parts = [
+    a.kakaoTitle, a.topic, a.storySummary, a.tipSummary,
+    a.quizSummary, a.newsSummary, a.note, a.avoidExpressions,
+    a.issueNo, a.date
+  ];
+  return parts.filter(Boolean).join(' ').toLowerCase();
+}
+
+/* 소재 태그 추론·유사 회차 비교용 텍스트. 뉴스 브리핑은 보조 섹션이라 제외 —
+   뉴스 본문에 등장한 키워드가 회차의 핵심 소재로 잡히지 않도록 분리. */
+function collectArchiveTopicText(a) {
+  if (!a) return '';
+  var parts = [
+    a.kakaoTitle, a.topic, a.storySummary, a.tipSummary,
+    a.quizSummary, a.note, a.avoidExpressions
+  ];
+  return parts.filter(Boolean).join(' ').toLowerCase();
+}
+
+/* 도메인 소재 태그 — 키워드 매칭, 다중 태그 가능 */
+var ARCHIVE_DOMAIN_TAG_RULES = [
+  { tag: '세금·신고',  kws: ['가산세','신고','세금','납부','고지서','세무조사','경정청구','부가세','종소세','원천세','과세','세무'] },
+  { tag: '지원사업',   kws: ['지원금','지원사업','공고','정책자금','바우처','희망리턴','특별지원','보조금','지원대상','지원내용','신청방법','신청자격'] },
+  { tag: '직원·급여',  kws: ['직원','급여','4대보험','알바','근로','인건비','노무','퇴직금','임금','근로계약','원천세'] },
+  { tag: '매출·정산',  kws: ['매출','정산','현금흐름','통장','수수료','카드매출','결제','입금','매입'] },
+  { tag: '명의·계약',  kws: ['명의','주소','계약','임대차','사업자등록','권리금','양수도','임대','보증금'] }
+];
+
+/* 소재 태그 추론 — 도메인 태그만 반환. 섹션 포함(사연/꿀팁/퀴즈)·뉴스는 다음 회차 소재 판단에 도움이 안 되어 제외.
+   newsSummary는 collectArchiveTopicText에서 이미 빠져있어 뉴스 본문 키워드가 도메인 태그로 잡히지 않음. */
+function inferArchiveTags(a) {
+  if (!a) return [];
+  var topicText = collectArchiveTopicText(a);
+  if (!topicText) return [];
+  var tags = [];
+  ARCHIVE_DOMAIN_TAG_RULES.forEach(function(r){
+    for (var i = 0; i < r.kws.length; i++) {
+      if (topicText.indexOf(r.kws[i].toLowerCase()) !== -1) { tags.push(r.tag); return; }
+    }
+  });
+  return tags;
+}
+
+/* 단일 항목이 선택 필터에 매칭되는지 — 다중 태그 매칭 */
+function matchesArchiveFilter(a, filter) {
+  if (!filter || filter === 'all') return true;
+  return inferArchiveTags(a).indexOf(filter) !== -1;
+}
+
+/* ───── 섹션 오염 판단 ─────
+   bulk-import 시 사연/꿀팁/퀴즈/뉴스 필드가 서로 섞여 저장된 항목이 다수 존재한다.
+   원본 데이터는 그대로 두고, 화면 렌더링 단계에서만 “명백히 다른 섹션 본문”이 섞인 값을 숨긴다.
+   판단 기준: URL · 해시태그 3개 이상 · 섹션별 외래 키워드 2개 이상. */
+var ARCHIVE_FOREIGN_MARKERS = {
+  topic: ['세무내공','+1 퀴즈','꿀팁','브리핑','사연자','세무사 의견'],
+  story: ['세무내공','퀴즈','정답','꿀팁','뉴스','브리핑','지원대상','신청방법'],
+  tip:   ['사연자','세무사 의견','퀴즈','정답','뉴스','브리핑'],
+  quiz:  ['뉴스','브리핑','기사','사연자','꿀팁','지원대상','신청방법'],
+  news:  ['사연자','세무사 의견','퀴즈','정답','꿀팁']
+};
+
+/* 해시태그 임계치 — 본문 섹션(짧은 헤드라인 형태)은 1+, topic은 3+, news는 2+
+   섹션 헤드라인은 정상 저장 시 해시태그를 거의 포함하지 않으므로 강하게 검출 */
+var ARCHIVE_HASH_THRESHOLD = { topic: 3, story: 1, tip: 1, quiz: 1, news: 2 };
+
+function isCleanArchiveSection(text, sectionType) {
+  if (text == null) return false;
+  var s = String(text).trim();
+  if (s.length < 3) return false;                   /* 빈 값/너무 짧으면 표시 안 함 */
+  if (/https?:\/\//i.test(s)) return false;         /* URL 포함 → 원문 덤프 가능성 */
+
+  var hashCount = (s.match(/#[ㄱ-힣A-Za-z0-9]+/g) || []).length;
+  var hashLimit = ARCHIVE_HASH_THRESHOLD[sectionType] != null ? ARCHIVE_HASH_THRESHOLD[sectionType] : 3;
+  if (hashCount >= hashLimit) return false;
+
+  var markers = ARCHIVE_FOREIGN_MARKERS[sectionType] || [];
+  var lower = s.toLowerCase();
+  var hits = 0;
+  for (var i = 0; i < markers.length; i++) {
+    if (lower.indexOf(markers[i].toLowerCase()) !== -1) {
+      hits++;
+      if (hits >= 2) return false;                  /* 외래 키워드 2+ → 다른 섹션 혼입 */
+    }
+  }
+
+  /* 퀴즈는 자체 어휘가 없으면 뉴스/사연 본문이 잘못 들어왔을 가능성이 높다 */
+  if (sectionType === 'quiz') {
+    var quizVocab = ['퀴즈','정답','ox','o/x','4지선다','세무내공','문제','맞춰','맞나요','일까요','맞을까','풀어','보세요'];
+    var hasOwn = false;
+    for (var q = 0; q < quizVocab.length; q++) {
+      if (lower.indexOf(quizVocab[q]) !== -1) { hasOwn = true; break; }
+    }
+    if (!hasOwn) return false;
+    /* 뉴스 본문 어휘가 강하게 잡히면 오염 */
+    var newsSignals = ['정부','시행','발표','추진','출시','예정','은행','기업','시장','대통령','국세청','중기부','금융위'];
+    var newsHits = 0;
+    for (var k = 0; k < newsSignals.length; k++) {
+      if (lower.indexOf(newsSignals[k]) !== -1) { newsHits++; if (newsHits >= 2) return false; }
+    }
+  }
+  return true;
+}
+
+/* 카드 노출용 키워드 추출 — 최대 5개.
+   avoidExpressions(사용자가 직접 정한 회피 소재 목록)만 사용.
+   tipSummary/storySummary 해시태그 추출은 제거 — bulk-import된 항목에선 뉴스 브리핑 해시태그
+   (#국세청, #고액상습체납자단속 등)가 섞여 들어와 소재 판단에 방해됨. */
+function extractArchiveKeywords(a) {
+  if (!a) return [];
+  var out = [];
+  var seen = {};
+  function push(s) {
+    if (!s) return;
+    var t = String(s).trim();
+    if (!t || t.length < 2 || t.length > 14) return;
+    var k = t.toLowerCase();
+    if (seen[k]) return;
+    seen[k] = 1; out.push(t);
+  }
+  String(a.avoidExpressions || '').split(/[,\/·;|]+/).forEach(push);
+  return out.slice(0, 5);
+}
+
+/* 포함 소재 필터 옵션 — '전체' + 도메인 5개.
+   섹션 포함(사연/꿀팁/퀴즈)은 소재 판단에 도움이 안 되어 제거.
+   뉴스 브리핑은 보조 섹션이라 처음부터 제외 (검색은 그대로 newsSummary 포함). */
+var ARCHIVE_FILTER_OPTIONS = [
+  '전체',
+  '세금·신고','지원사업','직원·급여','매출·정산','명의·계약'
+];
+
+function renderArchiveFilters() {
+  var row = document.getElementById('arc-filter-row');
+  if (!row) return;
+  var cur = (S.archiveUI && S.archiveUI.category) || 'all';
+  row.innerHTML = ARCHIVE_FILTER_OPTIONS.map(function(opt){
+    var key = opt === '전체' ? 'all' : opt;
+    var active = cur === key;
+    return '<button type="button" class="arc-filter-btn' + (active ? ' active' : '')
+      + '" onclick="setArchiveFilter(\'' + key.replace(/'/g, "\\'") + '\')">' + escHtml(opt) + '</button>';
+  }).join('');
+}
+
+function setArchiveFilter(key) {
+  if (!S.archiveUI) S.archiveUI = { sort: 'latest', search: '', category: 'all' };
+  S.archiveUI.category = key;
+  saveState();
+  renderArchive();
+}
+
+function onArchiveControlChange() {
+  if (!S.archiveUI) S.archiveUI = { sort: 'latest', search: '', category: 'all' };
+  var s = document.getElementById('arc-search-input');
+  var sort = document.getElementById('arc-sort-select');
+  if (s)    S.archiveUI.search = s.value || '';
+  if (sort) S.archiveUI.sort   = sort.value || 'latest';
+  saveState();
+  renderArchive();
+}
+
+/* 현재 선택된 주제와 유사한 과거 회차 — 간단 키워드 매칭 */
+function renderSimilarPastIssues() {
+  var box = document.getElementById('archiveSimilar');
+  if (!box) return;
+  var subj = S.subject;
+  if (!subj || (!subj.title && !subj.summary)) { box.innerHTML = ''; return; }
+  if (!Array.isArray(S.archive) || !S.archive.length) { box.innerHTML = ''; return; }
+
+  var STOP = {'있는':1,'없는':1,'그리고':1,'하지만':1,'그런데':1,'이번':1,'저번':1,'어떻게':1,'어떤':1,'무엇':1,'어디':1,'에서':1,'까지':1,'부터':1,'으로':1,'했어요':1,'합니다':1,'있어요':1,'사장님':1,'사연':1,'주제':1};
+  function tokenize(text) {
+    var toks = String(text || '').toLowerCase().match(/[가-힣a-z0-9]+/gi) || [];
+    var out = [], seen = {};
+    toks.forEach(function(t){
+      if (t.length < 2 || STOP[t]) return;
+      if (seen[t]) return;
+      seen[t] = 1; out.push(t);
+    });
+    return out;
+  }
+  var subjText = [
+    subj.title, subj.summary, subj.problem_axis,
+    Array.isArray(subj.keywords) ? subj.keywords.join(' ') : (subj.keywords || ''),
+    subj.tax_question, subj.conflict
+  ].filter(Boolean).join(' ');
+  var subjKw = tokenize(subjText);
+  if (!subjKw.length) { box.innerHTML = ''; return; }
+
+  /* 유사 회차 점수도 뉴스 본문을 제외 — 중복 회피 판단에 뉴스 키워드 노이즈가 끼지 않도록 */
+  var scored = S.archive.map(function(a, idx){
+    var text = collectArchiveTopicText(a);
+    var matched = [];
+    subjKw.forEach(function(k){ if (text.indexOf(k) !== -1) matched.push(k); });
+    return { a: a, idx: idx, score: matched.length, matched: matched };
+  }).filter(function(s){ return s.score >= 2; });
+
+  scored.sort(function(x, y){
+    if (y.score !== x.score) return y.score - x.score;
+    var tx = parseArchiveDate(x.a.date), ty = parseArchiveDate(y.a.date);
+    if (tx != null && ty != null) return ty - tx;
+    return y.idx - x.idx;
+  });
+
+  var top = scored.slice(0, 3);
+  if (!top.length) {
+    box.innerHTML = '<div class="arc-similar">'
+      + '<div class="arc-similar-title">현재 선택 주제와 비슷한 과거 회차</div>'
+      + '<div style="font-size:11.5px;opacity:.75">비슷한 과거 회차가 아직 없습니다.</div>'
+      + '</div>';
     return;
   }
-  var reversed = S.archive.slice().reverse();
-  list.innerHTML = reversed.map(function(a, displayIdx) {
-    var realIdx = S.archive.length - 1 - displayIdx;
+  box.innerHTML = '<div class="arc-similar">'
+    + '<div class="arc-similar-title">현재 선택 주제와 비슷한 과거 회차</div>'
+    + top.map(function(s){
+        var no = getIssueNoNum(s.a);
+        var label = (no ? '#' + no + ' ' : '') + (s.a.kakaoTitle || s.a.topic || '(제목 없음)');
+        return '<div class="arc-similar-item">'
+          + '<span class="as-title">' + escHtml(label) + '</span>'
+          + '<span class="as-kw">유사 키워드: ' + escHtml(s.matched.slice(0, 5).join(', ')) + '</span>'
+          + '</div>';
+      }).join('')
+    + '</div>';
+}
+
+/* 회차/날짜 라벨 */
+function formatArchiveDateLabel(a) {
+  var no = getIssueNoNum(a);
+  var date = a.date ? String(a.date) : '';
+  if (no && date) return '#' + no + ' · ' + date;
+  if (no) return '#' + no;
+  return date;
+}
+
+/* 구버전 필터 값을 새 명칭으로 매핑. 새 옵션에 없는 값은 'all'로 리셋 */
+var ARCHIVE_LEGACY_FILTER_MAP = {
+  '세무 리스크': '세금·신고',
+  '직원/노무':   '직원·급여',
+  '매출/정산':   '매출·정산',
+  '명의/계약':   '명의·계약',
+  '퀴즈':        'all',
+  '사연':        'all',
+  '꿀팁':        'all',
+  '퀴즈 포함':   'all',
+  '사연 포함':   'all',
+  '꿀팁 포함':   'all',
+  '뉴스':        'all',
+  '뉴스 포함':   'all',
+  '사업 운영':   'all',
+  '주제':        'all'
+};
+function migrateArchiveFilter(cur) {
+  if (!cur || cur === 'all') return 'all';
+  if (ARCHIVE_FILTER_OPTIONS.indexOf(cur) !== -1) return cur;
+  if (ARCHIVE_LEGACY_FILTER_MAP[cur]) return ARCHIVE_LEGACY_FILTER_MAP[cur];
+  return 'all';
+}
+
+function renderArchive() {
+  updateArchiveCurrentBtn();
+  if (!S.archiveUI) S.archiveUI = { sort: 'latest', search: '', category: 'all' };
+  S.archiveUI.category = migrateArchiveFilter(S.archiveUI.category);
+
+  /* UI 컨트롤 값 동기화 */
+  var searchEl = document.getElementById('arc-search-input');
+  var sortEl   = document.getElementById('arc-sort-select');
+  if (searchEl && searchEl.value !== (S.archiveUI.search || '')) searchEl.value = S.archiveUI.search || '';
+  if (sortEl   && sortEl.value   !== (S.archiveUI.sort   || 'latest')) sortEl.value = S.archiveUI.sort || 'latest';
+  renderArchiveFilters();
+  renderSimilarPastIssues();
+
+  var list  = document.getElementById('archiveList');
+  var count = document.getElementById('arc-count');
+  if (!list) return;
+
+  var total = Array.isArray(S.archive) ? S.archive.length : 0;
+  if (!total) {
+    if (count) count.textContent = '';
+    list.innerHTML = '<div class="arc-empty">저장된 과거 회차가 없습니다.<br>최종 초안 완료 후 저장하거나 수동으로 입력하세요.</div>';
+    return;
+  }
+
+  var search = (S.archiveUI.search || '').trim().toLowerCase();
+  var cat    = S.archiveUI.category || 'all';
+
+  var filtered = S.archive.map(function(a, idx){ return { a: a, origIdx: idx }; }).filter(function(it){
+    if (search) {
+      if (collectArchiveText(it.a).indexOf(search) === -1) return false;
+    }
+    if (!matchesArchiveFilter(it.a, cat)) return false;
+    return true;
+  });
+
+  /* 정렬 */
+  var sortKey = S.archiveUI.sort || 'latest';
+  filtered.forEach(function(it){
+    it.ts = parseArchiveDate(it.a.date);
+    it.no = getIssueNoNum(it.a);
+  });
+  if (sortKey === 'oldest') {
+    filtered.sort(function(x, y){
+      if (x.ts != null && y.ts != null && x.ts !== y.ts) return x.ts - y.ts;
+      if (x.ts != null && y.ts == null) return -1;
+      if (x.ts == null && y.ts != null) return 1;
+      return x.origIdx - y.origIdx;
+    });
+  } else if (sortKey === 'issue_desc') {
+    filtered.sort(function(x, y){
+      if (x.no != null && y.no != null && x.no !== y.no) return y.no - x.no;
+      if (x.no != null && y.no == null) return -1;
+      if (x.no == null && y.no != null) return 1;
+      return y.origIdx - x.origIdx;
+    });
+  } else if (sortKey === 'issue_asc') {
+    filtered.sort(function(x, y){
+      if (x.no != null && y.no != null && x.no !== y.no) return x.no - y.no;
+      if (x.no != null && y.no == null) return -1;
+      if (x.no == null && y.no != null) return 1;
+      return x.origIdx - y.origIdx;
+    });
+  } else { /* latest */
+    filtered.sort(function(x, y){
+      if (x.ts != null && y.ts != null && x.ts !== y.ts) return y.ts - x.ts;
+      if (x.ts != null && y.ts == null) return -1;
+      if (x.ts == null && y.ts != null) return 1;
+      return y.origIdx - x.origIdx;
+    });
+  }
+
+  /* 결과 개수 */
+  if (count) {
+    if (search || cat !== 'all') {
+      count.textContent = '전체 ' + total + '개 중 ' + filtered.length + '개 표시';
+    } else {
+      count.textContent = '전체 ' + total + '개';
+    }
+  }
+
+  if (!filtered.length) {
+    list.innerHTML = '<div class="arc-empty">조건에 맞는 아카이브가 없습니다.<br>검색어를 바꾸거나 필터를 전체로 변경해보세요.</div>';
+    return;
+  }
+
+  function clip(s, max) {
+    var t = String(s || '').replace(/\s+/g, ' ').trim();
+    if (!t) return '';
+    return t.length > max ? t.slice(0, max) + '…' : t;
+  }
+
+  var MAX_TAGS_VISIBLE = 6;
+
+  list.innerHTML = filtered.map(function(it){
+    var a = it.a;
+    var realIdx = it.origIdx;
+    var dateLabel = formatArchiveDateLabel(a);
+    var tags = inferArchiveTags(a);
+    var kws  = extractArchiveKeywords(a);
+
+    var topPills = '';
+    if (dateLabel) topPills += '<span class="tag tgr">' + escHtml(dateLabel) + '</span>';
+
+    /* 섹션 본문은 isCleanArchiveSection 통과한 경우에만 노출 — 오염된 값은 숨김 */
+    var rows = '';
+    if (isCleanArchiveSection(a.topic,        'topic')) rows += '<div class="archive-card-row"><b>주제</b>' + escHtml(clip(a.topic, 120)) + '</div>';
+    if (isCleanArchiveSection(a.storySummary, 'story')) rows += '<div class="archive-card-row"><b>사연</b>' + escHtml(clip(a.storySummary, 120)) + '</div>';
+    if (isCleanArchiveSection(a.tipSummary,   'tip'))   rows += '<div class="archive-card-row"><b>꿀팁</b>' + escHtml(clip(a.tipSummary, 120)) + '</div>';
+    if (isCleanArchiveSection(a.quizSummary,  'quiz'))  rows += '<div class="archive-card-row"><b>퀴즈</b>' + escHtml(clip(a.quizSummary, 80))  + '</div>';
+    if (isCleanArchiveSection(a.newsSummary,  'news'))  rows += '<div class="archive-card-row"><b>뉴스</b>' + escHtml(clip(a.newsSummary, 120)) + '</div>';
+
+    /* 소재 태그 행 — 추론된 태그 중 최대 N개 + "+M" */
+    var tagBlock = '';
+    if (tags.length) {
+      var shown = tags.slice(0, MAX_TAGS_VISIBLE);
+      var extra = tags.length - shown.length;
+      tagBlock = '<div class="archive-card-tagrow">'
+        + '<span class="tagrow-label">소재</span>'
+        + shown.map(function(t){ return '<span class="archive-tag-badge">' + escHtml(t) + '</span>'; }).join('')
+        + (extra > 0 ? '<span class="archive-tag-more">+' + extra + '</span>' : '')
+        + '</div>';
+    }
+
+    var kwBlock = kws.length
+      ? '<div class="archive-card-kw">' + kws.map(function(k){ return '<span class="archive-kw-badge">' + escHtml(k) + '</span>'; }).join('') + '</div>'
+      : '';
+
+    var metaParts = [];
+    if (a.ctr)   metaParts.push('CTR ' + escHtml(String(a.ctr)) + '%');
+    if (a.share) metaParts.push('공유 ' + escHtml(String(a.share)) + '건');
+    if (a.note)  metaParts.push(escHtml(a.note));
+    var metaLine = metaParts.length ? '<div class="archive-card-meta" style="margin-top:6px">' + metaParts.join(' · ') + '</div>' : '';
+
     return '<div class="archive-card">'
       + '<div class="archive-card-hd">'
-      + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
-      + (a.date ? '<span class="tag tgr">' + escHtml(a.date) + '</span>' : '')
-      + '<span class="archive-card-title">' + escHtml(a.kakaoTitle || '(제목 없음)') + '</span>'
+      + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0;flex:1">'
+      + topPills
+      + '<span class="archive-card-title">' + escHtml(a.kakaoTitle || a.topic || '(제목 없음)') + '</span>'
       + '</div>'
-      + '<button class="btn-danger" onclick="deleteArchiveItem(' + realIdx + ')">삭제</button>'
+      + '<button type="button" class="btn-danger" onclick="deleteArchiveItem(' + realIdx + ')">삭제</button>'
       + '</div>'
-      + '<div class="archive-card-meta">'
-      + (a.topic ? '<span><b>주제</b> ' + escHtml(a.topic) + '</span>' : '')
-      + (a.ctr   ? ' · <span>CTR ' + escHtml(String(a.ctr)) + '%</span>' : '')
-      + (a.share ? ' · <span>공유 ' + escHtml(String(a.share)) + '건</span>' : '')
-      + (a.note  ? ' · <span>' + escHtml(a.note) + '</span>' : '')
-      + '</div>'
-      + (a.avoidExpressions ? '<div class="archive-card-meta" style="margin-top:3px"><b>회피 소재</b> ' + escHtml(a.avoidExpressions) + '</div>' : '')
+      + rows
+      + tagBlock
+      + kwBlock
+      + metaLine
       + '</div>';
   }).join('');
 }
@@ -3415,10 +3933,31 @@ function addToArchive() {
   alert('이번 회차가 아카이브에 저장되었습니다.');
 }
 
-function deleteArchiveItem(realIdx) {
-  if (!Array.isArray(S.archive)) return;
+function deleteArchiveItem(rawIdx) {
+  if (rawIdx == null) {
+    console.warn('[아카이브] 삭제 인덱스가 없습니다');
+    return;
+  }
+  var realIdx = Number(rawIdx);
+  if (!Number.isInteger(realIdx) || realIdx < 0) {
+    console.warn('[아카이브] 삭제 인덱스가 유효하지 않습니다:', rawIdx);
+    return;
+  }
+  if (!Array.isArray(S.archive) || realIdx >= S.archive.length) {
+    console.warn('[아카이브] 삭제 대상 없음. idx=', realIdx, 'len=', S.archive ? S.archive.length : 'n/a');
+    return;
+  }
+  var target = S.archive[realIdx];
+  var label  = (target && (target.kakaoTitle || target.topic)) || '이 아카이브 항목';
+  if (!confirm('"' + label + '" 항목을 삭제할까요?')) return;
+
+  /* tombstone — 공용 archive.json 자동 병합으로 부활하지 않도록 키 기록 */
+  if (!Array.isArray(S.archiveDeletedKeys)) S.archiveDeletedKeys = [];
+  var key = archiveItemKey(target);
+  if (key && S.archiveDeletedKeys.indexOf(key) === -1) S.archiveDeletedKeys.push(key);
+
   S.archive.splice(realIdx, 1);
-  saveState();
+  try { saveState(); } catch(e) { console.warn('[아카이브] 저장 실패:', e && e.message); }
   renderArchive();
 }
 
