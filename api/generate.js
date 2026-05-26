@@ -20,7 +20,7 @@ const ALLOWED_TYPES = [
 // draft 타입은 긴 원고를 생성하므로 토큰을 넉넉히 설정
 const MAX_TOKENS = {
   analyze:        1400,
-  subjects:       4200,
+  subjects:       8500,  /* 내부 10-15개 + 6개 에피소드 축 + 7개 점수 + 최종 5개 메타 — 토큰 여유 */
   stories:        3200,
   story_draft:    3500,
   tips:           2000,
@@ -79,6 +79,26 @@ ${hasPrevTitle
 - keywords: HTML 없으면 빈 배열. 있으면 3~5개, 실제 반복 단어 위주.
 - avoid: 직전 소재 중 이번에 반복하면 식상할 것 3개 이상.
 - body_structure: HTML 섹션 기준. 미제공 시 "(본문 미제공)".
+
+[★★ 한입 브리핑/뉴스 브리핑 섹션 제외 — 반드시 준수 ★★]
+직전 회차 본문에는 다음 섹션들이 있습니다:
+  - 메뉴/TOC ("💌 이번주 밀당레터 는?")
+  - 한입 브리핑 / 뉴스 브리핑 ("🍽️ 이번 주 꼭 알아야 할 한입 브리핑", "#태그 #태그 …" 클러스터)
+  - 사연모음 ("📬 사연모음 Zip", "샘밀의 세무사들이 직접 답하는 …")
+  - 밀당 꿀팁 ("🍯 밀당 꿀팁 🐝")
+  - 세무내공 +1 퀴즈 ("🧠 세무내공 +1 퀴즈")
+
+topic / keywords / avoid / avoid_material / prev_covered는 **사연모음·꿀팁·퀴즈 섹션의 소재만** 사용하세요.
+**한입 브리핑/뉴스 브리핑 섹션의 소재는 절대 포함하지 마세요.**
+
+이유: 뉴스 브리핑은 보조 섹션입니다. 거기서 짧게 언급된 소재(예: "고유가 피해지원금")가
+다음 회차의 본격 주제/꿀팁으로 확장되는 것은 자연스러운 흐름이지 중복이 아닙니다.
+브리핑 키워드를 avoid에 넣으면 다음 회차에서 그 소재를 본격적으로 다루지 못해 콘텐츠 다양성이 줄어듭니다.
+
+식별 방법:
+  · "#단어1 #단어2 #단어3 …" 처럼 해시태그 클러스터로 시작하는 문단 = 뉴스 브리핑 본문
+  · "한입 브리핑", "🍽️" 이후 ~ "🍯 밀당 꿀팁" 이전 영역 = 뉴스 브리핑 영역
+  · 해당 영역의 키워드·해시태그·기관명(정부/은행/국세청 발표 등)은 avoid 후보에서 제외
 
 [필드 분리 원칙 — 반드시 준수]
 - topic · prev_covered · avoid_material · keywords: 직전 회차 실제 내용 기준 (과거)
@@ -161,6 +181,12 @@ function buildSubjectsPrompt(p) {
   const excludeAxes     = Array.isArray(p.excludeAxes)     ? p.excludeAxes     : [];
   const variationSeed   = p.variationSeed != null ? p.variationSeed : 0;
 
+  /* ── 재생성 누적 회피 (regenerationContext) ── */
+  const regenCtx          = (p.regenerationContext && typeof p.regenerationContext === 'object') ? p.regenerationContext : {};
+  const regenerateCount   = Number(regenCtx.regenerateCount) || 0;
+  const rejectedSubjects  = Array.isArray(regenCtx.rejectedSubjects)    ? regenCtx.rejectedSubjects    : [];
+  const rejectedEpKeys    = Array.isArray(regenCtx.rejectedEpisodeKeys) ? regenCtx.rejectedEpisodeKeys : [];
+
   const archive   = Array.isArray(p.archive) ? p.archive : [];
 
   /* ── 서버 사이드: 각 아카이브 항목에 주제군 태깅 ─────────────────── */
@@ -201,10 +227,10 @@ function buildSubjectsPrompt(p) {
   const archiveSection = archive.length > 0
     ? `
 [★ 과거 데이터의 사용 목적 — 반드시 준수]
-과거 회차 아카이브는 "중복 회피 필터"로만 사용하세요.
+과거 회차 아카이브는 "중복 회피 / 신선도 평가 기준"으로만 사용하세요.
 새 주제를 만드는 재료가 아닙니다.
 
-  ✅ 허용: 이번 후보가 과거 회차와 핵심 소재가 겹치는지 확인 → 겹치면 제외
+  ✅ 허용: 이번 후보가 과거 회차와 핵심 소재가 겹치는지 확인 → 겹치면 freshness_score 감점
   ✅ 허용: 과거 자주 나온 표현·구조를 피하기 위한 회피 자료
   ✅ 허용: 독자가 이미 본 느낌이 나는 주제를 자동 걸러내기
 
@@ -212,8 +238,10 @@ function buildSubjectsPrompt(p) {
   ⛔ 금지: 과거 주제의 표현만 살짝 바꿔 다시 제안하기
   ⛔ 금지: 최근 회차의 세금 이슈를 계속 변주하는 것 (예: 가산세 → 부가세 → 신고 확인 식 반복)
   ⛔ 금지: 매번 신고/가산세/부가세/포괄양수도 같은 좁은 범위 안에서만 주제를 짜는 것
+  ⛔ 금지: 아카이브의 newsSummary(뉴스 브리핑)는 비교에서 제외 — 새 주제와 무관한 뉴스 키워드로
+         freshness 감점하지 마세요. 비교 대상은 topic / storySummary / tipSummary / quizSummary뿐.
 
-[과거 회차 아카이브 — 중복 회피 필터 자료]
+[과거 회차 아카이브 — 중복 회피 필터 자료 (newsSummary 제외)]
 ${taggedArchive.map(a => {
   const parts = [];
   if (a.date)             parts.push(`날짜:${a.date}`);
@@ -278,11 +306,11 @@ ${recentListText || '  (없음)'}
 밀당레터는 소상공인·자영업자(사장님)를 대상으로 하는 세무법인 뉴스레터입니다.
 매 회차 핵심은 "사장님의 실제 고민 사연"이며, 사연 중심으로 꿀팁·퀴즈·뉴스가 연결됩니다.
 ${archiveSection}
-[직전 회차 중복 회피 자료 — 아래 소재는 이번 주제에서 반드시 제외]
+[직전 회차 중복 회피 자료 — 사연/꿀팁/퀴즈에서 본격적으로 다룬 소재만 제외 대상]
 직전 제목: ${p.prevTitle || '없음'}
 직전 주제: ${p.prevTopic || '없음'}
 반복 키워드: ${kwList}
-피해야 할 소재: ${avoidList}
+피해야 할 소재 (직전 사연·꿀팁·퀴즈 기준): ${avoidList}
 직전 오프닝 패턴: ${p.openingPattern || '없음'}
 직전 CTA 패턴: ${p.ctaPattern || '없음'}
 
@@ -291,6 +319,17 @@ ${archiveSection}
    ⛔ 직전 주제가 "지원금/정책자금/신청"이면 → 이번 회차는 반드시 다른 축으로 전환
    ⛔ 직전 키워드를 그대로 살려서 변주(예: "고유가 지원금" → "지원금 언제 받나요")하지 마세요
    ✅ 직전 입력값은 "중복 회피 필터"로만 사용. 후보 5개 중 같은 소재·축이 나오면 즉시 다른 축으로 교체.
+
+[★ 한입 브리핑/뉴스 브리핑 소재는 중복 판단에서 제외]
+뉴스 브리핑(한입 브리핑)에서 짧게 언급된 소재는 중복이 아닙니다.
+오히려 뉴스 브리핑에서 다뤄진 소재를 다음 회차의 본격 주제/꿀팁/사연으로 확장하는 것은 자연스러운 흐름입니다.
+
+  ✅ 허용: 직전 회차 뉴스 브리핑에 짧게 등장한 소재(예: "고유가 피해지원금")를 이번 주제·꿀팁·사연에서 본격적으로 다루기
+  ⛔ 금지: 직전 회차의 사연/꿀팁/퀴즈에서 이미 본격적으로 다룬 소재를 이번 회차에서 반복하기
+
+위 "피해야 할 소재" 목록은 직전 회차의 사연/꿀팁/퀴즈 기준으로만 추출돼 있어야 합니다.
+혹시 뉴스 브리핑에서만 등장한 키워드가 섞여 있다면(예: 직전 회차 사연·꿀팁·퀴즈에 등장하지 않은
+"고유가/피해지원금/철강관세" 등의 뉴스성 키워드), 그 항목은 무시하고 freshness 감점에 쓰지 마세요.
 ${excludeTitles.length || excludeKeywords.length || excludeAxes.length ? `
 
 [★ 직전 생성 후보 제외 목록 — 재생성 회차이므로 아래 후보·키워드·축은 이번에 반드시 회피]
@@ -306,6 +345,59 @@ ${excludeAxes.length ? excludeAxes.join(' / ') : '(없음)'}
    "지원사업·정책자금"을 0개 또는 최대 1개로 제한하고, 나머지는 다른 4개 축으로 채우세요.
 ⛔ 직전 후보와 핵심 단어 2개 이상 겹치는 제목 금지.
 ⛔ "지원금 언제 받을 수 있나요"·"지원금이라도 챙겨야죠"처럼 표현만 다른 같은 소재 반복 금지.
+` : ''}
+${rejectedSubjects.length ? `
+[★★★ 재생성 누적 회피 — 사용자가 "방금 보고 마음에 안 들었던" 후보들 ★★★]
+재생성 횟수: ${regenerateCount} (이 숫자가 높을수록 더 강하게 다른 방향으로 전환)
+누적 거부 후보 수: ${rejectedSubjects.length}개
+
+⛔ 재생성은 "제목만 바꾸는 작업"이 아닙니다. 아래 후보들의 title / summary / episode_axis /
+   trigger_moment / conflict_axis와 유사한 후보는 최종 5개에서 절대 제외하세요.
+⛔ 같은 episode_axis 또는 같은 normalizedEpisodeKey를 가진 새 후보는 duplicate_risk="높음"
+   + episode_diversity_score ≤ 2로 처리해 최종 5개에서 탈락시키세요.
+⛔ rejected 후보와 title만 조금 다르고 사건(episode_axis)이 같으면 제외.
+
+[누적 거부 후보 — title / episode_axis / trigger_moment / conflict_axis]
+${rejectedSubjects.slice(-15).map((r, i) => {
+  const parts = [];
+  if (r.title)           parts.push(`title:「${r.title}」`);
+  if (r.problem_axis)    parts.push(`problem:${r.problem_axis}`);
+  if (r.episode_axis)    parts.push(`episode:${r.episode_axis}`);
+  if (r.trigger_moment)  parts.push(`trigger:${r.trigger_moment}`);
+  if (r.conflict_axis)   parts.push(`conflict:${r.conflict_axis}`);
+  return `  [${i+1}] ${parts.join(' | ')}`;
+}).join('\n')}
+
+[누적 거부 에피소드 키 — 새 후보가 같은 키로 정규화되면 즉시 탈락]
+${rejectedEpKeys.length ? rejectedEpKeys.join(' / ') : '(없음)'}
+
+[재생성 모드 — regenerateCount=${regenerateCount}]
+${regenerateCount <= 1
+  ? `- 카테고리 균형은 유지하되, 위 rejected 후보들과 다른 "사건(episode)"을 우선 탐색.
+- rejected 후보의 표현만 바꾼 변주 금지. 다른 trigger_moment / actor_axis / money_flow_axis 조합으로 새 사건을 잡기.`
+  : regenerateCount === 2
+  ? `- 카테고리 균형보다 "낯선 사건성·구체 장면"을 우선.
+- 아래 "기본형 사장님 불안" 구조 회피 강도 ↑↑:
+  × 매출은 늘었는데 통장 잔고가 없음
+  × 카드 비용 인정 불안
+  × 직원 채용 비용 부담
+  × 지원금 받을 수 있나요
+  × 계약 바뀌면 세금 바뀌나요
+- "이미 뭔가 했고 → 뒤늦게 돈/세금/비용 문제가 생길까 봐 불안" 구조 자체에서 벗어나기. 발견·반전·외부 트리거 구조도 시도.`
+  : `- ★기본형 금지 모드★ — 매출/카드/직원/지원금/계약 같은 넓은 단어로 제목 시작 금지.
+- 반드시 구체 사건으로 출발. 다음 예시를 참고(그대로 베끼지 말고 톤·구조만):
+  · 자동결제 서비스가 대표 개인 명의로 빠져나감
+  · 예약금은 받았지만 환불 가능성이 있어 매출 인식이 애매함
+  · PG사 정산일과 세금 신고 기준일이 달라 헷갈림
+  · 가족 명의 계좌로 매출이 들어옴
+  · 공동대표 변경 후 세금계산서 발행 주체가 꼬임
+  · 지원금을 이미 받았는데 사후 점검에서 반납 조건이 걸림
+  · 세금계산서를 발행했는데 입금은 다음 달에 됨
+  · 프리랜서라고 생각했는데 근로자로 볼 수 있는 상황
+  · 가게 인수 후 사업자번호를 그대로 쓰려는 상황
+  · 가족카드로 결제한 비용을 사업비로 넣으려는 상황
+  · 거래처 접대비와 복리후생비 구분이 애매함
+- 위 예시 외에도 같은 결의 "구체 사건성" 후보면 가능.`}
 ` : ''}
 
 [★ 이번 회차 주제 후보 — 5개를 "성격이 분명히 다르게" 구성]
@@ -453,10 +545,116 @@ title 필수 조건:
 - title과 다른 표현으로, summary를 한 줄 클릭 유도로 압축 (18~32자)
 - "○○에 대한 안내" 같은 설명형 금지. title처럼 체감 단어 + 감정이 살아 있어야 합니다.
 
+[★★ 가장 중요: "에피소드 다양성"이 problem_axis 다양성보다 우선 ★★]
+큰 주제(problem_axis)가 같아도 됩니다. 단, 에피소드(실제 벌어진 사건·갈등·타이밍·돈의 흐름)는 달라야 합니다.
+반대로, problem_axis가 달라도 에피소드가 같으면 같은 후보로 봅니다.
+
+[에피소드를 구분하는 6개 축 — 각 후보마다 모두 채워주세요]
+
+▷ episode_axis      : 실제 벌어진 사건의 종류
+   예: 서류 누락 / 사후 반납 / 명의 불일치 / 정산 지연 / 직원 조건 착각 / 계약 갱신 누락 /
+       자동결제 누락 / 현금 매출 누락 / 증빙 주체 불명 / 매출 인식 시점 혼동 등
+
+▷ trigger_moment    : 문제가 터지는 순간
+   예: 신청 버튼 누른 뒤 / 정산일 아침 / 신고 마감 직전 / 계약 갱신일 / 직원 첫 월급날 /
+       카드 내역 정리 중 / 세무서 안내문 받은 날 / 사후 점검 통지받은 날 등
+
+▷ conflict_axis     : 갈등 구조
+   예: 받을 줄 알았는데 못 받음 / 비용인 줄 알았는데 인정 안 됨 /
+       이미 끝난 줄 알았는데 다시 문제 발생 / 이름만 바꿨는데 계약 전체가 흔들림 등
+
+▷ actor_axis        : 누가 얽혀 있는지
+   예: 사장님 혼자 / 직원 / 가족 / 거래처 / 플랫폼 / 임대인 / 지자체·기관 / 세무서
+
+▷ money_flow_axis   : 돈이 걸린 지점
+   예: 지원금 수령 / 세금 추가 납부 / 경비 인정 / 정산 지연 / 월급·4대보험 /
+       계약금·보증금 / 현금흐름
+
+▷ resolution_angle  : 풀어줄 방향
+   예: 신청 전 체크리스트 / 사후 반납 조건 확인 / 명의·계약 확인 / 정산 구조 점검 /
+       증빙 보관 기준 / 고용 조건 확인
+
+[강한 중복 케이스 — 같은 후보군으로 묶어서 1개만 남길 것]
+  ① 카드/영수증/거래처 증빙/직원 영수증 누락 → 모두 "증빙 누락 → 비용 인정 불안" 에피소드
+  ② 지원금/정책자금/보조금 신청 후 못 받음 → 모두 "신청 후 탈락/수령 불안" 에피소드
+  ③ 신고 후 세금 추가 / 고지서 / 가산세 → 모두 "신고 후 추가 세금" 에피소드
+  ④ 직원/알바/가족 직원 비용 부담 일반론 → 모두 "고용 후 비용 부담" 에피소드
+
+[같은 큰 주제라도 에피소드가 다르면 모두 허용]
+  · 지원금: "서류 누락 탈락" vs "사후 반납 통보" vs "명의 불일치로 신청 불가" vs "매출 기준 착각" → 4개 후보 OK
+  · 카드/경비: "개인카드 자동결제 1년 누락" vs "직원 카드 증빙 주체 불명" vs "가족카드 사업비 처리"
+  · 직원/급여: "알바 3시간 늘려 4대보험 진입" vs "가족 직원 실근무 입증" vs "프리랜서 → 근로자 판정"
+  · 명의/계약: "임대차는 본인, 사업자는 배우자" vs "공동대표 전환 시 세금계산서 주체"
+
+[★★ 내부 후보 생성·평가·선별 파이프라인 — 반드시 이 순서로 수행 ★★]
+사용자에게 보이는 결과는 최종 5개지만, 내부적으로는 더 넓게 탐색하고 걸러야 합니다.
+
+▶ 1단계 (내부): 후보 10~15개 생성
+   - 위 6개 에피소드 축을 다양하게 — 같은 episode_axis 후보 ≤ 2개, 같은 trigger_moment ≤ 2개, 같은 conflict_axis ≤ 2개
+   - problem_axis는 균형 잡되, "기본형 후보"(아래 9번 참고)는 구체 에피소드 없으면 생성 자체 금지
+   - 의외성·생활형 ≥ 2개
+
+▶ 2단계 (내부): 후보별 0~10점 점수 부여
+   - freshness_score              (20%): 과거 아카이브 topic/story/tip/quiz와 덜 겹칠수록 높음 (newsSummary 비교 제외)
+   - episode_diversity_score      (25%): episode_axis/trigger_moment/conflict_axis가 다른 후보 및 최근 아카이브와 얼마나 다른가
+   - story_potential_score        (20%): 사연으로 풀기 좋은 갈등 구조
+   - practical_value_score        (15%): 사장님 실무 도움
+   - hook_score                   (10%): 제목 클릭/정지력
+   - expansion_score              (5%):  꿀팁/퀴즈로 자연스럽게 이어짐
+   - clarity_score                (5%):  한눈에 이해
+   - final_score = freshness*0.20 + episode_diversity*0.25 + story_potential*0.20 + practical_value*0.15 + hook*0.10 + expansion*0.05 + clarity*0.05
+
+▶ 3단계 (내부): 감점·필터·캡
+   - 아래 9번 "반복 패턴"·"기본형 제목"에 해당하면서 구체 에피소드 없으면 freshness/episode_diversity 모두 3 이하로 강제
+   - episode_diversity_score ≤ 3 → final_score 최댓값 5.5로 캡
+   - episode_diversity_score ≤ 2 → 최종 5개에서 제외 (절대 통과 금지)
+   - 같은 episode_axis 후보가 여러 개면 final_score 최고만 남기고 나머지 탈락
+   - 같은 trigger_moment 후보가 여러 개면 final_score 최고만 남기고 나머지 탈락
+   - 지원사업·정책자금 problem_axis 후보는 최대 1개 (가장 final_score 높은 1개만)
+   - 뉴스 브리핑 기반 소재(아카이브 newsSummary에서만 등장)는 평가/감점에 쓰지 마세요
+
+▶ 4단계 (출력): final_score 상위 5개를 subjects 배열로 출력
+   ★ 우선순위 (이 순서대로 통과시킬지 결정):
+     1순위: episode_axis가 서로 다른가
+     2순위: 최근 아카이브와 episode_axis/trigger_moment/conflict_axis가 다른가
+     3순위: 사연으로 풀 수 있는가 (story_potential)
+     4순위: 실무 도움 (practical_value)
+     5순위: 제목 후킹 (hook)
+     6순위: problem_axis 균형 (가능하면 5축 분산, 강제는 아님)
+   - 최종 5개 중 동일 episode_axis 절대 금지
+   - internal_candidates_count 기록, 탈락 후보는 출력 안 함
+
+[★ 반드시 회피해야 할 반복 패턴 — 새 에피소드가 확실할 때만 통과]
+아래 패턴은 freshness_score / episode_diversity_score 모두 3 이하로 강제 감점.
+구체 에피소드(trigger_moment + actor_axis)가 명확하지 않으면 최종 5개에서 제외.
+
+× "신고 끝났는데 세금이 더 나왔다 / 가산세가 붙었다 / 고지서가 갑자기 날아왔다"
+× "매출은 줄었는데 세금이 늘었다" (단어만 바꾼 변주 포함)
+× "카드/영수증 누락만 반복하는 구조"
+× "지원금 신청했는데 왜 안 나오나" (단순 신청·대상 확인 패턴)
+× "정책자금/지원사업 단순 신청 안내" (구체적 갈등 없이 공고 알림형)
+× "부가세/종소세만 바꾼 같은 이야기"
+× "사장님/직원/거래처만 바꾼 같은 문제 구조"
+
+[★ "기본형 제목"은 구체 에피소드 없으면 즉시 탈락]
+아래 제목은 너무 일반적입니다. 구체적인 trigger_moment·actor_axis가 붙어 장면이 떠오를 때만 허용.
+
+  나쁜 제목                          → 좋은 제목 (장면이 보임)
+  "카드 비용 인정 되나요?"           → "대표 개인카드 자동결제가 1년째 빠져나가고 있었어요"
+  "영수증 빠졌는데 괜찮나요?"        → "직원이 받아온 영수증, 사업자 이름이 비어 있었어요"
+  "직원 뽑았는데 비용이 늘었어요"    → "알바 시간을 3시간 늘렸을 뿐인데, 4대보험 기준에 걸렸어요"
+  "계약서 확인해야 하나요?"          → "임대차 계약은 제 이름인데, 사업자등록은 남편 이름이에요"
+  "지원금 받을 수 있나요?"           → "지원금 받았는데, 3개월 뒤 반납하라는 연락이 왔어요"
+  "신고했는데 세금이 더 나왔어요"    → (이 자체가 #27 패턴 — 새 에피소드 없으면 절대 금지)
+  "정산금이 왜 부족하죠?"            → "PG사 정산일이 부가세 신고일보다 늦어서 돈이 비었어요"
+  "사업자 명의 바꾸면 되나요?"       → "공동대표로 바꾼 첫 달, 세금계산서가 두 명 이름으로 갈라졌어요"
+
 [지시]
 순수 JSON 객체만 출력하세요. 마크다운, 설명 텍스트 일절 금지.
+내부 1~3단계 작업물(탈락 후보·점수 표 등)은 출력하지 마세요. 최종 subjects 5개와 메타만 출력.
 
 {
+  "internal_candidates_count": "내부 1단계에서 생성한 raw 후보 총 개수 (정수, 권장 10~15)",
   "subjects": [
     {
       "title": "18~32자, 실제 사장님 말투, 손해·불안·궁금증·반전·억울함·놓침 중 1개 이상 + 체감 단어(돈/통장/계약/직원/정산/지원금/카드 등) 필수. 임시 제목·일반 질문형 절대 금지",
@@ -476,10 +674,26 @@ title 필수 조건:
       "type": "나해당형 | 손해반전형 | 놓침형 | 헷갈림형 | 현실질문형 | 정책체감형 중 하나",
       "topic_cluster": "직원·인건비·4대보험 — 해당 주제군 이름 (없으면 '기타')",
       "problem_axis": "카드·증빙·경비 관리 | 직원·급여·4대보험 | 지원사업·정책자금 | 매출·정산·현금흐름 | 사업자 정보·명의·주소·계약 — 5개 중 하나",
+      "episode_axis":      "실제 벌어진 사건의 종류 (예: 서류 누락, 사후 반납, 명의 불일치, 정산 지연, 직원 조건 착각, 자동결제 누락, 증빙 주체 불명 등). 같은 episode_axis 후보는 최종 5개에 1개만 허용",
+      "trigger_moment":    "문제가 터지는 순간 (예: 신청 버튼 누른 뒤 / 정산일 아침 / 신고 마감 직전 / 사후 점검 통지받은 날). '평소'·'언제든' 같은 모호 표현 금지",
+      "conflict_axis":     "갈등 구조 한 줄 (예: 받을 줄 알았는데 못 받음 / 비용인 줄 알았는데 인정 안 됨 / 끝난 줄 알았는데 다시 문제 발생)",
+      "actor_axis":        "얽힌 주체 (사장님 혼자 / 직원 / 가족 / 거래처 / 플랫폼 / 임대인 / 지자체·기관 / 세무서)",
+      "money_flow_axis":   "돈이 걸린 지점 (지원금 수령 / 세금 추가 납부 / 경비 인정 / 정산 지연 / 월급·4대보험 / 계약금·보증금 / 현금흐름)",
+      "resolution_angle":  "풀어줄 방향 (신청 전 체크리스트 / 사후 반납 조건 확인 / 명의·계약 확인 / 정산 구조 점검 / 증빙 보관 기준 / 고용 조건 확인)",
       "duplicate_risk": "낮음/보통/높음 중 하나",
       "similar_archive": "아카이브 내 같은 클러스터 항목 '#번호 제목' 형식 / 진짜 없을 때만 '없음'",
+      "similar_archive_refs": ["아카이브 번호 배열 (예: [3, 20]) — 빈 배열 가능. newsSummary 매칭은 포함하지 말 것"],
       "why_not_duplicate": "기존 회차와 어떤 점이 다른지 한 줄 (이전 회차와 다른 점)",
-      "new_angle": "이번 주제가 새롭게 보는 관점 한 줄"
+      "new_angle": "이번 주제가 새롭게 보는 관점 한 줄",
+      "freshness_score":          "0~10 정수 — 과거 아카이브와 덜 겹칠수록 높음 (newsSummary 비교 제외)",
+      "episode_diversity_score":  "0~10 정수 — 다른 후보 및 최근 아카이브와 episode_axis/trigger_moment/conflict_axis가 다를수록 높음. ≤2면 최종 후보 탈락, ≤3면 final_score 5.5로 캡",
+      "story_potential_score":    "0~10 정수 — 사연으로 풀기 좋은 갈등 구조",
+      "practical_value_score":    "0~10 정수 — 사장님 실무에 실제 도움",
+      "hook_score":               "0~10 정수 — 제목 클릭/정지력",
+      "expansion_score":          "0~10 정수 — 꿀팁/퀴즈로 자연스럽게 이어짐",
+      "clarity_score":            "0~10 정수 — 한눈에 이해됨",
+      "final_score":              "0~10 소수 한 자리 — 가중 평균 (freshness 0.20 + episode_diversity 0.25 + story_potential 0.20 + practical_value 0.15 + hook 0.10 + expansion 0.05 + clarity 0.05). episode_diversity≤3이면 5.5로 캡, ≤2면 출력 자체 금지",
+      "selected_reason":          "이 후보가 최종 5개에 남은 이유 한 줄 — 어떤 episode_axis/trigger_moment가 결정적이었는지 명시"
     }
   ]
 }
@@ -1306,6 +1520,92 @@ function effectiveAxis(s) {
   if (/(매출|정산|현금흐름|통장|고정비|플랫폼)/.test(blob))           return '매출·정산·현금흐름';
   if (/(명의|주소|계약|임대|폐업|휴업|동업|양수도|등록)/.test(blob))  return '사업자 정보·명의·주소·계약';
   return '';
+}
+
+/* ── 에피소드 정규화 (서버) — client effectiveEpisodeAxisClient와 의미 그룹 일치 ──
+   episode_axis / trigger_moment / conflict_axis / title / summary를 합쳐서 의미 그룹으로 묶는다.
+   rejectedSubjects의 episode_axis와 새 후보의 episode_axis가 같은 그룹이면 같은 키로 매칭. */
+function normalizeEpisodeKey(s) {
+  if (!s) return '';
+  const raw = [s.episode_axis, s.trigger_moment, s.conflict_axis, s.title, s.summary]
+    .filter(Boolean).join(' ').toLowerCase().replace(/[\s·,]+/g, '');
+  if (!raw) return '';
+
+  /* 받은 뒤 문제 — 반납/회수 (먼저 검사: '지원금 받았는데 반납'이 신청단계탈락보다 우선) */
+  if (/(사후).*(반납|반환|점검|회수)/.test(raw))                  return '사후반납';
+  if (/(받았|받은).*(반납|반환|회수|중단|토해)/.test(raw))       return '사후반납';
+  if (/(지원금|보조금).*(반납|환수|회수)/.test(raw))             return '사후반납';
+
+  /* 증빙 누락 — 카드/영수증/거래처 등 주체가 달라도 같은 사건 */
+  if (/(증빙|영수증|적격증빙).*(누락|빠짐|불명|없|인정|불안|애매)/.test(raw)) return '증빙누락-비용인정불안';
+  if (/(카드).*(비용|인정|경비)/.test(raw))                       return '증빙누락-비용인정불안';
+  if (/(가족카드|개인카드).*(사업|비용)/.test(raw))               return '증빙누락-비용인정불안';
+
+  /* 자동결제 명의 문제 */
+  if (/(자동결제|정기결제|구독료|자동이체).*(개인|명의|누락|대표)/.test(raw)) return '자동결제명의문제';
+
+  /* 신청 단계 탈락 — 서류/대상/기준/조건 */
+  if (/(서류).*(누락|빠|부족)/.test(raw))                         return '서류누락탈락';
+  if (/(매출|매출액).*(기준|착각|잘못)/.test(raw))                return '대상기준착각';
+  if (/(대상).*(아님|제외|착각)/.test(raw))                       return '대상기준착각';
+  if (/(고용|채용).*(조건|착각)/.test(raw))                       return '고용조건착각';
+  if (/(지원금|정책자금|보조금).*(신청).*(탈락|불가|못받|반려)/.test(raw)) return '신청단계탈락';
+  if (/(신청).*(탈락|불가|못받|반려)/.test(raw))                  return '신청단계탈락';
+
+  /* 신고 후 추가 세금 — 가산세/고지서 */
+  if (/(신고).*(가산세|고지서|추가|더\s*나|더나)/.test(raw))     return '신고후추가세금';
+  if (/^가산세/.test(raw) || /가산세.*(발생|부과|붙)/.test(raw))  return '신고후추가세금';
+  if (/^고지서/.test(raw) || /고지서.*(받|통보|날아)/.test(raw))  return '신고후추가세금';
+  if (/(매출.*줄.*세금.*늘|세금이더.*나)/.test(raw))              return '신고후추가세금';
+
+  /* 매출-정산-현금흐름 불일치 */
+  if (/(매출).*(늘|증가).*(통장|잔고|없|부족|돈없)/.test(raw))    return '매출정산-현금흐름불일치';
+  if (/(정산).*(지연|차이|늦|부족|입금)/.test(raw))               return '매출정산-현금흐름불일치';
+  if (/(정산).*(늘|증가).*(없|부족|돈\s?없)/.test(raw))           return '매출정산-현금흐름불일치';
+  if (/(통장).*(비|잔고|돈\s?없)/.test(raw))                     return '매출정산-현금흐름불일치';
+
+  /* 직원 비용 부담 */
+  if (/(채용|고용).*(부담|비용|많이|증가)/.test(raw))             return '직원비용부담';
+  if (/(월급|급여).*(올|인상).*(부담|4대보험|증가)/.test(raw))    return '직원비용부담';
+  if (/(4대보험|원천세).*(증가|부담|올라)/.test(raw))            return '직원비용부담';
+
+  /* 임대차 계약 변경 */
+  if (/(임대차|월세|이사).*(계약|변경|증가|세금)/.test(raw))      return '임대차계약변경';
+  if (/(임대차|계약).*(갱신|만료|이름)/.test(raw))                return '임대차계약변경';
+
+  /* 가족 명의 거래 */
+  if (/(가족).*(명의|계좌|카드|직원|등록|근로|실근무)/.test(raw)) return '가족명의거래';
+
+  /* 명의/주체 불일치 — 공동대표 / 사업자 명의 / 발행 주체 */
+  if (/(공동대표|동업).*(전환|변경|주체|발행)/.test(raw))         return '명의주체불일치';
+  if (/(명의|등록).*(불일치|다름|배우자|남편|아내)/.test(raw))    return '명의주체불일치';
+  if (/(세금계산서|발행).*(주체|꼬|혼동)/.test(raw))              return '명의주체불일치';
+
+  /* 예약금 매출 인식 */
+  if (/(예약금|환불).*(인식|매출|시점)/.test(raw))                return '예약금매출인식';
+
+  /* PG/플랫폼 정산일 차이 */
+  if (/(pg|플랫폼).*(정산일|신고|기준일|달라)/.test(raw))         return '정산일신고기준차이';
+
+  /* 근로자성 판단 */
+  if (/(프리랜서|3\.3).*(근로|판정|볼\s?수\s?있)/.test(raw))     return '근로자성판단';
+  if (/(직원|알바).*(4대보험|기준).*(걸|진입)/.test(raw))         return '근로자성판단';
+
+  /* 현금 매출 누락 */
+  if (/(현금).*(매출|누락)/.test(raw))                            return '현금매출누락';
+
+  /* 매칭 안 되면 episode_axis 원본 앞 20자 */
+  return raw.slice(0, 20);
+}
+
+function normalizeRejectedKeys(rejectedSubjects, alreadyKeys) {
+  const out = new Set();
+  (alreadyKeys || []).forEach(k => { if (k) out.add(String(k)); });
+  (rejectedSubjects || []).forEach(r => {
+    const k = normalizeEpisodeKey(r);
+    if (k) out.add(k);
+  });
+  return out;
 }
 
 /**
@@ -2901,10 +3201,66 @@ export default async function handler(req, res) {
     }
   }
 
-  // subjects: 축 중복 자동 강등 → 중복 위험도 기준 정렬
+  // subjects: 에피소드 축 + problem_axis 중복 자동 강등 → 중복 위험도 기준 정렬
   if (type === 'subjects' && Array.isArray(result.subjects)) {
-    /* 1단계: 실효 축 기준 자동 강등.
-       같은 축이 두 번째부터 등장하면 duplicate_risk = "높음"으로 강등 → 하단으로 보낸다.
+    /* 0-A단계: 재생성 누적 회피 — payload.regenerationContext의 rejected 후보와 같은
+       normalizeEpisodeKey를 가진 새 후보는 즉시 강등.
+       LLM이 프롬프트 지시를 어겨도 안전망으로 동작. */
+    const regenCtx = (payload && payload.regenerationContext) || {};
+    const rejectedKeySet = normalizeRejectedKeys(
+      Array.isArray(regenCtx.rejectedSubjects)    ? regenCtx.rejectedSubjects    : [],
+      Array.isArray(regenCtx.rejectedEpisodeKeys) ? regenCtx.rejectedEpisodeKeys : []
+    );
+    if (rejectedKeySet.size > 0) {
+      result.subjects.forEach(s => {
+        const k = normalizeEpisodeKey(s);
+        if (k && rejectedKeySet.has(k)) {
+          s.duplicate_risk = '높음';
+          s._rejected_match_key = k;
+          s._rejected_reason = `rejected 후보와 normalizedEpisodeKey="${k}" 일치 — 재생성에서 같은 사건 제출 금지`;
+          /* episode_diversity_score를 강제로 2 이하 + final_score 5.0 캡 */
+          const eds = parseFloat(s.episode_diversity_score);
+          if (!isFinite(eds) || eds > 2) s.episode_diversity_score = 2;
+          const fs = parseFloat(s.final_score);
+          if (!isFinite(fs) || fs > 5.0) s.final_score = 5.0;
+        }
+      });
+    }
+
+    /* 0-B단계: episode_axis 캡 — episode_diversity_score ≤ 2면 강등.
+       LLM이 캡 룰을 따르지 않은 경우의 안전망. */
+    result.subjects.forEach(s => {
+      const eds = parseFloat(s && s.episode_diversity_score);
+      if (isFinite(eds) && eds <= 2) {
+        s.duplicate_risk = '높음';
+        s._episode_dedup_reason = `episode_diversity_score=${eds} (≤2) — 에피소드 다양성 부족`;
+        const fs = parseFloat(s.final_score);
+        if (!isFinite(fs) || fs > 5.0) s.final_score = 5.0;
+      } else if (isFinite(eds) && eds <= 3) {
+        const fs = parseFloat(s.final_score);
+        if (!isFinite(fs) || fs > 5.5) s.final_score = 5.5;
+      }
+    });
+
+    /* 1단계: episode_axis 정규화 후 첫 등장만 유지, 같은 episode_axis 두 번째부터 강등.
+       에피소드 다양성은 problem_axis 다양성보다 우선이므로 먼저 검사. */
+    const normEpisode = (s) => {
+      const v = String(s && s.episode_axis || '').toLowerCase().replace(/\s+/g, '').trim();
+      return v;
+    };
+    const seenEpisode = new Set();
+    result.subjects.forEach(s => {
+      const ep = normEpisode(s);
+      if (!ep) return;
+      if (seenEpisode.has(ep)) {
+        s.duplicate_risk = '높음';
+        s._episode_dedup_reason = `에피소드 중복 — episode_axis "${s.episode_axis}" 이미 한 번 사용됨`;
+      } else {
+        seenEpisode.add(ep);
+      }
+    });
+
+    /* 2단계: problem_axis 실효 축 자동 강등 (기존 로직 유지).
        지원사업·정책자금 축이 1개를 초과하면 동일하게 강등. */
     const seenAxis = new Set();
     const policyAxisName = '지원사업·정책자금';
@@ -2922,12 +3278,18 @@ export default async function handler(req, res) {
       }
     });
 
-    /* 2단계: 중복 위험도 기준 정렬 (낮음 → 보통 → 높음 → 하단으로) */
+    /* 2단계: 중복 위험도 기준 정렬 (낮음 → 보통 → 높음 → 하단으로).
+       동일 위험 등급 안에서는 final_score 내림차순 — AI가 부여한 종합 점수 우선 */
     const riskRank = { '낮음': 0, '보통': 1, '높음': 2 };
+    const toScore = (s) => {
+      const v = parseFloat(s && s.final_score);
+      return isFinite(v) ? v : 0;
+    };
     result.subjects.sort((a, b) => {
       const ra = riskRank[a.duplicate_risk] !== undefined ? riskRank[a.duplicate_risk] : 0;
       const rb = riskRank[b.duplicate_risk] !== undefined ? riskRank[b.duplicate_risk] : 0;
-      return ra - rb;
+      if (ra !== rb) return ra - rb;
+      return toScore(b) - toScore(a);
     });
     const dupCheck = checkSubjectsDuplicate(result.subjects);
     if (dupCheck.length > 0) {

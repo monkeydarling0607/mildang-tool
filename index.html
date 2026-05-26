@@ -686,6 +686,9 @@ var S = {
   fetchedEntry: null,
   /* 탭2 — 주제 */
   subjectData: null, subject: null,
+  /* 재생성 누적 회피 — 현재 회차 단위 */
+  subjectRegenCount: 0,        /* 0=최초, 1=첫 재생성, 2=두 번째, … */
+  subjectRejectedHistory: [],  /* 사용자가 선택하지 않고 재생성한 후보들 (최근 20개, 슬림 객체) */
   /* 탭3 — 사연 후보 */
   storyData: null, story: null,
   /* 탭4 — 사연 원고 */
@@ -843,6 +846,7 @@ function hardReset() {
   S.rawHtml = ''; S.analysis = null; S.recType = '';
   S.fetchedEntry = null;
   S.subjectData = null; S.subject = null;
+  S.subjectRegenCount = 0; S.subjectRejectedHistory = [];
   S.storyData = null;   S.story = null;   S.storyDraft = null;
   S.tipUserNews = '';
   S.tipData = null; S.tip = null; S.tipDraft = null;
@@ -939,6 +943,7 @@ function softReset() {
   )) return;
 
   S.subjectData=null; S.subject=null;
+  S.subjectRegenCount = 0; S.subjectRejectedHistory = [];
   S.storyData=null;   S.story=null;    S.storyDraft=null;
   S.tipUserNews='';   S.tipData=null;  S.tip=null; S.tipDraft=null; S.benefitSearch=null; S.benefitTip=null;
   S.quizFormat='ox';  S.quizDiff='normal'; S.quizData=null;
@@ -1474,27 +1479,102 @@ async function callBulkArchive() {
    TAB 2 — 주제 후보
 ══════════════════════════════════════ */
 async function callSubjects() {
-  /* ── 재생성 회피용: 직전 후보를 제외 목록으로 추출 ── */
-  var excludeTitles = [], excludeKeywords = [], excludeAxes = [];
-  if (S.subjectData && Array.isArray(S.subjectData.subjects)) {
-    S.subjectData.subjects.forEach(function(s) {
-      if (s.title)         excludeTitles.push(s.title);
-      if (s.problem_axis)  excludeAxes.push(s.problem_axis);
-      [s.title, s.summary, s.hook, s.topic_cluster].forEach(function(v) {
-        String(v || '').replace(/[!?.,…]+/g,' ').split(/\s+/).forEach(function(t) {
-          if (t.length >= 2) excludeKeywords.push(t);
-        });
+  /* ── 재생성 누적 회피 ──
+     현재 화면 후보(S.subjectData.subjects)가 있으면 = 사용자가 그것을 보고 재생성을 누른 것 →
+     해당 후보를 "rejected"로 history에 누적하고 regenerateCount를 증가시킴. */
+  var isRegeneration = !!(S.subjectData && Array.isArray(S.subjectData.subjects) && S.subjectData.subjects.length);
+  if (isRegeneration) {
+    var slim = S.subjectData.subjects.map(function(s) {
+      return {
+        title:            s.title || '',
+        summary:          s.summary || '',
+        subject_category: s.subject_category || '',
+        problem_axis:     s.problem_axis || '',
+        episode_axis:     s.episode_axis || '',
+        trigger_moment:   s.trigger_moment || '',
+        conflict_axis:    s.conflict_axis || '',
+        actor_axis:       s.actor_axis || '',
+        money_flow_axis:  s.money_flow_axis || '',
+        resolution_angle: s.resolution_angle || '',
+        _epKey:           effectiveEpisodeAxisClient(s)
+      };
+    });
+    if (!Array.isArray(S.subjectRejectedHistory)) S.subjectRejectedHistory = [];
+    S.subjectRejectedHistory = S.subjectRejectedHistory.concat(slim).slice(-20);
+    S.subjectRegenCount = (S.subjectRegenCount || 0) + 1;
+  }
+
+  /* rejectedSubjects/rejectedEpisodeKeys + 기존 excludeTitles/Keywords/Axes 도출 */
+  var rejectedSubjects    = (S.subjectRejectedHistory || []).slice();
+  var rejectedEpisodeKeys = Array.from(new Set(rejectedSubjects.map(function(r){ return r._epKey; }).filter(Boolean)));
+
+  var excludeTitles = Array.from(new Set(rejectedSubjects.map(function(r){ return r.title; }).filter(Boolean))).slice(-15);
+  var excludeAxes   = Array.from(new Set(rejectedSubjects.map(function(r){ return r.problem_axis; }).filter(Boolean))).slice(-8);
+  var excludeKeywords = [];
+  rejectedSubjects.forEach(function(r) {
+    [r.title, r.summary].forEach(function(v) {
+      String(v || '').replace(/[!?.,…]+/g, ' ').split(/\s+/).forEach(function(t) {
+        if (t.length >= 2) excludeKeywords.push(t);
       });
     });
-  }
-  /* 중복 제거 + 길이 제한 */
-  excludeTitles   = Array.from(new Set(excludeTitles)).slice(-12);
+  });
   excludeKeywords = Array.from(new Set(excludeKeywords)).slice(-30);
-  excludeAxes     = Array.from(new Set(excludeAxes)).slice(-8);
 
   /* 재생성마다 매번 변화를 강제하는 시드 */
   var variationSeed = (S.subjectRegenCount || 0) + 1;
-  S.subjectRegenCount = variationSeed;
+
+  console.log('[subjects:regen]', {
+    regenerateCount:        S.subjectRegenCount,
+    rejectedSubjectsCount:  rejectedSubjects.length,
+    rejectedEpisodeKeys:    rejectedEpisodeKeys
+  });
+
+  /* 서버 프롬프트로 보낼 아카이브 압축
+     - 최근 10회차만 (issueNo/date 내림차순으로 최근부터 선별 — 저장 순서에 무관)
+     - newsSummary 제외 (뉴스 키워드가 freshness 평가를 흐리지 않게)
+     - 본문 길이 제한 (story 120 / tip 120 / quiz 80)
+     - avoidExpressions는 topic/story/tip/quiz에 실제 등장하는 키워드만 남김 */
+  function buildCompactArchive() {
+    var src = Array.isArray(S.archive) ? S.archive.slice() : [];
+    /* 최근순 정렬 — issueNo 우선, 동률·미존재면 date, 그래도 없으면 원래 순서 유지 */
+    src.sort(function(x, y) {
+      var nx = parseInt(String(x && x.issueNo || '').replace(/[^\d]/g,''), 10);
+      var ny = parseInt(String(y && y.issueNo || '').replace(/[^\d]/g,''), 10);
+      if (isFinite(nx) && isFinite(ny) && nx !== ny) return ny - nx;
+      var dx = parseArchiveDate(x && x.date);
+      var dy = parseArchiveDate(y && y.date);
+      if (dx != null && dy != null && dx !== dy) return dy - dx;
+      return 0;
+    });
+    var arr = src.slice(0, 10);
+    return arr.map(function(a) {
+      var topicText = [a.kakaoTitle, a.topic, a.storySummary, a.tipSummary, a.quizSummary, a.note]
+        .filter(Boolean).join(' ').toLowerCase();
+      var rawKeywords = String(a.avoidExpressions || '').split(/[,\/·;|]+/);
+      var keptKeywords = [];
+      var seenKw = {};
+      rawKeywords.forEach(function(k) {
+        var t = String(k).trim();
+        if (!t || t.length < 2 || t.length > 14) return;
+        var low = t.toLowerCase();
+        if (seenKw[low]) return;
+        if (topicText && topicText.indexOf(low) === -1) return;  /* news에만 등장 → 제외 */
+        seenKw[low] = 1;
+        keptKeywords.push(t);
+      });
+      return {
+        issueNo:                 a.issueNo || '',
+        date:                    a.date || '',
+        kakaoTitle:              a.kakaoTitle || '',
+        topic:                   a.topic || '',
+        storySummary:            String(a.storySummary || '').slice(0, 120),
+        tipSummary:              String(a.tipSummary   || '').slice(0, 120),
+        quizSummary:             String(a.quizSummary  || '').slice(0, 80),
+        avoidExpressions:        keptKeywords.slice(0, 8).join(', ')
+        /* newsSummary: 의도적으로 제외 */
+      };
+    });
+  }
 
   /* 선택값 + 이후 단계 생성 결과 전체 초기화 */
   S.subject     = null; S.subjectData  = null;
@@ -1517,13 +1597,30 @@ async function callSubjects() {
       avoid:           S.analysis ? (S.analysis.avoid           || []) : [],
       openingPattern:  S.analysis ? (S.analysis.opening_pattern || '') : '',
       ctaPattern:      S.analysis ? (S.analysis.cta_pattern     || '') : '',
-      archive:         Array.isArray(S.archive) ? S.archive.slice(-15) : [],
+      archive:         buildCompactArchive(),
       excludeTitles:   excludeTitles,
       excludeKeywords: excludeKeywords,
       excludeAxes:     excludeAxes,
       variationSeed:   variationSeed,
+      regenerationContext: {
+        regenerateCount:     S.subjectRegenCount || 0,
+        rejectedSubjects:    rejectedSubjects,
+        rejectedEpisodeKeys: rejectedEpisodeKeys
+      }
     });
     S.subjectData = result;
+    console.log('[subjects:result]', {
+      regenerateCount: S.subjectRegenCount || 0,
+      finals: (result && Array.isArray(result.subjects) ? result.subjects : []).map(function(s) {
+        return {
+          title:                s.title,
+          episode_axis:         s.episode_axis,
+          normalizedEpisodeKey: effectiveEpisodeAxisClient(s),
+          final_score:          s.final_score,
+          duplicate_risk:       s.duplicate_risk
+        };
+      })
+    });
     renderSubjects();
     updateCarry(1);
     showRegenBtn('subjects');
@@ -1539,14 +1636,51 @@ function renderSubjects() {
     document.getElementById('t2area').innerHTML = errBox('주제 데이터가 없습니다. 재생성해주세요.'); return;
   }
 
-  /* ── 1단계: 실효 축 기준 자동 교체/하향 ──
+  /* ── 0단계: episode_diversity_score 캡 — LLM이 캡 룰을 무시한 경우 안전망 ──
+     ≤2: duplicate_risk="높음", final_score≤5.0   ≤3: final_score≤5.5 */
+  data.subjects.forEach(function(s) {
+    var eds = parseFloat(s && s.episode_diversity_score);
+    if (!isFinite(eds)) return;
+    if (eds <= 2) {
+      s.duplicate_risk = '높음';
+      s._episode_dedup_reason = 'episode_diversity_score=' + eds + ' (≤2) — 에피소드 다양성 부족';
+      var fs0 = parseFloat(s.final_score);
+      if (!isFinite(fs0) || fs0 > 5.0) s.final_score = 5.0;
+    } else if (eds <= 3) {
+      var fs1 = parseFloat(s.final_score);
+      if (!isFinite(fs1) || fs1 > 5.5) s.final_score = 5.5;
+    }
+  });
+
+  /* ── 1단계 (에피소드 우선): 같은 episode_axis 두 번째 이상이면 강등 ──
+     큰 주제가 같아도 episode_axis가 다르면 허용. 반대로 problem_axis가 달라도
+     episode_axis가 같으면 같은 후보로 본다 (사용자 요청). */
+  var seenEpisode = {};
+  data.subjects.forEach(function(s) {
+    var ep = effectiveEpisodeAxisClient(s);
+    if (!ep) return;
+    if (seenEpisode[ep]) {
+      s.duplicate_risk = '높음';
+      s._episode_dedup_reason = '에피소드 중복 — "' + (s.episode_axis || ep) + '" 에피소드 이미 사용됨';
+    } else {
+      seenEpisode[ep] = true;
+    }
+  });
+
+  /* ── 2단계: problem_axis 실효 축 자동 강등 (보조적) ──
      같은 축이 2개 이상이면 첫 번째만 유지하고 나머지는 duplicate_risk="높음"으로 강등.
-     특히 지원사업·정책자금 축은 5개 중 최대 1개만 정상 후보로 인정. */
+     특히 지원사업·정책자금 축은 5개 중 최대 1개만 정상 후보로 인정.
+     단, episode_axis가 다르면 같은 problem_axis라도 묶지 않음 (에피소드 우선 룰 존중). */
   var seenAxis = {};
   data.subjects.forEach(function(s) {
     var ax = effectiveAxisClient(s);
     if (!ax) return;
     if (seenAxis[ax]) {
+      /* 에피소드가 분명히 다르면 problem_axis 중복은 무시 (지원사업·정책자금 제외) */
+      var epOk = effectiveEpisodeAxisClient(s);
+      if (ax !== '지원사업·정책자금' && epOk && !s._episode_dedup_reason) {
+        return; /* 에피소드가 새로우면 problem_axis 중복은 OK */
+      }
       s.duplicate_risk = '높음';
       s._axis_dedup_reason = '축 중복 — "' + ax + '" 축이 이미 한 번 사용됨';
     } else {
@@ -1554,26 +1688,41 @@ function renderSubjects() {
     }
   });
 
-  /* ── 2단계: 중복 위험도 기준 정렬: 낮음/(없음) → 보통 → 높음 ── */
+  /* ── 2단계: 중복 위험도 기준 정렬: 낮음/(없음) → 보통 → 높음 ──
+     동일 위험 등급 안에서는 final_score(0~10) 내림차순 — 서버가 매긴 종합 점수 우선 */
   var riskRank = { '낮음': 0, '보통': 1, '높음': 2 };
+  function toFinalScore(s) {
+    var v = parseFloat(s && s.final_score);
+    return isFinite(v) ? v : 0;
+  }
   var sorted = data.subjects.slice().sort(function(a, b) {
     var ra = riskRank[a.duplicate_risk] !== undefined ? riskRank[a.duplicate_risk] : 0;
     var rb = riskRank[b.duplicate_risk] !== undefined ? riskRank[b.duplicate_risk] : 0;
-    return ra - rb;
+    if (ra !== rb) return ra - rb;
+    return toFinalScore(b) - toFinalScore(a);
   });
   data.subjects = sorted;
 
   /* ── 내부 검증은 계속 수행 (정렬/축 강등에 사용) ── */
   var subjReport = validateSubjectsClient(data.subjects);
 
-  /* ── 상단 경고 배너는 진짜 위험할 때만 — 2가지 케이스만 노출 ──
-     ① 구조 중복 위험: 같은 problem_axis 2개 이상 감지
-     ② 최근 회차와 매우 유사: duplicate_risk === '높음' 후보 존재 */
-  var hasHighRisk = data.subjects.some(function(s){ return s.duplicate_risk === '높음'; });
-  var hasAxisDup  = subjReport.axisDupIdx && subjReport.axisDupIdx.length > 0;
+  /* ── 상단 경고 배너는 진짜 위험할 때만 ──
+     ① 에피소드 구조 중복 (우선): 같은 episode_axis 후보가 2개 이상
+     ② 구조 중복 위험: 같은 problem_axis 2개 이상 감지
+     ③ 최근 회차와 매우 유사: duplicate_risk === '높음' 후보 존재 */
+  var hasHighRisk    = data.subjects.some(function(s){ return s.duplicate_risk === '높음'; });
+  var hasAxisDup     = subjReport.axisDupIdx    && subjReport.axisDupIdx.length    > 0;
+  var hasEpisodeDup  = subjReport.episodeDupIdx && subjReport.episodeDupIdx.length > 0;
 
   var structuralBanner = '';
-  if (hasAxisDup) {
+  if (hasEpisodeDup) {
+    /* 에피소드 중복이 problem_axis 중복보다 우선 메시지 */
+    structuralBanner = '<div style="margin-bottom:12px;padding:10px 13px;background:#FDECEC;border:1px solid #E5A2A2;border-radius:var(--radius);font-size:12px;color:#7A1F1F;line-height:1.65">'
+      + '<div style="font-weight:600;margin-bottom:4px">⚠ 에피소드 구조 중복</div>'
+      + '큰 주제는 달라도 실제 사건·갈등 구조가 같은 후보가 함께 있습니다. 재생성을 권장합니다.'
+      + ' <span style="color:#A23535;cursor:pointer;font-weight:600;margin-left:4px" onclick="callSubjects()">재생성</span>'
+      + '</div>';
+  } else if (hasAxisDup) {
     structuralBanner = '<div style="margin-bottom:12px;padding:10px 13px;background:#FDECEC;border:1px solid #E5A2A2;border-radius:var(--radius);font-size:12px;color:#7A1F1F;line-height:1.65">'
       + '<div style="font-weight:600;margin-bottom:4px">⚠ 구조 중복 위험</div>'
       + '비슷한 문제 구조의 주제가 함께 생성되었습니다. 재생성을 권장합니다.'
@@ -1597,26 +1746,31 @@ function renderSubjects() {
     + data.subjects.map(function(s, i) {
         var isOn = S.subject && S.subject.title === s.title;
         var cardId = 'sbj' + i;
-        var isAxisDup = subjReport.axisDupIdx && subjReport.axisDupIdx.indexOf(i) !== -1;
+        var isAxisDup    = subjReport.axisDupIdx    && subjReport.axisDupIdx.indexOf(i)    !== -1;
+        var isEpisodeDup = subjReport.episodeDupIdx && subjReport.episodeDupIdx.indexOf(i) !== -1;
 
         /* ── 카드 기본 노출: 카테고리 / 제목 / 한 줄 설명 / 왜 지금 만 ──
-           내부 검증 결과(문제 축·중복 위험 낮음·보통·축 자동 강등·아카이브와 다른 점 등)는
+           내부 검증 결과(에피소드 축·문제 축·중복 위험 낮음·보통·점수 등)는
            데이터로는 유지하되 화면에는 노출하지 않음. */
         var catBadge = s.subject_category
           ? '<span class="tag tpr" style="flex-shrink:0;font-size:10px">' + escHtml(s.subject_category) + '</span>'
           : '';
 
         /* 진짜 위험할 때만 카드에 작은 경고 배지.
-           ─ "최근 아카이브와 매우 유사": duplicate_risk === '높음'
-           ─ "구조 중복 위험": axisDupIdx에 포함 */
-        var archiveSimBadge = s.duplicate_risk === '높음'
+           ─ "에피소드 구조 유사": 같은 episode_axis 후보가 함께 있음 (우선)
+           ─ "최근 회차와 매우 유사": duplicate_risk === '높음'
+           ─ "구조 중복 위험": problem_axis 중복 (에피소드 중복 없을 때만) */
+        var episodeBadge = isEpisodeDup
+          ? '<span class="sc-struct-badge" style="background:#FDECEC;border-color:#E5A2A2;color:#7A1F1F">에피소드 구조 유사</span>'
+          : '';
+        var archiveSimBadge = (!isEpisodeDup && s.duplicate_risk === '높음')
           ? '<span class="sc-struct-badge" style="background:#FDECEC;border-color:#E5A2A2;color:#7A1F1F">최근 회차와 매우 유사</span>'
           : '';
-        var structBadge = isAxisDup ? '<span class="sc-struct-badge">구조 중복 위험</span>' : '';
+        var structBadge = (!isEpisodeDup && isAxisDup) ? '<span class="sc-struct-badge">구조 중복 위험</span>' : '';
 
         return '<div class="sc' + (isOn?' on':'') + '" id="' + cardId + '" onclick="selectSubject('+i+')">'
           /* 1행: 카테고리(+ 진짜 위험할 때만 경고 배지) */
-          + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">' + catBadge + archiveSimBadge + structBadge + '</div>'
+          + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">' + catBadge + episodeBadge + archiveSimBadge + structBadge + '</div>'
           /* 2행: 제목 */
           + '<div class="sc-t" style="margin-bottom:6px">' + escHtml(s.title) + '</div>'
           /* 3행: 한 줄 설명 */
@@ -1671,11 +1825,105 @@ function effectiveAxisClient(s) {
   return '';
 }
 
+/* ── 에피소드 축 정규화 — 표현 차이 흡수 (서버 normalizeEpisodeKey와 동일 그룹) ──
+   episode_axis / trigger_moment / conflict_axis / title / summary를 합쳐서 본다. */
+function effectiveEpisodeAxisClient(s) {
+  if (!s) return '';
+  var raw = [s.episode_axis, s.trigger_moment, s.conflict_axis, s.title, s.summary]
+    .filter(Boolean).join(' ').toLowerCase().replace(/[\s·,]+/g, '');
+  if (!raw) return '';
+
+  /* 받은 뒤 문제 — 반납/회수 (먼저 검사) */
+  if (/(사후).*(반납|반환|점검|회수)/.test(raw))                  return '사후반납';
+  if (/(받았|받은).*(반납|반환|회수|중단|토해)/.test(raw))       return '사후반납';
+  if (/(지원금|보조금).*(반납|환수|회수)/.test(raw))             return '사후반납';
+
+  /* 증빙 누락 — 카드/영수증/거래처/가족카드 등 주체가 달라도 같은 사건 */
+  if (/(증빙|영수증|적격증빙).*(누락|빠짐|불명|없|인정|불안|애매)/.test(raw)) return '증빙누락-비용인정불안';
+  if (/(카드).*(비용|인정|경비)/.test(raw))                       return '증빙누락-비용인정불안';
+  if (/(가족카드|개인카드).*(사업|비용)/.test(raw))               return '증빙누락-비용인정불안';
+
+  /* 자동결제 명의 문제 */
+  if (/(자동결제|정기결제|구독료|자동이체).*(개인|명의|누락|대표)/.test(raw)) return '자동결제명의문제';
+
+  /* 신청 단계 탈락 — 서류/대상/기준/조건 */
+  if (/(서류).*(누락|빠|부족)/.test(raw))                         return '서류누락탈락';
+  if (/(매출|매출액).*(기준|착각|잘못)/.test(raw))                return '대상기준착각';
+  if (/(대상).*(아님|제외|착각)/.test(raw))                       return '대상기준착각';
+  if (/(고용|채용).*(조건|착각)/.test(raw))                       return '고용조건착각';
+  if (/(지원금|정책자금|보조금).*(신청).*(탈락|불가|못받|반려)/.test(raw)) return '신청단계탈락';
+  if (/(신청).*(탈락|불가|못받|반려)/.test(raw))                  return '신청단계탈락';
+
+  /* 신고 후 추가 세금 — 가산세/고지서 */
+  if (/(신고).*(가산세|고지서|추가|더\s*나|더나)/.test(raw))     return '신고후추가세금';
+  if (/^가산세/.test(raw) || /가산세.*(발생|부과|붙)/.test(raw))  return '신고후추가세금';
+  if (/^고지서/.test(raw) || /고지서.*(받|통보|날아)/.test(raw))  return '신고후추가세금';
+  if (/(매출.*줄.*세금.*늘|세금이더.*나)/.test(raw))              return '신고후추가세금';
+
+  /* 매출-정산-현금흐름 불일치 (긍정 매출 증가 + 통장 부족 패턴) */
+  if (/(매출).*(늘|증가).*(통장|잔고|없|부족|돈없)/.test(raw))    return '매출정산-현금흐름불일치';
+  if (/(정산).*(지연|차이|늦|부족|입금)/.test(raw))               return '매출정산-현금흐름불일치';
+  if (/(정산).*(늘|증가).*(없|부족|돈\s?없)/.test(raw))           return '매출정산-현금흐름불일치';
+  if (/(통장).*(비|잔고|돈\s?없)/.test(raw))                     return '매출정산-현금흐름불일치';
+
+  /* 직원 비용 부담 */
+  if (/(채용|고용).*(부담|비용|많이|증가)/.test(raw))             return '직원비용부담';
+  if (/(월급|급여).*(올|인상).*(부담|4대보험|증가)/.test(raw))    return '직원비용부담';
+  if (/(4대보험|원천세).*(증가|부담|올라)/.test(raw))            return '직원비용부담';
+
+  /* 임대차 계약 변경 */
+  if (/(임대차|월세|이사).*(계약|변경|증가|세금)/.test(raw))      return '임대차계약변경';
+  if (/(임대차|계약).*(갱신|만료|이름)/.test(raw))                return '임대차계약변경';
+
+  /* 가족 명의 거래 */
+  if (/(가족).*(명의|계좌|카드|직원|등록|근로|실근무)/.test(raw)) return '가족명의거래';
+
+  /* 명의/주체 불일치 */
+  if (/(공동대표|동업).*(전환|변경|주체|발행)/.test(raw))         return '명의주체불일치';
+  if (/(명의|등록).*(불일치|다름|배우자|남편|아내)/.test(raw))    return '명의주체불일치';
+  if (/(세금계산서|발행).*(주체|꼬|혼동)/.test(raw))              return '명의주체불일치';
+
+  /* 예약금 매출 인식 */
+  if (/(예약금|환불).*(인식|매출|시점)/.test(raw))                return '예약금매출인식';
+
+  /* PG/플랫폼 정산일 차이 */
+  if (/(pg|플랫폼).*(정산일|신고|기준일|달라)/.test(raw))         return '정산일신고기준차이';
+
+  /* 근로자성 판단 */
+  if (/(프리랜서|3\.3).*(근로|판정|볼\s?수\s?있)/.test(raw))     return '근로자성판단';
+  if (/(직원|알바).*(4대보험|기준).*(걸|진입)/.test(raw))         return '근로자성판단';
+
+  /* 현금 매출 누락 */
+  if (/(현금).*(매출|누락)/.test(raw))                            return '현금매출누락';
+
+  /* 매칭 안 되면 raw 앞 20자 */
+  return raw.slice(0, 20);
+}
+
 /* ── 주제 후보 클라이언트 룰 기반 중복 검증 ── */
 function validateSubjectsClient(subjects) {
   var warnings = [];
   var axisDupIdx = [];
-  if (!Array.isArray(subjects) || subjects.length < 2) return { warnings: warnings, axisDupIdx: axisDupIdx };
+  var episodeDupIdx = [];
+  if (!Array.isArray(subjects) || subjects.length < 2) {
+    return { warnings: warnings, axisDupIdx: axisDupIdx, episodeDupIdx: episodeDupIdx };
+  }
+
+  /* 0) episode_axis 중복 — 우선 검사 (사용자 요청: 에피소드 다양성이 problem_axis보다 우선) */
+  var epIdxMap = {};
+  subjects.forEach(function(s, i) {
+    var ep = effectiveEpisodeAxisClient(s);
+    if (!ep) return;
+    (epIdxMap[ep] = epIdxMap[ep] || []).push(i);
+  });
+  Object.keys(epIdxMap).forEach(function(ep) {
+    var list = epIdxMap[ep];
+    if (list.length >= 2) {
+      warnings.push('에피소드 "' + ep + '"가 #' + list.map(function(n){return n+1;}).join(', #') + '에서 동일');
+      list.forEach(function(idx){ episodeDupIdx.push(idx); });
+    }
+  });
+  episodeDupIdx = Array.from(new Set(episodeDupIdx));
 
   /* 1) duplicate_risk "높음"이 1개 이상이면 경고 */
   var highCount = subjects.filter(function(s){ return s.duplicate_risk === '높음'; }).length;
@@ -1740,7 +1988,7 @@ function validateSubjectsClient(subjects) {
   }
 
   axisDupIdx = Array.from(new Set(axisDupIdx));
-  return { warnings: warnings, axisDupIdx: axisDupIdx };
+  return { warnings: warnings, axisDupIdx: axisDupIdx, episodeDupIdx: episodeDupIdx };
 }
 
 /* ══════════════════════════════════════
