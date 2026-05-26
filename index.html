@@ -1400,16 +1400,16 @@ async function callBulkArchive() {
       var candidate = {
         issueNo:          entry.issueNo || '',
         date:             entry.date    || new Date().toISOString().slice(0, 10),
-        kakaoTitle:       entry.title   || '',
-        topic:            entry.tipTitle || '',
-        storySummary:     entry.storyTitle || '',
-        tipSummary:       entry.tipSummary || entry.tipTitle || '',
-        quizSummary:      entry.quizTitle  || '',
-        newsSummary:      '',
+        kakaoTitle:       entry.kakaoTitle    || entry.title       || '',
+        topic:            entry.topic         || '',                          /* 새 파서가 title에서 추출 */
+        storySummary:     entry.storySummary  || '',                          /* 비어 있어도 OK — 잘못된 값보다 빈 값 */
+        tipSummary:       entry.tipSummary    || '',
+        quizSummary:      entry.quizSummary   || '',
+        newsSummary:      entry.newsSummary   || '',
+        avoidExpressions: entry.avoidExpressions || '',
         ctr:              0,
         share:            0,
-        note:             '',
-        avoidExpressions: ''
+        note:             ''
       };
       var key = archiveItemKey(candidate);
       if (key && deletedSet.has(key)) { skipped++; return; }   /* tombstone — 부활 금지 */
