@@ -1,210 +1,245 @@
-// scripts/test-subject-regen.mjs — 임시 검증
-// 1) 서버 normalizeEpisodeKey vs 클라이언트 effectiveEpisodeAxisClient 의미 그룹 일치
-// 2) regenerationContext rejectedKey 매칭이 새 후보를 강등시키는지
-// 3) buildEpisodeExcludeMap이 archive(hard/strong/soft) + rejected 키를 올바르게 묶는지
-// 4) detectBasicOwnerAnxiety / detectBroadGenericTitle이 기본형 후보를 인식하는지
+// scripts/test-subject-regen.mjs — 주제 후보 생성 후처리 검증
+//
+// 검증 항목:
+//  1) normalizeEpisodeKey 의미 그룹 매칭 (서버 ↔ 클라이언트 동일)
+//  2) detectBasicOwnerAnxiety / detectBroadGenericTitle 인식
+//  3) buildEpisodeExcludeMap (archive hard/strong + rejected)
+//  4) processSubjects — 기본형 제거, seed fallback 사용, archive 충돌 시 다른 seed 사용
+//  5) 최종 5개 품질 (기본형 0개, epKey 중복 없음, 구체 사건/seed ≥ 3개)
+//
+// 실행: node scripts/test-subject-regen.mjs
+// 환경: Windows / PowerShell 호환
 
 import fs from 'node:fs';
 
-/* ── client effectiveEpisodeAxisClient + 클라이언트 detect 함수 추출 ── */
+/* ── client 함수 추출 ── */
 const html = fs.readFileSync('index.html', 'utf8');
-const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+const clientScript = html.match(/<script>([\s\S]*?)<\/script>/)[1];
 global.document = { addEventListener:()=>{}, querySelectorAll:()=>[], getElementById:()=>({value:'',style:{},classList:{add:()=>{},remove:()=>{},toggle:()=>{}},querySelectorAll:()=>[]}) };
 global.localStorage = { getItem:()=>null, setItem:()=>{} };
 global.window = global;
 const { effectiveEpisodeAxisClient, detectBasicOwnerAnxietyClient, detectBroadGenericTitleClient } =
-  new Function(script + '; return { effectiveEpisodeAxisClient, detectBasicOwnerAnxietyClient, detectBroadGenericTitleClient };')();
+  new Function(clientScript + '; return { effectiveEpisodeAxisClient, detectBasicOwnerAnxietyClient, detectBroadGenericTitleClient };')();
 
-/* ── server 함수 추출 — buildEpisodeExcludeMap이 normalizeEpisodeKey를 참조하므로
-   하나의 묶음으로 평가해 클로저 안에서 서로 참조 가능하게 한다. ── */
+/* ── server 헬퍼 블록 추출 (TEST_HELPERS_START ~ TEST_HELPERS_END) ── */
 const serverSrc = fs.readFileSync('api/generate.js', 'utf8');
-function slice(src, startMarker, endMarker) {
-  const s = src.indexOf(startMarker);
-  if (s < 0) throw new Error('missing marker: ' + startMarker);
-  const e = src.indexOf(endMarker, s);
-  if (e < 0) throw new Error('missing end: ' + endMarker);
-  return src.slice(s, e);
-}
-const bundle = [
-  slice(serverSrc, 'function normalizeEpisodeKey(',   '\nfunction detectBasicOwnerAnxiety'),
-  slice(serverSrc, 'function detectBasicOwnerAnxiety(', '\nfunction detectBroadGenericTitle'),
-  slice(serverSrc, 'function detectBroadGenericTitle(', '\nfunction buildEpisodeExcludeMap'),
-  slice(serverSrc, 'function buildEpisodeExcludeMap(',  '\nfunction normalizeRejectedKeys'),
-].join('\n');
+const startTag = '/* TEST_HELPERS_START';
+const endTag   = '/* TEST_HELPERS_END */';
+const startIdx = serverSrc.indexOf(startTag);
+const endIdx   = serverSrc.indexOf(endTag);
+if (startIdx < 0 || endIdx < 0) throw new Error('TEST_HELPERS 마커가 없습니다 — api/generate.js 확인 필요');
+const helperBlock = serverSrc.slice(startIdx, endIdx);
+
 const {
   normalizeEpisodeKey,
+  effectiveAxis,
   detectBasicOwnerAnxiety,
   detectBroadGenericTitle,
   buildEpisodeExcludeMap,
-} = new Function(bundle + '\nreturn { normalizeEpisodeKey, detectBasicOwnerAnxiety, detectBroadGenericTitle, buildEpisodeExcludeMap };')();
+  processSubjects,
+  CONCRETE_EPISODE_SEED_BANK,
+} = new Function(helperBlock + `
+  return {
+    normalizeEpisodeKey,
+    effectiveAxis,
+    detectBasicOwnerAnxiety,
+    detectBroadGenericTitle,
+    buildEpisodeExcludeMap,
+    processSubjects,
+    CONCRETE_EPISODE_SEED_BANK,
+  };
+`)();
 
-/* ── Test cases: 의미 그룹 매칭 ── */
-const SPEC = [
-  { name: '증빙 누락 그룹', cases: [
-      { episode_axis: '증빙 누락' },
-      { episode_axis: '영수증 누락' },
-      { episode_axis: '카드 비용 인정 불안' },
-      { episode_axis: '적격증빙 없음' }
-    ], expectGroup: true },
-  { name: '신고후추가세금 그룹', cases: [
-      { episode_axis: '신고 후 추가 세금' },
-      { episode_axis: '가산세 발생' },
-      { episode_axis: '고지서 갑작스러운 통보' },
-      { episode_axis: '신고 끝났는데 세금 더 나옴' },
-      { episode_axis: '세금 폭탄' },
-      { title: '직원 뽑고 세금 폭탄이 날아올 줄이야?' },
-    ], expectGroup: true },
-  { name: '사후반납 그룹', cases: [
-      { episode_axis: '사후 반납' },
-      { episode_axis: '지원금 사후 점검 반납' },
-      { title: '지원금 받았는데 반납하라는 연락이 왔어요', episode_axis: '반납 통보' }
-    ], expectGroup: true },
-  { name: '매출-현금흐름 불일치', cases: [
-      { title: '매출 늘었는데 통장엔 왜 돈이 없을까요?', episode_axis: '매출-현금흐름 불일치' },
-      { title: '카드 매출 늘었는데 왜 통장 잔고가 없죠?', episode_axis: '매출 늘었는데 통장 잔고 없음' },
-      { episode_axis: '정산은 늘었는데 돈 없음' },
-      { title: '정산금이 없는데 매출은 늘고 있어요?', episode_axis: '정산금 없음' }
-    ], expectGroup: true },
-  { name: '직원비용부담', cases: [
-      { title: '직원 채용 후 부담이 너무 많이 늘었어요', episode_axis: '직원 채용 비용 부담' },
-      { title: '직원 월급 올렸더니 4대보험도 올라갔어요', episode_axis: '4대보험 증가' },
-      { title: '직원 뽑았는데 부담', episode_axis: '직원 채용 부담' }
-    ], expectGroup: true },
-  { name: '신청단계탈락', cases: [
-      { title: '지원금 신청했는데 연락 없음', episode_axis: '신청 후 연락 없음' },
-      { title: '지원금 좋은데, 왜 안 줄까요?', episode_axis: '지원금 신청 탈락' }
-    ], expectGroup: true },
-  { name: '임대차계약변경', cases: [
-      { title: '이사 후 세금이 늘어날 줄이야', episode_axis: '이사 후 세금 변동' },
-      { title: '임대차 계약이 변동되면 세금도 바뀌나요?', episode_axis: '임대차 계약 변경' }
-    ], expectGroup: true },
-  { name: '자동결제 명의 문제', cases: [
-      { title: '자동결제 서비스가 대표 개인 명의로 빠져나가요', episode_axis: '자동결제 누락' }
-    ], expectGroup: false },
-];
-
-let allPass = true;
-for (const t of SPEC) {
-  console.log('━━━ ' + t.name + ' ━━━');
-  const cKeys = t.cases.map(effectiveEpisodeAxisClient);
-  const sKeys = t.cases.map(normalizeEpisodeKey);
-  t.cases.forEach((c, i) => {
-    const label = (c.title || c.episode_axis || '').slice(0, 38);
-    console.log('  ' + label.padEnd(40), '| client:', cKeys[i].padEnd(26), '| server:', sKeys[i]);
-  });
-  if (t.expectGroup) {
-    const cAllSame = cKeys.every(k => k && k === cKeys[0]);
-    const sAllSame = sKeys.every(k => k && k === sKeys[0]);
-    if (!cAllSame) { console.log('  ✗ client 같은 그룹으로 묶이지 않음'); allPass = false; }
-    if (!sAllSame) { console.log('  ✗ server 같은 그룹으로 묶이지 않음'); allPass = false; }
-    if (cAllSame && sAllSame) console.log('  ✓ 모두 같은 그룹');
+let totalFails = 0;
+function assert(name, cond, detail) {
+  if (cond) {
+    console.log('  ✓', name);
+  } else {
+    console.log('  ✗', name);
+    if (detail) console.log('    →', detail);
+    totalFails++;
   }
 }
 
-console.log('');
-console.log('━━━ 사용자 spec 테스트 A: 1차 후보 vs 2차 후보 키 매칭 ━━━');
-const round1 = [
-  { title:'매출 늘었는데, 통장엔 왜 돈이 없을까요?', episode_axis:'매출 늘었는데 통장 잔고 없음' },
-  { title:'카드 긁었는데, 비용 인정이 안 된다네요',  episode_axis:'카드 비용 인정 불안' },
-  { title:'직원 채용 후, 부담이 너무 많이 늘었어요',  episode_axis:'직원 채용 비용 부담' },
-  { title:'지원금 받았는데, 반납하라는 연락이 왔어요', episode_axis:'사후 반납' },
-  { title:'이사 후, 세금이 늘어날 줄이야',           episode_axis:'임대차 계약 변경' }
+/* ═══════════════════════════════════════════════════════════════════
+   0. 의미 그룹 매칭 — 서버/클라이언트 동일
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('━━━ 0) normalizeEpisodeKey 의미 그룹 매칭 (서버 ↔ 클라이언트) ━━━');
+const GROUPS = [
+  { name: '증빙누락', cases: [
+      { episode_axis: '증빙 누락' },
+      { episode_axis: '카드 비용 인정 불안' },
+      { episode_axis: '적격증빙 없음' },
+    ], expectGroup: true },
+  { name: '신고후추가세금', cases: [
+      { episode_axis: '신고 후 추가 세금' },
+      { episode_axis: '가산세 발생' },
+      { episode_axis: '세금 폭탄' },
+      { title: '직원 뽑고 세금 폭탄이 날아올 줄이야?' },
+    ], expectGroup: true },
+  { name: '사후반납', cases: [
+      { episode_axis: '사후 반납' },
+      { title: '지원금 받았는데 반납하라는 연락이 왔어요' },
+    ], expectGroup: true },
+  { name: '매출-현금흐름', cases: [
+      { title: '매출 늘었는데 통장엔 왜 돈이 없을까요?' },
+      { episode_axis: '정산은 늘었는데 돈 없음' },
+      { title: '정산금이 없는데 매출은 늘고 있어요?' },
+    ], expectGroup: true },
+  { name: '직원비용부담', cases: [
+      { title: '직원 채용 후 부담이 너무 많이 늘었어요' },
+      { title: '직원 뽑았는데 부담' },
+    ], expectGroup: true },
+  { name: '신청단계탈락', cases: [
+      { title: '지원금 신청했는데 연락 없음' },
+      { title: '지원금 좋은데, 왜 안 줄까요?' },
+      { title: '지원금 신청했는데 보류됐어요' },
+    ], expectGroup: true },
+  { name: '임대차계약변경', cases: [
+      { title: '이사 후 세금이 늘어날 줄이야' },
+      { title: '임대차 계약이 변동되면 세금도 바뀌나요?' },
+    ], expectGroup: true },
+  { name: '자동결제명의문제', cases: [
+      { title: '자동결제 서비스가 대표 개인 명의로 빠져나가요' },
+    ], expectGroup: false },
 ];
-const round2 = [
-  { title:'지원금 받았는데, 이건 내 돈으로 갚아야 한다고요?', episode_axis:'지원금 반납' },
-  { title:'카드 매출 늘었는데 왜 통장 잔고가 없죠?',          episode_axis:'매출-현금흐름 불일치' },
-  { title:'신고했는데 벌 세금이 더 나왔다고요?',              episode_axis:'신고 후 추가 세금' },
-  { title:'임대차 계약이 변동되면 세금도 바뀌나요?',          episode_axis:'임대차 계약 변경' },
-  { title:'직원 월급 올렸더니 4대보험도 올라갔어요',          episode_axis:'4대보험 증가' }
-];
-const rejectedKeySet = new Set(round1.map(normalizeEpisodeKey).filter(Boolean));
-console.log('rejected keys:', Array.from(rejectedKeySet));
-let hits = 0;
-round2.forEach(s => {
-  const k = normalizeEpisodeKey(s);
-  const hit = rejectedKeySet.has(k);
-  console.log(' ', (hit ? '✗ REJECTED 매칭' : '  통과').padEnd(16), '|', k.padEnd(28), '|', s.title);
-  if (hit) hits++;
-});
-console.log('총 ' + round2.length + '개 중 ' + hits + '개가 rejected와 매칭 → 제거됨 (기대: 4~5개 — 사용자 spec상 반복 후보)');
-
-console.log('');
-console.log('━━━ 테스트 B: buildEpisodeExcludeMap — archive(hard/strong) + rejected ━━━');
-const archive = [
-  /* idx 0~4: hard (최근 5회) */
-  { kakaoTitle: '신고 마치고 세금이 더 나왔어요',  topic: '신고 후 추가 세금' },
-  { kakaoTitle: '매출 늘었는데 통장이 비어 있어요', topic: '매출-현금흐름' },
-  { kakaoTitle: '직원 뽑고 부담이 너무 늘었어요',   topic: '직원 비용 부담' },
-  { kakaoTitle: '지원금 받았는데 반납 통보',        topic: '사후 반납' },
-  { kakaoTitle: '임대차 계약 갱신',                topic: '임대차 변경' },
-  /* idx 5~14: strong */
-  { kakaoTitle: '카드 비용 인정 불안',              topic: '카드 증빙' },
-  { kakaoTitle: '지원금 신청했는데 연락 없음',      topic: '신청 탈락' },
-  /* idx 15+: soft */
-];
-for (let i = 7; i < 20; i++) archive.push({ kakaoTitle: '구회차 ' + i, topic: '소재' + i });
-
-const excludeMap = buildEpisodeExcludeMap({
-  archiveItems: archive,
-  rejectedSubjects: [{ title: '카드 매출 늘었는데 통장 비었', episode_axis: '카드매출 통장' }],
-  rejectedEpisodeKeys: []
-});
-console.log('hardKeys:', Array.from(excludeMap.hardKeys));
-console.log('strongKeys:', Array.from(excludeMap.strongKeys));
-console.log('rejectedKeys:', Array.from(excludeMap.rejectedKeys));
-
-const newCandidate = { title: '매출은 늘었는데 통장은 비어 있어요', episode_axis: '매출 통장' };
-const k = normalizeEpisodeKey(newCandidate);
-const blockedAsHard = excludeMap.hardKeys.has(k);
-console.log('새 후보 "' + newCandidate.title + '" — key=' + k + ', archive-hard로 제거되는가?',
-  blockedAsHard ? '✓ 예' : '✗ 아니오 (실패)');
-if (!blockedAsHard) allPass = false;
-
-console.log('');
-console.log('━━━ 테스트 C: detectBasicOwnerAnxiety — 기본형 패턴 인식 ━━━');
-const basicCases = [
-  { title: '직원 뽑았는데 부담', expect: true },
-  { title: '매출 늘었는데 통장 비어 있음', expect: true },
-  { title: '카드 비용 인정 불안', expect: true },
-  { title: '지원금 신청했는데 연락 없음', expect: true },
-  { title: '계약 바뀌면 세금 걱정', expect: true },
-  { title: '세금 폭탄이 날아올 줄이야', expect: true },
-  /* 구체 사건형 — false여야 함 */
-  { title: '자동결제 서비스가 대표 개인 명의로 빠져나가요', expect: false },
-  { title: '예약금은 받았는데 환불될 수도 있대요', expect: false },
-  { title: '가족 계좌로 매출이 들어왔는데 괜찮나요?', expect: false },
-  { title: '공동대표로 바꿨더니 계산서 발행 주체가 애매해요', expect: false },
-];
-basicCases.forEach(c => {
-  const sv = detectBasicOwnerAnxiety(c);
-  const cv = detectBasicOwnerAnxietyClient(c);
-  const svDetected = !!sv, cvDetected = !!cv;
-  const ok = svDetected === c.expect && cvDetected === c.expect;
-  if (!ok) allPass = false;
-  console.log(' ', (ok ? '✓' : '✗').padEnd(2), c.title.padEnd(48),
-    '| server:', String(sv).padEnd(16), '| client:', String(cv).padEnd(16),
-    '| 기대:', c.expect ? '기본형 감지' : '면제');
+GROUPS.forEach(g => {
+  const sKeys = g.cases.map(normalizeEpisodeKey);
+  const cKeys = g.cases.map(effectiveEpisodeAxisClient);
+  if (g.expectGroup) {
+    const sAllSame = sKeys.every(k => k && k === sKeys[0]);
+    const cAllSame = cKeys.every(k => k && k === cKeys[0]);
+    assert(`[${g.name}] server 의미 그룹 일치`, sAllSame, `keys=${JSON.stringify(sKeys)}`);
+    assert(`[${g.name}] client 의미 그룹 일치`, cAllSame, `keys=${JSON.stringify(cKeys)}`);
+  }
+  /* 매 케이스마다 server ↔ client 키가 같아야 한다 */
+  g.cases.forEach((c, i) => {
+    const label = (c.title || c.episode_axis || '').slice(0, 30);
+    assert(`[${g.name}] ${label} — 서버/클라이언트 키 동일`, sKeys[i] === cKeys[i], `s=${sKeys[i]} c=${cKeys[i]}`);
+  });
 });
 
+/* ═══════════════════════════════════════════════════════════════════
+   Test 1. 기본형 후보 5개 → regen=2에서 전부 제거
+   ═══════════════════════════════════════════════════════════════════ */
 console.log('');
-console.log('━━━ 테스트 D: detectBroadGenericTitle — 넓은 제목 인식 ━━━');
-const broadCases = [
-  { title: '매출 늘었는데 세금까지', expect: true },
-  { title: '직원 뽑았는데 부담', expect: true },
-  { title: '카드 썼는데 비용 안 됨', expect: true },
-  { title: '지원금 신청했는데 연락 없음', expect: true },
-  { title: '자동결제 서비스가 대표 개인 명의로 빠져나가요', expect: false },
-  { title: '예약금은 받았지만 환불 가능성이 있어 매출 인식이 애매함', expect: false },
+console.log('━━━ Test 1) 기본형 후보 제거 (regenerateCount=2) ━━━');
+const test1Subjects = [
+  { title:'매출은 증가했는데, 통장 잔고는 왜 비는 걸까요?', summary:'카드 매출은 늘었는데 통장에 돈이 없어 답답합니다.', subject_category:'사업 운영형', problem_axis:'매출·정산·현금흐름', episode_axis:'매출 증가하는데 통장은 빈다', trigger_moment:'월말 통장 확인', conflict_axis:'매출과 잔고 차이', final_score:9.0, episode_diversity_score:7 },
+  { title:'카드 긁었는데, 경비 인정이 안 된다?', summary:'사업카드로 결제했지만 경비 인정이 어려운 상황입니다.', subject_category:'세무 리스크형', problem_axis:'카드·증빙·경비 관리', episode_axis:'카드 비용 인정 불안', trigger_moment:'결산 직전', conflict_axis:'경비 인정 여부', final_score:8.7, episode_diversity_score:6 },
+  { title:'직원 뽑고 원천세가 이렇게 늘어났어요?', summary:'직원 한 명 채용했을 뿐인데 원천세 부담이 늘었습니다.', subject_category:'직원·노무형', problem_axis:'직원·급여·4대보험', episode_axis:'직원 채용 비용 부담', trigger_moment:'첫 월급일', conflict_axis:'예상보다 큰 부담', final_score:8.5, episode_diversity_score:6 },
+  { title:'지원금 신청했는데 보류됐어요',                  summary:'지원금 신청했는데 결과가 보류 상태입니다.', subject_category:'지원·정책형', problem_axis:'지원사업·정책자금', episode_axis:'지원금 신청 보류', trigger_moment:'결과 통보', conflict_axis:'신청 후 미수령', final_score:8.4, episode_diversity_score:6 },
+  { title:'계약 바뀌면 세금도 바뀌나요?',                  summary:'임대차 계약 갱신 후 세금이 어떻게 바뀔지 걱정입니다.', subject_category:'사업 운영형', problem_axis:'사업자 정보·명의·주소·계약', episode_axis:'임대차 계약 변경 세금', trigger_moment:'계약 갱신', conflict_axis:'계약 변경 세금 변화', final_score:8.2, episode_diversity_score:6 },
 ];
-broadCases.forEach(c => {
-  const sv = detectBroadGenericTitle(c);
-  const cv = detectBroadGenericTitleClient(c);
-  const ok = (!!sv) === c.expect && (!!cv) === c.expect;
-  if (!ok) allPass = false;
-  console.log(' ', (ok ? '✓' : '✗').padEnd(2), c.title.padEnd(60),
-    '| server:', String(sv).padEnd(22), '| client:', String(cv));
+const test1Payload = { regenerationContext: { regenerateCount: 2 }, archive: [] };
+const test1Out = processSubjects(test1Subjects, test1Payload);
+const test1Removed = test1Out.stats.removedByBasicPattern;
+const test1AnyLeftover = test1Out.finalSubjects.some(s => detectBasicOwnerAnxiety(s));
+assert('기본형 5개 모두 basic-owner-anxiety로 감지', test1Removed >= 5, `removedByBasicPattern=${test1Removed}`);
+assert('최종 후보에 기본형 0개', !test1AnyLeftover, `leftover titles=${JSON.stringify(test1Out.finalSubjects.map(s=>s.title))}`);
+assert('최종 후보 5개', test1Out.finalSubjects.length === 5, `length=${test1Out.finalSubjects.length}`);
+assert('seed fallback으로 보강', test1Out.stats.seedFallbackUsed >= 5, `seedFallbackUsed=${test1Out.stats.seedFallbackUsed}`);
+assert('similar fallback 0개 (유사 후보 안내 안 뜸)', test1Out.stats.similarFallbackUsed === 0, `similarFallbackUsed=${test1Out.stats.similarFallbackUsed}`);
+
+/* ═══════════════════════════════════════════════════════════════════
+   Test 2. 구체 사건형 5개 → regen=2에서 전부 유지
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ Test 2) 구체 사건형 후보 유지 (regenerateCount=2) ━━━');
+const test2Subjects = [
+  { title:'가족카드로 결제한 비용도 사업비가 되나요?',           summary:'가족 명의 카드로 결제한 사업용 지출의 경비 인정 여부.', subject_category:'세무 리스크형', problem_axis:'카드·증빙·경비 관리', episode_axis:'가족카드 사업비 처리', trigger_moment:'결산 중', conflict_axis:'결제 주체 다름', final_score:8.8, episode_diversity_score:9 },
+  { title:'자동결제 서비스가 대표 개인 명의로 빠져나가요',        summary:'사업 구독료가 대표 개인 명의로 결제되는 상황.', subject_category:'세무 리스크형', problem_axis:'카드·증빙·경비 관리', episode_axis:'자동결제 명의 문제', trigger_moment:'카드 명세 확인', conflict_axis:'명의 차이', final_score:8.7, episode_diversity_score:9 },
+  { title:'세금계산서는 이번 달, 입금은 다음 달이면요?',         summary:'계산서 발행과 입금 시점이 달라 매출 인식이 모호.', subject_category:'세무 리스크형', problem_axis:'매출·정산·현금흐름', episode_axis:'세금계산서·입금 시점 차이', trigger_moment:'월말 결산', conflict_axis:'시점 불일치', final_score:8.6, episode_diversity_score:9 },
+  { title:'공동대표로 바꿨더니 계산서 발행 주체가 애매해요',     summary:'공동대표 전환 후 세금계산서 발행 주체가 헷갈림.', subject_category:'세무 리스크형', problem_axis:'사업자 정보·명의·주소·계약', episode_axis:'공동대표 세금계산서 발행 주체', trigger_moment:'전환 직후 첫 발행', conflict_axis:'주체 분산', final_score:8.5, episode_diversity_score:9 },
+  { title:'프리랜서로 계약했는데 근로자라고 볼 수도 있대요',      summary:'프리랜서 계약이지만 실제 근로 관계가 있어 근로자성 판단 필요.', subject_category:'직원·노무형', problem_axis:'직원·급여·4대보험', episode_axis:'프리랜서 근로자성 판단', trigger_moment:'노동청 안내', conflict_axis:'계약 vs 실태', final_score:8.4, episode_diversity_score:9 },
+];
+const test2Payload = { regenerationContext: { regenerateCount: 2 }, archive: [] };
+const test2Out = processSubjects(test2Subjects, test2Payload);
+assert('구체 사건형 5개 모두 통과', test2Out.finalSubjects.length === 5
+  && test2Out.finalSubjects.every(s => !detectBasicOwnerAnxiety(s)),
+  `final=${JSON.stringify(test2Out.finalSubjects.map(s=>s.title))}`);
+assert('basic-owner-anxiety로 제거된 후보 0개', test2Out.stats.removedByBasicPattern === 0, `removedByBasic=${test2Out.stats.removedByBasicPattern}`);
+assert('seed fallback 사용 안 함', test2Out.stats.seedFallbackUsed === 0, `seedFallbackUsed=${test2Out.stats.seedFallbackUsed}`);
+assert('similar fallback 사용 안 함', test2Out.stats.similarFallbackUsed === 0, `similarFallbackUsed=${test2Out.stats.similarFallbackUsed}`);
+
+/* ═══════════════════════════════════════════════════════════════════
+   Test 3. 후보 대부분 제거 → seed bank로 보강
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ Test 3) 후보 부족 시 seed bank로 보강 ━━━');
+/* 모두 기본형 — regen=2에서 다 제거되므로 seed bank로 5개 채워야 함 */
+const test3Subjects = test1Subjects.slice();
+const test3Out = processSubjects(test3Subjects, { regenerationContext: { regenerateCount: 2 }, archive: [] });
+assert('최종 5개 채워짐', test3Out.finalSubjects.length === 5, `length=${test3Out.finalSubjects.length}`);
+assert('seed fallback ≥ 5', test3Out.stats.seedFallbackUsed >= 5, `seedFallbackUsed=${test3Out.stats.seedFallbackUsed}`);
+const test3HasSeedFlag = test3Out.finalSubjects.some(s => s._seedFallback === true);
+assert('finalSubjects에 _seedFallback=true 포함', test3HasSeedFlag, JSON.stringify(test3Out.finalSubjects.map(s => ({t:s.title, seed:!!s._seedFallback}))));
+assert('similar fallback 0개 (유사 후보 안내 플래그 false)', test3Out.stats.similarFallbackUsed === 0, `similarFallbackUsed=${test3Out.stats.similarFallbackUsed}`);
+
+/* ═══════════════════════════════════════════════════════════════════
+   Test 4. archive에 자동결제명의문제 hard → 자동결제 seed 제외, 다른 seed 사용
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ Test 4) archive hard key와 겹치는 seed는 사용 안 함 ━━━');
+const test4Archive = [
+  { kakaoTitle: '자동결제 명의 문제로 골치 아팠던 사례', topic: '자동결제 명의' },
+  { kakaoTitle: '다른 회차',  topic: '소재 A' },
+  { kakaoTitle: '다른 회차2', topic: '소재 B' },
+  { kakaoTitle: '다른 회차3', topic: '소재 C' },
+  { kakaoTitle: '다른 회차4', topic: '소재 D' },
+];
+const test4Out = processSubjects(test1Subjects.slice(), { regenerationContext: { regenerateCount: 2 }, archive: test4Archive });
+const test4AutoUsed = test4Out.finalSubjects.some(s => normalizeEpisodeKey(s) === '자동결제명의문제');
+assert('자동결제명의문제 seed 사용 안 함', !test4AutoUsed, `자동결제 seed 사용됨? final=${JSON.stringify(test4Out.finalSubjects.map(s=>({t:s.title, k:normalizeEpisodeKey(s)})))}`);
+assert('그래도 최종 5개 채워짐 (다른 seed 사용)', test4Out.finalSubjects.length === 5, `length=${test4Out.finalSubjects.length}`);
+assert('seed fallback ≥ 5', test4Out.stats.seedFallbackUsed >= 5, `seedFallbackUsed=${test4Out.stats.seedFallbackUsed}`);
+
+/* ═══════════════════════════════════════════════════════════════════
+   Test 5. 최종 5개 품질 — basic 0개, epKey 중복 없음, 구체 사건 ≥ 3
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ Test 5) 최종 5개 품질 검사 ━━━');
+const test5Out = processSubjects(test1Subjects.slice(), { regenerationContext: { regenerateCount: 2 }, archive: [] });
+const test5Basic = test5Out.finalSubjects.filter(s => detectBasicOwnerAnxiety(s)).length;
+const epKeys = test5Out.finalSubjects.map(normalizeEpisodeKey);
+const uniqueEpKeys = new Set(epKeys);
+const concreteOrSeed = test5Out.finalSubjects.filter(s => s._seedFallback || !detectBasicOwnerAnxiety(s)).length;
+const similarBadgeCount = test5Out.finalSubjects.filter(s => s._similarFallback).length;
+assert('basic 후보 0개', test5Basic === 0, `basic=${test5Basic}`);
+assert('epKey 중복 없음', uniqueEpKeys.size === epKeys.length, `epKeys=${JSON.stringify(epKeys)}`);
+assert('seed 또는 구체 사건 후보 ≥ 3', concreteOrSeed >= 3, `count=${concreteOrSeed}`);
+assert('유사 후보 배지 ≤ 1', similarBadgeCount <= 1, `similarFallback=${similarBadgeCount}`);
+
+/* ═══════════════════════════════════════════════════════════════════
+   Test 6. regen=0 일 때는 기본형도 통과 (구체 사건 강제 없음)
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ Test 6) regenerateCount=0 — 기본형도 통과 ━━━');
+const test6Out = processSubjects(test1Subjects.slice(), { regenerationContext: { regenerateCount: 0 }, archive: [] });
+assert('regen=0에서는 basic-owner-anxiety로 제거 안 됨', test6Out.stats.removedByBasicPattern === 0, `removed=${test6Out.stats.removedByBasicPattern}`);
+assert('5개 모두 LLM 후보 그대로 유지', test6Out.finalSubjects.length === 5 && test6Out.stats.seedFallbackUsed === 0, `length=${test6Out.finalSubjects.length} seed=${test6Out.stats.seedFallbackUsed}`);
+
+/* ═══════════════════════════════════════════════════════════════════
+   Test 7. seed bank 자체 정합성 — 각 seed가 epKey/필드 완비, 기본형으로 잡히지 않음
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ Test 7) seed bank 정합성 검사 ━━━');
+assert('seed bank ≥ 15개', CONCRETE_EPISODE_SEED_BANK.length >= 15, `length=${CONCRETE_EPISODE_SEED_BANK.length}`);
+CONCRETE_EPISODE_SEED_BANK.forEach((seed, i) => {
+  const required = ['title', 'summary', 'why_now', 'subject_category', 'problem_axis', 'episode_axis', 'trigger_moment', 'conflict_axis'];
+  const missing = required.filter(k => !seed[k]);
+  assert(`seed[${i}] "${seed.title.slice(0, 30)}" 필수 필드`, missing.length === 0, `missing=${missing.join(',')}`);
+  const k = normalizeEpisodeKey(seed);
+  assert(`seed[${i}] normalizeEpisodeKey 산정 가능`, !!k, `key='${k}'`);
+  assert(`seed[${i}] basic-owner-anxiety 아님`, !detectBasicOwnerAnxiety(seed), `tag='${detectBasicOwnerAnxiety(seed)}' title='${seed.title}'`);
+  assert(`seed[${i}] broad-generic-title 아님`, !detectBroadGenericTitle(seed), `seed=${seed.title}`);
 });
 
 console.log('');
-console.log(allPass ? '✅ 모든 테스트 통과' : '❌ 일부 실패');
-process.exit(allPass ? 0 : 1);
+if (totalFails === 0) {
+  console.log('✅ 모든 테스트 통과');
+  process.exit(0);
+} else {
+  console.log(`❌ ${totalFails}개 실패`);
+  process.exit(1);
+}

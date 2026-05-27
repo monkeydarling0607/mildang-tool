@@ -1637,29 +1637,23 @@ function renderSubjects() {
   }
 
   /* ── 클라이언트 안전망 ──
-     서버가 이미 archive/rejected/basic-pattern 기준으로 필터했더라도
-     화면에 표시되기 전 한 번 더 안전망을 둔다.
-     1) 거부 history(_epKey)와 같은 후보 제거
-     2) 같은 응답 내 epKey 중복 제거
-     3) regenerateCount >= 2: 기본형/넓은 제목 제거 */
+     서버가 이미 archive/rejected/basic-pattern 기준으로 필터하고 seed bank로 보강했지만,
+     혹시 새어 들어온 후보가 있으면 _similarFallback 플래그를 붙여 안내 배지를 표시한다.
+     서버가 보낸 _seedFallback 후보는 정상 후보로 그대로 통과. */
   var regenCount = S.subjectRegenCount || 0;
   var rejectedKeySet = {};
   (S.subjectRejectedHistory || []).forEach(function(r) {
     if (r && r._epKey) rejectedKeySet[r._epKey] = true;
   });
-  /* 점수 내림차순으로 처리 — 같은 epKey가 여러 개 들어왔을 때 점수 높은 1개만 살림 */
-  function toFinalScore(s) {
-    var v = parseFloat(s && s.final_score);
-    return isFinite(v) ? v : 0;
-  }
-  var ordered = data.subjects.slice().sort(function(a, b) {
-    return toFinalScore(b) - toFinalScore(a);
-  });
-
   var seenEpKey = {};
-  ordered.forEach(function(s) {
+  data.subjects.forEach(function(s) {
     var k = effectiveEpisodeAxisClient(s);
     s._epKey = k;
+    /* seed bank로 보강된 후보(_seedFallback)는 검증을 면제 — 서버에서 이미 정합성 확보 */
+    if (s._seedFallback) {
+      if (k) seenEpKey[k] = true;
+      return;
+    }
     var reasons = [];
     if (k && rejectedKeySet[k]) reasons.push('rejected:' + k);
     if (k && seenEpKey[k])      reasons.push('same-batch-duplicate:' + k);
@@ -1670,36 +1664,22 @@ function renderSubjects() {
       if (bp) reasons.push('basic-owner-anxiety:' + bp);
       if (bg) reasons.push('broad-generic-title');
     }
-    /* episode_diversity_score ≤ 2 → 제거 */
     var eds = parseFloat(s.episode_diversity_score);
     if (isFinite(eds) && eds <= 2) reasons.push('episode-diversity≤2');
+    /* 제거 사유가 있으면 _similarFallback 플래그 — 카드 안내 배지/상단 안내에 사용. */
+    if (reasons.length > 0) s._similarFallback = true;
     s._removeReasons = reasons;
   });
-
-  var keepers  = ordered.filter(function(s){ return !s._removeReasons.length; });
-  var fallback = ordered.filter(function(s){ return s._removeReasons.length > 0; });
-
-  var finalList = keepers.slice(0, 5);
-  var fallbackUsed = 0;
-  if (finalList.length < 5) {
-    var need = 5 - finalList.length;
-    var pick = fallback.slice(0, need).map(function(s){ s._fallback = true; return s; });
-    finalList = finalList.concat(pick);
-    fallbackUsed = pick.length;
-  }
-  data.subjects = finalList;
 
   console.log('[subjects:client-filter]', {
     regenerateCount:    regenCount,
     rejectedKeyCount:   Object.keys(rejectedKeySet).length,
-    inputCount:         ordered.length,
-    removedByRejected:  ordered.filter(function(s){ return s._removeReasons.some(function(r){ return r.indexOf('rejected:') === 0; }); }).length,
-    removedBySameBatch: ordered.filter(function(s){ return s._removeReasons.some(function(r){ return r.indexOf('same-batch-duplicate:') === 0; }); }).length,
-    removedByBasic:     ordered.filter(function(s){ return s._removeReasons.some(function(r){ return r.indexOf('basic-owner-anxiety:') === 0; }); }).length,
-    removedByBroad:     ordered.filter(function(s){ return s._removeReasons.indexOf('broad-generic-title') !== -1; }).length,
-    fallbackUsed:       fallbackUsed,
-    finalCount:         finalList.length,
-    finalTitles:        finalList.map(function(s){ return { title: s.title, epKey: s._epKey, fallback: !!s._fallback }; })
+    inputCount:         data.subjects.length,
+    seedFallbackCount:  data.subjects.filter(function(s){ return s._seedFallback; }).length,
+    similarFallbackCount: data.subjects.filter(function(s){ return s._similarFallback; }).length,
+    finalTitles:        data.subjects.map(function(s){
+      return { title: s.title, epKey: s._epKey, seedFallback: !!s._seedFallback, similarFallback: !!s._similarFallback };
+    })
   });
 
   /* 노출 전 내부 필드 정리 */
@@ -1708,15 +1688,14 @@ function renderSubjects() {
   });
 
   /* ── 카드 렌더링 ──
-     서버·클라이언트 안전망에서 유사 후보를 이미 제거했으므로 기본적으로
-     "유사" 배지는 표시하지 않는다. fallback으로 어쩔 수 없이 노출된 후보에만
-     작게 "유사 후보" 배지를 표시해 사용자가 판단할 수 있게 한다. */
-  var fallbackCount = data.subjects.filter(function(s){ return s._fallback; }).length;
+     - 서버에서 seed bank로 보강된 후보(_seedFallback)는 정상 후보로 노출. 배지/안내 없음.
+     - soft pool(유사 후보)로 보강된 후보(_similarFallback)에만 안내 배지/배너를 표시. */
+  var similarCount = data.subjects.filter(function(s){ return s._similarFallback; }).length;
   var fallbackBanner = '';
-  if (fallbackCount > 0) {
+  if (similarCount > 0) {
     fallbackBanner = '<div style="margin-bottom:12px;padding:10px 13px;background:#FFF8F0;border:1px solid #F3C49C;border-radius:var(--radius);font-size:12px;color:#7A4A00;line-height:1.65">'
       + '<div style="font-weight:600;margin-bottom:4px">ℹ 후보가 부족해 일부 유사 후보가 포함되었습니다</div>'
-      + '5개 중 ' + fallbackCount + '개는 최근 회차와 구조가 비슷할 수 있습니다.'
+      + '5개 중 ' + similarCount + '개는 최근 회차와 구조가 비슷할 수 있습니다.'
       + ' <span style="color:#C96A14;cursor:pointer;font-weight:600;margin-left:4px" onclick="callSubjects()">재생성</span>'
       + '</div>';
   }
@@ -1726,26 +1705,19 @@ function renderSubjects() {
         var isOn = S.subject && S.subject.title === s.title;
         var cardId = 'sbj' + i;
 
-        /* ── 카드 기본 노출: 카테고리 / 제목 / 한 줄 설명 / 왜 지금 만 ──
-           내부 검증 결과(에피소드 축·문제 축·중복 위험 낮음·보통·점수 등)는
-           데이터로는 유지하되 화면에는 노출하지 않음. */
         var catBadge = s.subject_category
           ? '<span class="tag tpr" style="flex-shrink:0;font-size:10px">' + escHtml(s.subject_category) + '</span>'
           : '';
 
-        /* fallback 후보에만 최소한의 안내 배지 */
-        var fallbackBadge = s._fallback
+        /* similar fallback 후보에만 안내 배지. seed fallback은 정상 후보처럼. */
+        var similarBadge = s._similarFallback
           ? '<span class="sc-struct-badge" style="background:#FFF8F0;border-color:#F3C49C;color:#7A4A00">유사 후보</span>'
           : '';
 
         return '<div class="sc' + (isOn?' on':'') + '" id="' + cardId + '" onclick="selectSubject('+i+')">'
-          /* 1행: 카테고리(+ fallback 안내 배지) */
-          + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">' + catBadge + fallbackBadge + '</div>'
-          /* 2행: 제목 */
+          + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">' + catBadge + similarBadge + '</div>'
           + '<div class="sc-t" style="margin-bottom:6px">' + escHtml(s.title) + '</div>'
-          /* 3행: 한 줄 설명 */
           + (s.summary ? '<div class="sc-b" style="margin-bottom:4px">' + escHtml(s.summary) + '</div>' : '')
-          /* 4행: 왜 지금 */
           + (s.why_now ? '<div class="sc-key"><b>왜 지금</b>' + escHtml(s.why_now) + '</div>' : '')
           + '<div class="ck">✓</div></div>';
       }).join('') + '</div>';
@@ -1825,10 +1797,11 @@ function effectiveEpisodeAxisClient(s) {
   if (/(매출|매출액).*(기준|착각|잘못|미달|초과)/.test(raw))                      return '대상기준착각';
   if (/(대상).*(아님|제외|착각|미충족)/.test(raw))                                return '대상기준착각';
   if (/(고용|채용).*(조건|착각|기준)/.test(raw))                                  return '고용조건착각';
-  if (/(지원금|정책자금|보조금|지원사업).*(신청).*(탈락|불가|못받|반려|승인안|연락없)/.test(raw)) return '신청단계탈락';
+  if (/(지원금|정책자금|보조금|지원사업).*(신청).*(탈락|불가|못받|반려|승인안|연락없|보류|지연)/.test(raw)) return '신청단계탈락';
   if (/(지원금|정책자금|보조금|지원사업).*(연락).*(없|안)/.test(raw))             return '신청단계탈락';
   if (/(지원금|정책자금|보조금|지원사업).*(좋은데|왜).*(안주|안줄|못받)/.test(raw)) return '신청단계탈락';
-  if (/(신청).*(탈락|불가|못받|반려|승인안)/.test(raw))                           return '신청단계탈락';
+  if (/(지원금|정책자금|보조금|지원사업).*(보류|반려|지연)/.test(raw))            return '신청단계탈락';
+  if (/(신청).*(탈락|불가|못받|반려|승인안|보류)/.test(raw))                      return '신청단계탈락';
   if (/(지원금).*(왜).*(안)/.test(raw))                                            return '신청단계탈락';
 
   /* 신고 후 추가 세금 — 가산세/고지서/세금폭탄 */
@@ -1900,24 +1873,31 @@ function detectBasicOwnerAnxietyClient(s) {
   if (!s) return null;
   var blob = (String(s.title || '') + ' ' + String(s.summary || '') + ' ' + String(s.hook || ''))
     .toLowerCase().replace(/\s+/g, '');
-  /* 구체 사건 키워드가 있으면 면제 */
-  var concrete = /(자동결제|정기결제|예약금|환불|pg|플랫폼정산|가족명의|가족계좌|가족카드|공동대표|세금계산서.*발행|사업자번호|가게인수|프리랜서.*근로|3\.3|접대비|복리후생비|배달앱.*정산일|세금계산서.*입금)/;
+  /* 구체 사건 키워드가 있으면 면제 — seed bank/사용자 spec 권장 사건형 */
+  var concrete = /(자동결제|정기결제|구독료|자동이체|예약금|환불|선결제|예약취소|pg|플랫폼정산|배달앱.*정산|수수료차감|가족명의|가족계좌|가족카드|배우자명의|배우자.*계약|공동대표|세금계산서.*발행|발행주체|사업자번호|가게인수|상호.*바꿨|상호.*변경|권리금|프리랜서.*근로|3\.3|외주.*근로|근로자성|계속근로|접대비|복리후생비|경비성격|직원간식|세금계산서.*입금|계산서.*이번달.*입금.*다음달|거래처.*계산서|현금영수증|계좌이체.*매출|현금매출.*누락|단골손님.*입금)/;
   if (concrete.test(blob)) return null;
   var patterns = [
-    { tag: '매출늘었는데', re: /매출.*(늘|증가|올).*(통장|돈|잔고|비)/ },
-    { tag: '통장비었',     re: /(통장).*(비|돈\s?없|잔고)/ },
-    { tag: '카드비용인정',  re: /(카드).*(비용|인정).*(불안|애매|걱정)/ },
-    { tag: '직원뽑았는데',  re: /(직원|알바).*(뽑|채용).*(부담|불안|걱정)/ },
-    { tag: '지원금신청',    re: /(지원금|정책자금|보조금).*(신청).*(왜|안|연락|없|승인)/ },
-    { tag: '지원금연락',    re: /(지원금|정책자금|보조금).*(연락).*(없|안)/ },
-    { tag: '계약바뀌면',    re: /(계약|이사).*(바뀌|변경).*(세금|걱정)/ },
+    { tag: '매출늘었는데', re: /매출.*(늘|증가|올|많).*(통장|돈|잔고|비|없|왜)/ },
+    { tag: '매출은',       re: /매출은(증가|늘|올)/ },
+    { tag: '통장비었',     re: /(통장).*(비|돈\s?없|잔고|왜)/ },
+    { tag: '돈이없',        re: /(돈|잔고).*(없|부족)/ },
+    { tag: '카드비용인정',  re: /(카드).*(비용|경비|인정).*(불안|애매|걱정|안|왜)/ },
+    { tag: '카드긁었는데',  re: /(카드).*(긁|썼|결제).*(경비|비용|인정).*(안|왜|애매)/ },
+    { tag: '경비인정안',    re: /(경비).*(인정).*(안|왜|애매|불안)/ },
+    { tag: '직원뽑았는데',  re: /(직원|알바|아르바이트).*(뽑|채용).*(부담|불안|걱정|많|늘|이렇게)/ },
+    { tag: '직원원천세',    re: /(직원).*(뽑|채용).*(원천세|4대보험).*(늘|많|증가|이렇게)/ },
+    { tag: '원천세늘',      re: /(원천세|4대보험).*(늘|많|증가|이렇게)/ },
+    { tag: '지원금신청',    re: /(지원금|정책자금|보조금|지원사업).*(신청).*(왜|안|연락|없|승인|보류|반려)/ },
+    { tag: '지원금보류',    re: /(지원금|정책자금|보조금|지원사업).*(보류|반려|지연|연락없)/ },
+    { tag: '지원금연락',    re: /(지원금|정책자금|보조금|지원사업).*(연락).*(없|안)/ },
+    { tag: '계약바뀌면',    re: /(계약|이사|임대차).*(바뀌|변경|갱신).*(세금|비용|걱정|부담)/ },
     { tag: '월세늘',        re: /(월세|임대료).*(올|늘|증가).*(부담|세금|걱정)/ },
-    { tag: '이사후세금',    re: /(이사).*(후|뒤).*(세금|걱정)/ },
-    { tag: '세금폭탄',      re: /세금폭탄/ },
-    { tag: '부담늘',        re: /(부담).*(늘|커|많)/ },
-    { tag: '걱정돼요',      re: /걱정돼요|걱정이/ },
-    { tag: '불안해요',      re: /불안해요|불안이/ },
-    { tag: '돈이없',        re: /돈이?없|돈이?부족/ },
+    { tag: '이사후세금',    re: /(이사).*(후|뒤).*(세금|걱정|비용|부담)/ },
+    { tag: '임대차계약',    re: /(임대차).*(계약).*(세금|비용|부담)/ },
+    { tag: '세금폭탄',      re: /세금폭탄|세금이폭탄/ },
+    { tag: '부담늘',        re: /(부담).*(늘|커|많|이)/ },
+    { tag: '걱정돼요',      re: /걱정돼요|걱정이|걱정인/ },
+    { tag: '불안해요',      re: /불안해요|불안이|불안인/ },
   ];
   for (var i = 0; i < patterns.length; i++) {
     if (patterns[i].re.test(blob)) return patterns[i].tag;
