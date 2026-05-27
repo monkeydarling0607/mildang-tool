@@ -235,6 +235,122 @@ CONCRETE_EPISODE_SEED_BANK.forEach((seed, i) => {
   assert(`seed[${i}] broad-generic-title 아님`, !detectBroadGenericTitle(seed), `seed=${seed.title}`);
 });
 
+/* ═══════════════════════════════════════════════════════════════════
+   Test A~E: similarFallback 허용 개수 제한 검증
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* seed bank의 모든 고유 epKey를 strong 슬롯(idx 5~14)에 배치해 seed 사용을 차단하는 archive.
+   normalizeEpisodeKey가 regex 우선 매칭이라 입력 필드 순서에 따라 키가 달라지므로,
+   strong 후보가 실제 어떤 키로 매핑되는지 검증된 텍스트를 사용한다.
+   (CONCRETE_EPISODE_SEED_BANK의 실제 키들과 동일한 키로 매핑되는 것을 확인함.) */
+function buildAllSeedBlockingStrongSlots() {
+  return [
+    { kakaoTitle: '증빙 누락 사례', topic: '증빙 누락' },                                                       /* 증빙누락-비용인정불안 */
+    { kakaoTitle: '예약금 환불 회차', topic: '예약금 매출 인식' },                                              /* 예약금매출인식 */
+    { kakaoTitle: '매출 늘었는데 통장 잔고 부족', topic: '매출 통장' },                                          /* 매출정산-현금흐름불일치 */
+    { kakaoTitle: '대상 아님 통보', topic: '매출 기준 미달' },                                                  /* 대상기준착각 */
+    { kakaoTitle: '가족 명의 계좌 매출', topic: '가족 계좌 명의' },                                              /* 가족명의거래 */
+    { kakaoTitle: '공동대표 변경 발행 주체', topic: '명의 발행' },                                              /* 명의주체불일치 */
+    { kakaoTitle: '프리랜서 근로 판정', topic: '근로자성' },                                                     /* 근로자성판단 */
+    { kakaoTitle: 'PG 정산일 신고 기준일 달라', topic: '배달앱 정산일' },                                       /* 정산일신고기준차이 */
+    { kakaoTitle: '상호 변경 후 계약·계산서 불일치 거래처에서 계산서 명의가 다른' },                              /* seed 13 fallback (raw 20자) */
+    { kakaoTitle: '현금 매출 누락', topic: '현금 매출' },                                                       /* 현금매출누락 */
+  ];
+}
+
+/* ═══ Test A: similarFallback 1개는 허용 ═══ */
+console.log('');
+console.log('━━━ Test A) similarFallback 1개는 허용 ━━━');
+/* keeper 4개 (unique fallback 키) + similar 1개 (증빙누락-비용인정불안 key, archive strong과 매칭).
+   archive의 strong 슬롯에 10개 seed key가 모두 들어 있어 seed 풀은 비게 된다. */
+const testA_keepers = [
+  { title:'테스트 keeper 1', summary:'구체 사건 1',  subject_category:'세무 리스크형', problem_axis:'카드·증빙·경비 관리',   episode_axis:'테스트 keeper1 에피소드 ABC', trigger_moment:'XX1', conflict_axis:'YY1', final_score:9.0, episode_diversity_score:8 },
+  { title:'테스트 keeper 2', summary:'구체 사건 2',  subject_category:'사업 운영형',  problem_axis:'사업자 정보·명의·주소·계약', episode_axis:'테스트 keeper2 에피소드 DEF', trigger_moment:'XX2', conflict_axis:'YY2', final_score:8.9, episode_diversity_score:8 },
+  { title:'테스트 keeper 3', summary:'구체 사건 3',  subject_category:'세무 리스크형', problem_axis:'카드·증빙·경비 관리',   episode_axis:'테스트 keeper3 에피소드 GHI', trigger_moment:'XX3', conflict_axis:'YY3', final_score:8.8, episode_diversity_score:8 },
+  { title:'테스트 keeper 4', summary:'구체 사건 4',  subject_category:'의외성·생활형', problem_axis:'사업자 정보·명의·주소·계약', episode_axis:'테스트 keeper4 에피소드 JKL', trigger_moment:'XX4', conflict_axis:'YY4', final_score:8.7, episode_diversity_score:8 },
+];
+/* similar candidate: episode_axis='증빙 누락' → 증빙누락-비용인정불안 key.
+   증빙누락-비용인정불안은 seed bank의 한 key이기도 해서 strong 슬롯 하나로 둘 다 차단됨. */
+const testA_similar = { title:'A. archive와 결이 비슷한 후보 카드', summary:'관련 사건 내용', subject_category:'세무 리스크형', problem_axis:'카드·증빙·경비 관리', episode_axis:'증빙 누락', trigger_moment:'특정 순간', conflict_axis:'유사 갈등', final_score:7.0, episode_diversity_score:6 };
+
+const testA_archive = [];
+for (let i = 0; i < 5; i++) testA_archive.push({ kakaoTitle:'hard-pad-'+i, topic:'unrelated-'+i });
+for (const item of buildAllSeedBlockingStrongSlots()) testA_archive.push(item);
+const testA_out = processSubjects([...testA_keepers, testA_similar], { regenerationContext:{ regenerateCount:0 }, archive: testA_archive });
+assert('A. 최종 5개 유지', testA_out.finalSubjects.length === 5, `length=${testA_out.finalSubjects.length}`);
+assert('A. similarFallback === 1', testA_out.stats.similarFallbackUsed === 1,
+  `similarFallbackUsed=${testA_out.stats.similarFallbackUsed} | final=${JSON.stringify(testA_out.finalSubjects.map(s=>({t:s.title, k:normalizeEpisodeKey(s), seed:!!s._seedFallback, sim:!!s._similarFallback})))}`);
+const testA_similarItems = testA_out.finalSubjects.filter(s => s._similarFallback);
+assert('A. similar 후보에 _similarFallback=true', testA_similarItems.length === 1, JSON.stringify(testA_out.finalSubjects.map(s=>({t:s.title, sim:!!s._similarFallback}))));
+assert('A. seed fallback 사용 안 함 (다 차단됨)', testA_out.stats.seedFallbackUsed === 0, `seedFallbackUsed=${testA_out.stats.seedFallbackUsed}`);
+assert('A. 상단 안내 배너 조건 false (similar < 2)', testA_out.stats.similarFallbackUsed < 2, `similarFallbackUsed=${testA_out.stats.similarFallbackUsed}`);
+
+/* ═══ Test B: similar 2개 후보 → seed로 대체 ═══ */
+console.log('');
+console.log('━━━ Test B) similarFallback 2개 후보 → seed bank로 대체 ━━━');
+const testB_keepers = testA_keepers.slice(0, 3);
+const testB_similar1 = { title:'유사 후보 B-1', summary:'유사', subject_category:'세무 리스크형',  problem_axis:'세무 리스크형',  episode_axis:'가산세 발생',           trigger_moment:'M', conflict_axis:'C', final_score:7.0, episode_diversity_score:6 };
+const testB_similar2 = { title:'유사 후보 B-2', summary:'유사', subject_category:'직원·노무형',  problem_axis:'직원·급여·4대보험', episode_axis:'직원 채용 부담 증가',     trigger_moment:'M', conflict_axis:'C', final_score:6.9, episode_diversity_score:6 };
+const testB_archive = [];
+for (let i = 0; i < 5; i++) testB_archive.push({ kakaoTitle:'hard-pad-'+i, topic:'unrelated-'+i });
+testB_archive.push({ kakaoTitle:'가산세 발생 회차', topic:'가산세' });            /* → 신고후추가세금 */
+testB_archive.push({ kakaoTitle:'직원 채용 부담 회차', topic:'직원 채용 부담' }); /* → 직원비용부담 */
+const testB_out = processSubjects([...testB_keepers, testB_similar1, testB_similar2], { regenerationContext:{ regenerateCount:0 }, archive: testB_archive });
+assert('B. 최종 5개 유지', testB_out.finalSubjects.length === 5, `length=${testB_out.finalSubjects.length}`);
+assert('B. similarFallback <= 1', testB_out.stats.similarFallbackUsed <= 1,
+  `similarFallbackUsed=${testB_out.stats.similarFallbackUsed} | final=${JSON.stringify(testB_out.finalSubjects.map(s=>({t:s.title, seed:!!s._seedFallback, sim:!!s._similarFallback})))}`);
+assert('B. seedFallback ≥ 1 (유사 대신 seed로 보강)', testB_out.stats.seedFallbackUsed >= 1, `seedFallbackUsed=${testB_out.stats.seedFallbackUsed}`);
+assert('B. 상단 안내 배너 조건 false', testB_out.stats.similarFallbackUsed < 2, `similarFallbackUsed=${testB_out.stats.similarFallbackUsed}`);
+
+/* ═══ Test C: similar 3개 입력 → seed로 보강, 최종 similar ≤ 1 ═══ */
+console.log('');
+console.log('━━━ Test C) similarFallback 3개 입력 → seed로 보강 ━━━');
+const testC_keepers = testA_keepers.slice(0, 2);
+const testC_similars = [
+  { title:'유사 C-1', summary:'유사', subject_category:'세무 리스크형',  problem_axis:'세무 리스크형',  episode_axis:'가산세 발생',           trigger_moment:'M', conflict_axis:'C', final_score:7.0, episode_diversity_score:6 },
+  { title:'유사 C-2', summary:'유사', subject_category:'직원·노무형',  problem_axis:'직원·급여·4대보험', episode_axis:'직원 채용 부담 증가',     trigger_moment:'M', conflict_axis:'C', final_score:6.9, episode_diversity_score:6 },
+  { title:'유사 C-3', summary:'유사', subject_category:'사업 운영형',  problem_axis:'사업자 정보·명의·주소·계약', episode_axis:'이사 후 세금 변동',     trigger_moment:'M', conflict_axis:'C', final_score:6.8, episode_diversity_score:6 },
+];
+const testC_archive = [];
+for (let i = 0; i < 5; i++) testC_archive.push({ kakaoTitle:'hard-pad-'+i, topic:'unrelated-'+i });
+testC_archive.push({ kakaoTitle:'가산세 발생 회차', topic:'가산세' });
+testC_archive.push({ kakaoTitle:'직원 채용 부담 회차', topic:'직원 채용 부담' });
+testC_archive.push({ kakaoTitle:'이사 후 세금 회차', topic:'이사 후 세금' });
+const testC_out = processSubjects([...testC_keepers, ...testC_similars], { regenerationContext:{ regenerateCount:0 }, archive: testC_archive });
+assert('C. 최종 5개 유지', testC_out.finalSubjects.length === 5, `length=${testC_out.finalSubjects.length}`);
+assert('C. similarFallback <= 1', testC_out.stats.similarFallbackUsed <= 1,
+  `similarFallbackUsed=${testC_out.stats.similarFallbackUsed} | final=${JSON.stringify(testC_out.finalSubjects.map(s=>({t:s.title, seed:!!s._seedFallback, sim:!!s._similarFallback})))}`);
+assert('C. seedFallback ≥ 2 (보강에 사용됨)', testC_out.stats.seedFallbackUsed >= 2, `seedFallbackUsed=${testC_out.stats.seedFallbackUsed}`);
+const testC_similarsInFinal = testC_out.finalSubjects.filter(s => s._similarFallback).length;
+assert('C. finalSubjects 내 _similarFallback ≤ 1', testC_similarsInFinal <= 1, `count=${testC_similarsInFinal}`);
+
+/* ═══ Test D: seedFallback에는 _similarFallback 안 붙음 ═══ */
+console.log('');
+console.log('━━━ Test D) seedFallback 후보에 _similarFallback 안 붙음 ━━━');
+const testD_out = processSubjects(test1Subjects.slice(), { regenerationContext:{ regenerateCount:2 }, archive: [] });
+const testD_seedItems = testD_out.finalSubjects.filter(s => s._seedFallback);
+assert('D. seedFallback 후보가 1개 이상', testD_seedItems.length >= 1, `count=${testD_seedItems.length}`);
+testD_seedItems.forEach((s, i) => {
+  assert(`D. seed[${i}] "${s.title.slice(0,30)}" _seedFallback=true`, s._seedFallback === true);
+  assert(`D. seed[${i}] "${s.title.slice(0,30)}" _similarFallback 아님`, !s._similarFallback, `_similarFallback=${s._similarFallback}`);
+});
+
+/* ═══ Test E: 최종 5개 품질 기준 (regen ≥ 2) ═══ */
+console.log('');
+console.log('━━━ Test E) 최종 5개 품질 기준 (regenerateCount >= 2) ━━━');
+const testE_out = processSubjects(test1Subjects.slice(), { regenerationContext:{ regenerateCount:2 }, archive: [] });
+const testE_basics = testE_out.finalSubjects.filter(s => detectBasicOwnerAnxiety(s)).length;
+const testE_epKeys = testE_out.finalSubjects.map(normalizeEpisodeKey);
+const testE_uniqueKeys = new Set(testE_epKeys);
+const testE_concreteOrSeed = testE_out.finalSubjects.filter(s => s._seedFallback || !detectBasicOwnerAnxiety(s)).length;
+assert('E. similarFallback ≤ 1', testE_out.stats.similarFallbackUsed <= 1, `similarFallbackUsed=${testE_out.stats.similarFallbackUsed}`);
+assert('E. basic_owner_anxiety 후보 0개', testE_basics === 0, `basics=${testE_basics}`);
+assert('E. normalizedEpisodeKey 중복 없음', testE_uniqueKeys.size === testE_epKeys.length, `keys=${JSON.stringify(testE_epKeys)}`);
+assert('E. 구체 사건형/seed 후보 ≥ 4개', testE_concreteOrSeed >= 4, `count=${testE_concreteOrSeed}`);
+
+/* ═══════════════════════════════════════════════════════════════════
+   Summary
+   ═══════════════════════════════════════════════════════════════════ */
 console.log('');
 if (totalFails === 0) {
   console.log('✅ 모든 테스트 통과');

@@ -2124,8 +2124,16 @@ function processSubjects(rawSubjects, payload) {
   const isHardRemoval = (reasons) => reasons.some(r => HARD_PREFIXES.some(p => r.startsWith(p)));
   const isAnyRemoval  = (reasons) => reasons.length > 0;
 
-  const keepers  = ranked.filter(s => !isAnyRemoval(s._removeReasons));
-  const softPool = ranked.filter(s => isAnyRemoval(s._removeReasons) && !isHardRemoval(s._removeReasons));
+  /* "similar" = archive-strong reason (과거 아카이브와 구조가 비슷한 후보)
+     "nonSimilar soft" = soft 제거 사유 중 archive-strong이 없는 경우 (policy-axis-cap 등)
+     similar 후보는 finalSubjects 안에서 최대 1개(일반) ~ 2개(극단)까지만 허용. */
+  const isSimilarReason = (reasons) => reasons.some(r => r.startsWith('archive-strong:'));
+  const keepers = ranked.filter(s => !isAnyRemoval(s._removeReasons));
+  const nonSimilarSoftPool = ranked.filter(s =>
+    isAnyRemoval(s._removeReasons) && !isHardRemoval(s._removeReasons) && !isSimilarReason(s._removeReasons));
+  const similarSoftPool = ranked.filter(s =>
+    isAnyRemoval(s._removeReasons) && !isHardRemoval(s._removeReasons) && isSimilarReason(s._removeReasons));
+  const blockedPool = ranked.filter(s => isHardRemoval(s._removeReasons));
 
   const finalSort = (a, b) => {
     const sa = toScore(a), sb = toScore(b);
@@ -2135,76 +2143,139 @@ function processSubjects(rawSubjects, payload) {
     return db - da;
   };
   keepers.sort(finalSort);
-  softPool.sort(finalSort);
+  nonSimilarSoftPool.sort(finalSort);
+  similarSoftPool.sort(finalSort);
 
-  let finalSubjects = keepers.slice(0, 5);
-  let seedFallbackCount = 0;
-  let similarFallbackCount = 0;
-
-  /* 4) 후보 부족 → seed bank로 보강 (유사 후보가 아닌 구체 사건 seed) */
-  if (finalSubjects.length < 5) {
-    const usedKeys = new Set(finalSubjects.map(s => s._epKey).filter(Boolean));
-    const seeded = CONCRETE_EPISODE_SEED_BANK.map(seed => {
-      const enriched = Object.assign({}, seed);
-      enriched._epKey = normalizeEpisodeKey(enriched);
-      enriched._effectiveAxis = effectiveAxis(enriched);
-      enriched._basicPattern  = detectBasicOwnerAnxiety(enriched);
-      enriched._broadGeneric  = detectBroadGenericTitle(enriched);
-      enriched._seedFallback  = true;
-      /* seed는 기본 점수 7.5 — LLM 평균과 비슷한 위치에 정렬 */
-      if (!isFinite(parseFloat(enriched.final_score))) enriched.final_score = 7.5;
-      if (!isFinite(parseFloat(enriched.episode_diversity_score))) enriched.episode_diversity_score = 8;
-      if (!enriched.duplicate_risk) enriched.duplicate_risk = '낮음';
-      return enriched;
+  /* enriched seed 후보 pool — usedKeys/excludeMap 기준으로 선별, epKey 중복 없이 고른다. */
+  const buildSeedPool = (usedKeys) =>
+    CONCRETE_EPISODE_SEED_BANK.map(seed => {
+      const e = Object.assign({}, seed);
+      e._epKey         = normalizeEpisodeKey(e);
+      e._effectiveAxis = effectiveAxis(e);
+      e._basicPattern  = detectBasicOwnerAnxiety(e);
+      e._broadGeneric  = detectBroadGenericTitle(e);
+      e._seedFallback  = true;
+      if (!isFinite(parseFloat(e.final_score)))            e.final_score = 7.5;
+      if (!isFinite(parseFloat(e.episode_diversity_score))) e.episode_diversity_score = 8;
+      if (!e.duplicate_risk) e.duplicate_risk = '낮음';
+      return e;
     }).filter(seed => {
       const k = seed._epKey;
       if (!k) return false;
       if (usedKeys.has(k)) return false;
-      /* seed도 archive hard / rejected / strong와 겹치면 사용 금지 */
-      if (excludeMap.hardKeys.has(k))   return false;
+      if (excludeMap.hardKeys.has(k))     return false;
       if (excludeMap.rejectedKeys.has(k)) return false;
-      if (excludeMap.strongKeys.has(k)) return false;
-      /* seed가 (예상치 못한) 기본형으로 판정되면 사용 안 함 */
+      if (excludeMap.strongKeys.has(k))   return false;
       if (seed._basicPattern || seed._broadGeneric) return false;
       return true;
     });
 
-    /* seed들 중에서 epKey 중복 없이 고르기 + episode_axis 다양성 유지 */
-    const pickedSeeds = [];
+  const SIMILAR_CAP_DEFAULT   = 1;  /* 일반 상황 최대 허용 */
+  const SIMILAR_CAP_EMERGENCY = 2;  /* seed/non-similar 모두 소진된 극단 상황의 절대 상한 */
+
+  let finalSubjects = [];
+  let seedFallbackUsed         = 0;
+  let nonSimilarSoftUsed       = 0;
+  let similarFallbackUsed      = 0;
+  let similarOverflowPrevented = 0;
+  const usedKeys = new Set();
+
+  /* Phase 1: keepers (정상 후보) */
+  for (const s of keepers) {
+    if (finalSubjects.length >= 5) break;
+    if (s._epKey && usedKeys.has(s._epKey)) continue;
+    if (s._epKey) usedKeys.add(s._epKey);
+    finalSubjects.push(s);
+  }
+
+  /* Phase 2: seed bank (구체 사건 seed) — 유사 후보보다 먼저 */
+  if (finalSubjects.length < 5) {
+    const seeds = buildSeedPool(usedKeys);
     const seedSeen = new Set();
-    for (const seed of seeded) {
-      if (finalSubjects.length + pickedSeeds.length >= 5) break;
+    for (const seed of seeds) {
+      if (finalSubjects.length >= 5) break;
       if (seedSeen.has(seed._epKey)) continue;
       seedSeen.add(seed._epKey);
-      pickedSeeds.push(seed);
       usedKeys.add(seed._epKey);
+      finalSubjects.push(seed);
+      seedFallbackUsed++;
     }
-    finalSubjects = finalSubjects.concat(pickedSeeds);
-    seedFallbackCount = pickedSeeds.length;
   }
 
-  /* 5) 그래도 5개에 못 미치면 마지막 수단으로 soft pool (유사 후보) — 안내 배지 노출 대상 */
+  /* Phase 3: non-similar softPool (정책 축 캡 등) — 안내 배지 없음 */
   if (finalSubjects.length < 5) {
-    const need = 5 - finalSubjects.length;
-    const usedKeys = new Set(finalSubjects.map(s => s._epKey).filter(Boolean));
-    const pick = softPool.filter(s => !usedKeys.has(s._epKey)).slice(0, need).map(s => {
+    for (const s of nonSimilarSoftPool) {
+      if (finalSubjects.length >= 5) break;
+      if (s._epKey && usedKeys.has(s._epKey)) continue;
+      if (s._epKey) usedKeys.add(s._epKey);
+      finalSubjects.push(s);
+      nonSimilarSoftUsed++;
+    }
+  }
+
+  /* Phase 4: similar fallback — 기본 cap 1개. seed/non-similar가 다 떨어진 뒤에만. */
+  if (finalSubjects.length < 5 && similarFallbackUsed < SIMILAR_CAP_DEFAULT) {
+    for (const s of similarSoftPool) {
+      if (finalSubjects.length >= 5) break;
+      if (similarFallbackUsed >= SIMILAR_CAP_DEFAULT) break;
+      if (s._epKey && usedKeys.has(s._epKey)) continue;
+      if (s._epKey) usedKeys.add(s._epKey);
       s._similarFallback = true;
-      return s;
-    });
-    finalSubjects = finalSubjects.concat(pick);
-    similarFallbackCount = pick.length;
+      finalSubjects.push(s);
+      similarFallbackUsed++;
+    }
   }
 
-  /* 6) 그래도 부족하면 hard 제거 후보까지 동원 (정말 마지막) */
+  /* Phase 5: emergency — 2번째 similar (총 2개) + console.warn. seed/non-similar/similar1개 다 소진 후. */
+  if (finalSubjects.length < 5 && similarFallbackUsed < SIMILAR_CAP_EMERGENCY) {
+    let usedEmergency = false;
+    for (const s of similarSoftPool) {
+      if (finalSubjects.length >= 5) break;
+      if (similarFallbackUsed >= SIMILAR_CAP_EMERGENCY) {
+        similarOverflowPrevented++;
+        break;
+      }
+      if (s._epKey && usedKeys.has(s._epKey)) continue;
+      if (s._epKey) usedKeys.add(s._epKey);
+      s._similarFallback = true;
+      finalSubjects.push(s);
+      similarFallbackUsed++;
+      usedEmergency = true;
+    }
+    if (usedEmergency) {
+      console.warn('[subjects:filter] similarFallback 2개 사용 — seed/non-similar 모두 소진된 비정상 상황');
+    }
+  }
+
+  /* Phase 6: 정말 마지막 — blocked 후보 동원. similar cap 2개는 그대로 유지. */
   if (finalSubjects.length < 5) {
-    const need = 5 - finalSubjects.length;
-    const usedKeys = new Set(finalSubjects.map(s => s._epKey).filter(Boolean));
-    const lastResort = ranked
-      .filter(s => isHardRemoval(s._removeReasons) && !usedKeys.has(s._epKey))
-      .slice(0, need)
-      .map(s => { s._similarFallback = true; s._lastResort = true; return s; });
-    finalSubjects = finalSubjects.concat(lastResort);
-    similarFallbackCount += lastResort.length;
+    for (const s of blockedPool) {
+      if (finalSubjects.length >= 5) break;
+      if (similarFallbackUsed >= SIMILAR_CAP_EMERGENCY) {
+        similarOverflowPrevented++;
+        break;
+      }
+      if (s._epKey && usedKeys.has(s._epKey)) continue;
+      if (s._epKey) usedKeys.add(s._epKey);
+      s._similarFallback = true;
+      s._lastResort = true;
+      finalSubjects.push(s);
+      similarFallbackUsed++;
+    }
+  }
+
+  /* 안전망: 어떤 경로로든 finalSubjects 안에 similar cap을 초과한 후보가 들어가면 잘라낸다.
+     (정상 흐름에서는 발생하지 않지만, 위 phase 변경 시 회귀 방지용.) */
+  if (finalSubjects.filter(s => s._similarFallback).length > SIMILAR_CAP_EMERGENCY) {
+    let kept = 0;
+    finalSubjects = finalSubjects.filter(s => {
+      if (!s._similarFallback) return true;
+      if (kept < SIMILAR_CAP_EMERGENCY) { kept++; return true; }
+      similarOverflowPrevented++;
+      console.warn('[subjects:filter] similarFallback cap 초과 후보 제거 — title=' + s.title);
+      return false;
+    });
+    similarFallbackUsed = finalSubjects.filter(s => s._similarFallback).length;
   }
 
   /* 7) 통계 */
@@ -2217,8 +2288,10 @@ function processSubjects(rawSubjects, payload) {
     removedByBasicPattern:     ranked.filter(s => s._removeReasons.some(r => r.startsWith('basic-owner-anxiety:'))).length,
     removedByBroadGeneric:     ranked.filter(s => s._removeReasons.includes('broad-generic-title')).length,
     removedByPolicyAxisCap:    ranked.filter(s => s._removeReasons.includes('policy-axis-cap')).length,
-    seedFallbackUsed:          seedFallbackCount,
-    similarFallbackUsed:       similarFallbackCount,
+    seedFallbackUsed,
+    nonSimilarSoftUsed,
+    similarFallbackUsed,
+    similarOverflowPrevented,
     regenerateCount,
   };
 
@@ -3853,7 +3926,9 @@ export default async function handler(req, res) {
       removedByBroadGeneric:       stats.removedByBroadGeneric,
       removedByPolicyAxisCap:      stats.removedByPolicyAxisCap,
       seedFallbackUsed:            stats.seedFallbackUsed,
+      nonSimilarSoftUsed:          stats.nonSimilarSoftUsed,
       similarFallbackUsed:         stats.similarFallbackUsed,
+      similarOverflowPrevented:    stats.similarOverflowPrevented,
       finalSubjects: finalSubjects.map(s => ({
         title: s.title, epKey: s._epKey, seedFallback: !!s._seedFallback, similarFallback: !!s._similarFallback,
       })),

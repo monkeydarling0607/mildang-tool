@@ -1687,15 +1687,19 @@ function renderSubjects() {
     delete s._removeReasons;
   });
 
-  /* ── 카드 렌더링 ──
-     - 서버에서 seed bank로 보강된 후보(_seedFallback)는 정상 후보로 노출. 배지/안내 없음.
-     - soft pool(유사 후보)로 보강된 후보(_similarFallback)에만 안내 배지/배너를 표시. */
+  /* ── 카드 렌더링 기준 ──
+     - 서버에서 seed bank로 보강된 후보(_seedFallback)는 정상 후보로 노출 (배지/안내 없음)
+     - similarFallback 0~1개: 상단 안내 없음 (1개는 카드 배지만 작게)
+     - similarFallback 2개: 약한 상단 안내 표시
+     - similarFallback 3개 이상: console.warn (서버 cap으로 인해 정상 흐름에선 발생 안 함) */
   var similarCount = data.subjects.filter(function(s){ return s._similarFallback; }).length;
+  if (similarCount >= 3) {
+    console.warn('[subjects:client-render] similarFallback ' + similarCount + '개 — 서버 cap 초과. 비정상 상황');
+  }
   var fallbackBanner = '';
-  if (similarCount > 0) {
-    fallbackBanner = '<div style="margin-bottom:12px;padding:10px 13px;background:#FFF8F0;border:1px solid #F3C49C;border-radius:var(--radius);font-size:12px;color:#7A4A00;line-height:1.65">'
-      + '<div style="font-weight:600;margin-bottom:4px">ℹ 후보가 부족해 일부 유사 후보가 포함되었습니다</div>'
-      + '5개 중 ' + similarCount + '개는 최근 회차와 구조가 비슷할 수 있습니다.'
+  if (similarCount >= 2) {
+    fallbackBanner = '<div style="margin-bottom:12px;padding:8px 12px;background:#FFFBF3;border:1px solid #F3D8B0;border-radius:var(--radius);font-size:12px;color:#7A5A20;line-height:1.55">'
+      + '일부 후보는 최근 회차와 결이 비슷할 수 있습니다.'
       + ' <span style="color:#C96A14;cursor:pointer;font-weight:600;margin-left:4px" onclick="callSubjects()">재생성</span>'
       + '</div>';
   }
