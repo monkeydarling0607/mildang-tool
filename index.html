@@ -1636,118 +1636,95 @@ function renderSubjects() {
     document.getElementById('t2area').innerHTML = errBox('주제 데이터가 없습니다. 재생성해주세요.'); return;
   }
 
-  /* ── 0단계: episode_diversity_score 캡 — LLM이 캡 룰을 무시한 경우 안전망 ──
-     ≤2: duplicate_risk="높음", final_score≤5.0   ≤3: final_score≤5.5 */
-  data.subjects.forEach(function(s) {
-    var eds = parseFloat(s && s.episode_diversity_score);
-    if (!isFinite(eds)) return;
-    if (eds <= 2) {
-      s.duplicate_risk = '높음';
-      s._episode_dedup_reason = 'episode_diversity_score=' + eds + ' (≤2) — 에피소드 다양성 부족';
-      var fs0 = parseFloat(s.final_score);
-      if (!isFinite(fs0) || fs0 > 5.0) s.final_score = 5.0;
-    } else if (eds <= 3) {
-      var fs1 = parseFloat(s.final_score);
-      if (!isFinite(fs1) || fs1 > 5.5) s.final_score = 5.5;
-    }
+  /* ── 클라이언트 안전망 ──
+     서버가 이미 archive/rejected/basic-pattern 기준으로 필터했더라도
+     화면에 표시되기 전 한 번 더 안전망을 둔다.
+     1) 거부 history(_epKey)와 같은 후보 제거
+     2) 같은 응답 내 epKey 중복 제거
+     3) regenerateCount >= 2: 기본형/넓은 제목 제거 */
+  var regenCount = S.subjectRegenCount || 0;
+  var rejectedKeySet = {};
+  (S.subjectRejectedHistory || []).forEach(function(r) {
+    if (r && r._epKey) rejectedKeySet[r._epKey] = true;
   });
-
-  /* ── 1단계 (에피소드 우선): 같은 episode_axis 두 번째 이상이면 강등 ──
-     큰 주제가 같아도 episode_axis가 다르면 허용. 반대로 problem_axis가 달라도
-     episode_axis가 같으면 같은 후보로 본다 (사용자 요청). */
-  var seenEpisode = {};
-  data.subjects.forEach(function(s) {
-    var ep = effectiveEpisodeAxisClient(s);
-    if (!ep) return;
-    if (seenEpisode[ep]) {
-      s.duplicate_risk = '높음';
-      s._episode_dedup_reason = '에피소드 중복 — "' + (s.episode_axis || ep) + '" 에피소드 이미 사용됨';
-    } else {
-      seenEpisode[ep] = true;
-    }
-  });
-
-  /* ── 2단계: problem_axis 실효 축 자동 강등 (보조적) ──
-     같은 축이 2개 이상이면 첫 번째만 유지하고 나머지는 duplicate_risk="높음"으로 강등.
-     특히 지원사업·정책자금 축은 5개 중 최대 1개만 정상 후보로 인정.
-     단, episode_axis가 다르면 같은 problem_axis라도 묶지 않음 (에피소드 우선 룰 존중). */
-  var seenAxis = {};
-  data.subjects.forEach(function(s) {
-    var ax = effectiveAxisClient(s);
-    if (!ax) return;
-    if (seenAxis[ax]) {
-      /* 에피소드가 분명히 다르면 problem_axis 중복은 무시 (지원사업·정책자금 제외) */
-      var epOk = effectiveEpisodeAxisClient(s);
-      if (ax !== '지원사업·정책자금' && epOk && !s._episode_dedup_reason) {
-        return; /* 에피소드가 새로우면 problem_axis 중복은 OK */
-      }
-      s.duplicate_risk = '높음';
-      s._axis_dedup_reason = '축 중복 — "' + ax + '" 축이 이미 한 번 사용됨';
-    } else {
-      seenAxis[ax] = true;
-    }
-  });
-
-  /* ── 2단계: 중복 위험도 기준 정렬: 낮음/(없음) → 보통 → 높음 ──
-     동일 위험 등급 안에서는 final_score(0~10) 내림차순 — 서버가 매긴 종합 점수 우선 */
-  var riskRank = { '낮음': 0, '보통': 1, '높음': 2 };
+  /* 점수 내림차순으로 처리 — 같은 epKey가 여러 개 들어왔을 때 점수 높은 1개만 살림 */
   function toFinalScore(s) {
     var v = parseFloat(s && s.final_score);
     return isFinite(v) ? v : 0;
   }
-  var sorted = data.subjects.slice().sort(function(a, b) {
-    var ra = riskRank[a.duplicate_risk] !== undefined ? riskRank[a.duplicate_risk] : 0;
-    var rb = riskRank[b.duplicate_risk] !== undefined ? riskRank[b.duplicate_risk] : 0;
-    if (ra !== rb) return ra - rb;
+  var ordered = data.subjects.slice().sort(function(a, b) {
     return toFinalScore(b) - toFinalScore(a);
   });
-  data.subjects = sorted;
 
-  /* ── 내부 검증은 계속 수행 (정렬/축 강등에 사용) ── */
-  var subjReport = validateSubjectsClient(data.subjects);
+  var seenEpKey = {};
+  ordered.forEach(function(s) {
+    var k = effectiveEpisodeAxisClient(s);
+    s._epKey = k;
+    var reasons = [];
+    if (k && rejectedKeySet[k]) reasons.push('rejected:' + k);
+    if (k && seenEpKey[k])      reasons.push('same-batch-duplicate:' + k);
+    else if (k)                 seenEpKey[k] = true;
+    if (regenCount >= 2) {
+      var bp = detectBasicOwnerAnxietyClient(s);
+      var bg = detectBroadGenericTitleClient(s);
+      if (bp) reasons.push('basic-owner-anxiety:' + bp);
+      if (bg) reasons.push('broad-generic-title');
+    }
+    /* episode_diversity_score ≤ 2 → 제거 */
+    var eds = parseFloat(s.episode_diversity_score);
+    if (isFinite(eds) && eds <= 2) reasons.push('episode-diversity≤2');
+    s._removeReasons = reasons;
+  });
 
-  /* ── 상단 경고 배너는 진짜 위험할 때만 ──
-     ① 에피소드 구조 중복 (우선): 같은 episode_axis 후보가 2개 이상
-     ② 구조 중복 위험: 같은 problem_axis 2개 이상 감지
-     ③ 최근 회차와 매우 유사: duplicate_risk === '높음' 후보 존재 */
-  var hasHighRisk    = data.subjects.some(function(s){ return s.duplicate_risk === '높음'; });
-  var hasAxisDup     = subjReport.axisDupIdx    && subjReport.axisDupIdx.length    > 0;
-  var hasEpisodeDup  = subjReport.episodeDupIdx && subjReport.episodeDupIdx.length > 0;
+  var keepers  = ordered.filter(function(s){ return !s._removeReasons.length; });
+  var fallback = ordered.filter(function(s){ return s._removeReasons.length > 0; });
 
-  var structuralBanner = '';
-  if (hasEpisodeDup) {
-    /* 에피소드 중복이 problem_axis 중복보다 우선 메시지 */
-    structuralBanner = '<div style="margin-bottom:12px;padding:10px 13px;background:#FDECEC;border:1px solid #E5A2A2;border-radius:var(--radius);font-size:12px;color:#7A1F1F;line-height:1.65">'
-      + '<div style="font-weight:600;margin-bottom:4px">⚠ 에피소드 구조 중복</div>'
-      + '큰 주제는 달라도 실제 사건·갈등 구조가 같은 후보가 함께 있습니다. 재생성을 권장합니다.'
-      + ' <span style="color:#A23535;cursor:pointer;font-weight:600;margin-left:4px" onclick="callSubjects()">재생성</span>'
-      + '</div>';
-  } else if (hasAxisDup) {
-    structuralBanner = '<div style="margin-bottom:12px;padding:10px 13px;background:#FDECEC;border:1px solid #E5A2A2;border-radius:var(--radius);font-size:12px;color:#7A1F1F;line-height:1.65">'
-      + '<div style="font-weight:600;margin-bottom:4px">⚠ 구조 중복 위험</div>'
-      + '비슷한 문제 구조의 주제가 함께 생성되었습니다. 재생성을 권장합니다.'
-      + ' <span style="color:#A23535;cursor:pointer;font-weight:600;margin-left:4px" onclick="callSubjects()">재생성</span>'
+  var finalList = keepers.slice(0, 5);
+  var fallbackUsed = 0;
+  if (finalList.length < 5) {
+    var need = 5 - finalList.length;
+    var pick = fallback.slice(0, need).map(function(s){ s._fallback = true; return s; });
+    finalList = finalList.concat(pick);
+    fallbackUsed = pick.length;
+  }
+  data.subjects = finalList;
+
+  console.log('[subjects:client-filter]', {
+    regenerateCount:    regenCount,
+    rejectedKeyCount:   Object.keys(rejectedKeySet).length,
+    inputCount:         ordered.length,
+    removedByRejected:  ordered.filter(function(s){ return s._removeReasons.some(function(r){ return r.indexOf('rejected:') === 0; }); }).length,
+    removedBySameBatch: ordered.filter(function(s){ return s._removeReasons.some(function(r){ return r.indexOf('same-batch-duplicate:') === 0; }); }).length,
+    removedByBasic:     ordered.filter(function(s){ return s._removeReasons.some(function(r){ return r.indexOf('basic-owner-anxiety:') === 0; }); }).length,
+    removedByBroad:     ordered.filter(function(s){ return s._removeReasons.indexOf('broad-generic-title') !== -1; }).length,
+    fallbackUsed:       fallbackUsed,
+    finalCount:         finalList.length,
+    finalTitles:        finalList.map(function(s){ return { title: s.title, epKey: s._epKey, fallback: !!s._fallback }; })
+  });
+
+  /* 노출 전 내부 필드 정리 */
+  data.subjects.forEach(function(s) {
+    delete s._removeReasons;
+  });
+
+  /* ── 카드 렌더링 ──
+     서버·클라이언트 안전망에서 유사 후보를 이미 제거했으므로 기본적으로
+     "유사" 배지는 표시하지 않는다. fallback으로 어쩔 수 없이 노출된 후보에만
+     작게 "유사 후보" 배지를 표시해 사용자가 판단할 수 있게 한다. */
+  var fallbackCount = data.subjects.filter(function(s){ return s._fallback; }).length;
+  var fallbackBanner = '';
+  if (fallbackCount > 0) {
+    fallbackBanner = '<div style="margin-bottom:12px;padding:10px 13px;background:#FFF8F0;border:1px solid #F3C49C;border-radius:var(--radius);font-size:12px;color:#7A4A00;line-height:1.65">'
+      + '<div style="font-weight:600;margin-bottom:4px">ℹ 후보가 부족해 일부 유사 후보가 포함되었습니다</div>'
+      + '5개 중 ' + fallbackCount + '개는 최근 회차와 구조가 비슷할 수 있습니다.'
+      + ' <span style="color:#C96A14;cursor:pointer;font-weight:600;margin-left:4px" onclick="callSubjects()">재생성</span>'
       + '</div>';
   }
 
-  var archiveSimBanner = '';
-  if (hasHighRisk) {
-    archiveSimBanner = '<div style="margin-bottom:12px;padding:10px 13px;background:#FDECEC;border:1px solid #E5A2A2;border-radius:var(--radius);font-size:12px;color:#7A1F1F;line-height:1.65">'
-      + '<div style="font-weight:600;margin-bottom:4px">⚠ 최근 회차와 매우 유사</div>'
-      + '아카이브와 거의 같은 구조의 후보가 포함되어 있습니다. 재생성을 권장합니다.'
-      + ' <span style="color:#A23535;cursor:pointer;font-weight:600;margin-left:4px" onclick="callSubjects()">재생성</span>'
-      + '</div>';
-  }
-
-  /* 노이즈 배너(중복 가능성 ul)는 더 이상 표시하지 않음 — 내부 데이터로만 유지 */
-  var warnBanner = '';
-
-  document.getElementById('t2area').innerHTML = archiveSimBanner + structuralBanner + warnBanner + '<div class="sel-grid">'
+  document.getElementById('t2area').innerHTML = fallbackBanner + '<div class="sel-grid">'
     + data.subjects.map(function(s, i) {
         var isOn = S.subject && S.subject.title === s.title;
         var cardId = 'sbj' + i;
-        var isAxisDup    = subjReport.axisDupIdx    && subjReport.axisDupIdx.indexOf(i)    !== -1;
-        var isEpisodeDup = subjReport.episodeDupIdx && subjReport.episodeDupIdx.indexOf(i) !== -1;
 
         /* ── 카드 기본 노출: 카테고리 / 제목 / 한 줄 설명 / 왜 지금 만 ──
            내부 검증 결과(에피소드 축·문제 축·중복 위험 낮음·보통·점수 등)는
@@ -1756,21 +1733,14 @@ function renderSubjects() {
           ? '<span class="tag tpr" style="flex-shrink:0;font-size:10px">' + escHtml(s.subject_category) + '</span>'
           : '';
 
-        /* 진짜 위험할 때만 카드에 작은 경고 배지.
-           ─ "에피소드 구조 유사": 같은 episode_axis 후보가 함께 있음 (우선)
-           ─ "최근 회차와 매우 유사": duplicate_risk === '높음'
-           ─ "구조 중복 위험": problem_axis 중복 (에피소드 중복 없을 때만) */
-        var episodeBadge = isEpisodeDup
-          ? '<span class="sc-struct-badge" style="background:#FDECEC;border-color:#E5A2A2;color:#7A1F1F">에피소드 구조 유사</span>'
+        /* fallback 후보에만 최소한의 안내 배지 */
+        var fallbackBadge = s._fallback
+          ? '<span class="sc-struct-badge" style="background:#FFF8F0;border-color:#F3C49C;color:#7A4A00">유사 후보</span>'
           : '';
-        var archiveSimBadge = (!isEpisodeDup && s.duplicate_risk === '높음')
-          ? '<span class="sc-struct-badge" style="background:#FDECEC;border-color:#E5A2A2;color:#7A1F1F">최근 회차와 매우 유사</span>'
-          : '';
-        var structBadge = (!isEpisodeDup && isAxisDup) ? '<span class="sc-struct-badge">구조 중복 위험</span>' : '';
 
         return '<div class="sc' + (isOn?' on':'') + '" id="' + cardId + '" onclick="selectSubject('+i+')">'
-          /* 1행: 카테고리(+ 진짜 위험할 때만 경고 배지) */
-          + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">' + catBadge + episodeBadge + archiveSimBadge + structBadge + '</div>'
+          /* 1행: 카테고리(+ fallback 안내 배지) */
+          + '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">' + catBadge + fallbackBadge + '</div>'
           /* 2행: 제목 */
           + '<div class="sc-t" style="margin-bottom:6px">' + escHtml(s.title) + '</div>'
           /* 3행: 한 줄 설명 */
@@ -1826,78 +1796,156 @@ function effectiveAxisClient(s) {
 }
 
 /* ── 에피소드 축 정규화 — 표현 차이 흡수 (서버 normalizeEpisodeKey와 동일 그룹) ──
-   episode_axis / trigger_moment / conflict_axis / title / summary를 합쳐서 본다. */
+   episode_axis / trigger_moment / conflict_axis / title / summary 합쳐서 본다.
+   ※ newsSummary는 입력하지 말 것 — 뉴스 브리핑 단순 언급 소재는 중복 판단에서 제외. */
 function effectiveEpisodeAxisClient(s) {
   if (!s) return '';
-  var raw = [s.episode_axis, s.trigger_moment, s.conflict_axis, s.title, s.summary]
+  var raw = [s.episode_axis, s.trigger_moment, s.conflict_axis, s.title, s.summary, s.topic, s.storySummary, s.tipSummary, s.quizSummary, s.note, s.avoidExpressions]
     .filter(Boolean).join(' ').toLowerCase().replace(/[\s·,]+/g, '');
   if (!raw) return '';
 
   /* 받은 뒤 문제 — 반납/회수 (먼저 검사) */
-  if (/(사후).*(반납|반환|점검|회수)/.test(raw))                  return '사후반납';
-  if (/(받았|받은).*(반납|반환|회수|중단|토해)/.test(raw))       return '사후반납';
-  if (/(지원금|보조금).*(반납|환수|회수)/.test(raw))             return '사후반납';
+  if (/(사후).*(반납|반환|점검|회수|환수|토해)/.test(raw))        return '사후반납';
+  if (/(받았|받은).*(반납|반환|회수|중단|토해|환수)/.test(raw))   return '사후반납';
+  if (/(지원금|보조금).*(반납|환수|회수|토해)/.test(raw))         return '사후반납';
 
-  /* 증빙 누락 — 카드/영수증/거래처/가족카드 등 주체가 달라도 같은 사건 */
-  if (/(증빙|영수증|적격증빙).*(누락|빠짐|불명|없|인정|불안|애매)/.test(raw)) return '증빙누락-비용인정불안';
-  if (/(카드).*(비용|인정|경비)/.test(raw))                       return '증빙누락-비용인정불안';
-  if (/(가족카드|개인카드).*(사업|비용)/.test(raw))               return '증빙누락-비용인정불안';
+  /* 증빙 누락 / 비용 인정 불안 */
+  if (/(증빙|영수증|적격증빙).*(누락|빠짐|불명|없|인정|불안|애매|걱정)/.test(raw)) return '증빙누락-비용인정불안';
+  if (/(카드).*(비용|인정|경비|불안|애매|걱정)/.test(raw))                      return '증빙누락-비용인정불안';
+  if (/(가족카드|개인카드).*(사업|비용|경비)/.test(raw))                         return '증빙누락-비용인정불안';
+  if (/(경비|비용).*(처리|인정).*(불안|애매|걱정|안)/.test(raw))                return '증빙누락-비용인정불안';
+  if (/(접대비|복리후생비).*(구분|애매|혼동)/.test(raw))                         return '증빙누락-비용인정불안';
 
   /* 자동결제 명의 문제 */
-  if (/(자동결제|정기결제|구독료|자동이체).*(개인|명의|누락|대표)/.test(raw)) return '자동결제명의문제';
+  if (/(자동결제|정기결제|구독료|자동이체).*(개인|명의|누락|대표|빠져)/.test(raw)) return '자동결제명의문제';
+  if (/(대표).*(개인).*(명의|결제|자동)/.test(raw))                                return '자동결제명의문제';
 
-  /* 신청 단계 탈락 — 서류/대상/기준/조건 */
-  if (/(서류).*(누락|빠|부족)/.test(raw))                         return '서류누락탈락';
-  if (/(매출|매출액).*(기준|착각|잘못)/.test(raw))                return '대상기준착각';
-  if (/(대상).*(아님|제외|착각)/.test(raw))                       return '대상기준착각';
-  if (/(고용|채용).*(조건|착각)/.test(raw))                       return '고용조건착각';
-  if (/(지원금|정책자금|보조금).*(신청).*(탈락|불가|못받|반려)/.test(raw)) return '신청단계탈락';
-  if (/(신청).*(탈락|불가|못받|반려)/.test(raw))                  return '신청단계탈락';
+  /* 신청 단계 탈락 — 서류/대상/기준/조건/연락 없음/왜 안 줘 */
+  if (/(서류).*(누락|빠|부족|미비)/.test(raw))                                    return '서류누락탈락';
+  if (/(매출|매출액).*(기준|착각|잘못|미달|초과)/.test(raw))                      return '대상기준착각';
+  if (/(대상).*(아님|제외|착각|미충족)/.test(raw))                                return '대상기준착각';
+  if (/(고용|채용).*(조건|착각|기준)/.test(raw))                                  return '고용조건착각';
+  if (/(지원금|정책자금|보조금|지원사업).*(신청).*(탈락|불가|못받|반려|승인안|연락없)/.test(raw)) return '신청단계탈락';
+  if (/(지원금|정책자금|보조금|지원사업).*(연락).*(없|안)/.test(raw))             return '신청단계탈락';
+  if (/(지원금|정책자금|보조금|지원사업).*(좋은데|왜).*(안주|안줄|못받)/.test(raw)) return '신청단계탈락';
+  if (/(신청).*(탈락|불가|못받|반려|승인안)/.test(raw))                           return '신청단계탈락';
+  if (/(지원금).*(왜).*(안)/.test(raw))                                            return '신청단계탈락';
 
-  /* 신고 후 추가 세금 — 가산세/고지서 */
-  if (/(신고).*(가산세|고지서|추가|더\s*나|더나)/.test(raw))     return '신고후추가세금';
-  if (/^가산세/.test(raw) || /가산세.*(발생|부과|붙)/.test(raw))  return '신고후추가세금';
-  if (/^고지서/.test(raw) || /고지서.*(받|통보|날아)/.test(raw))  return '신고후추가세금';
-  if (/(매출.*줄.*세금.*늘|세금이더.*나)/.test(raw))              return '신고후추가세금';
+  /* 신고 후 추가 세금 — 가산세/고지서/세금폭탄 */
+  if (/(신고).*(가산세|고지서|추가|더\s*나|더나|폭탄)/.test(raw))                 return '신고후추가세금';
+  if (/^가산세/.test(raw) || /가산세.*(발생|부과|붙)/.test(raw))                  return '신고후추가세금';
+  if (/^고지서/.test(raw) || /고지서.*(받|통보|날아)/.test(raw))                  return '신고후추가세금';
+  if (/(매출.*줄.*세금.*늘|세금이더.*나)/.test(raw))                              return '신고후추가세금';
+  if (/(세금).*(폭탄|날아|더\s*나|더나)/.test(raw))                                return '신고후추가세금';
+  if (/(직원).*(뽑|채용).*(세금).*(폭탄)/.test(raw))                              return '신고후추가세금';
 
   /* 매출-정산-현금흐름 불일치 (긍정 매출 증가 + 통장 부족 패턴) */
-  if (/(매출).*(늘|증가).*(통장|잔고|없|부족|돈없)/.test(raw))    return '매출정산-현금흐름불일치';
-  if (/(정산).*(지연|차이|늦|부족|입금)/.test(raw))               return '매출정산-현금흐름불일치';
-  if (/(정산).*(늘|증가).*(없|부족|돈\s?없)/.test(raw))           return '매출정산-현금흐름불일치';
-  if (/(통장).*(비|잔고|돈\s?없)/.test(raw))                     return '매출정산-현금흐름불일치';
+  if (/(매출).*(늘|증가|올|많).*(통장|잔고|없|부족|돈없|비어|비었)/.test(raw))    return '매출정산-현금흐름불일치';
+  if (/(정산).*(지연|차이|늦|부족|입금|없)/.test(raw))                            return '매출정산-현금흐름불일치';
+  if (/(정산).*(늘|증가).*(없|부족|돈\s?없)/.test(raw))                           return '매출정산-현금흐름불일치';
+  if (/(통장).*(비|잔고|돈\s?없|비었)/.test(raw))                                 return '매출정산-현금흐름불일치';
+  if (/(카드매출|카드\s?매출).*(늘|증가).*(없|부족|입금)/.test(raw))              return '매출정산-현금흐름불일치';
+  if (/(정산금).*(없|부족|안\s?들어)/.test(raw))                                  return '매출정산-현금흐름불일치';
 
   /* 직원 비용 부담 */
-  if (/(채용|고용).*(부담|비용|많이|증가)/.test(raw))             return '직원비용부담';
-  if (/(월급|급여).*(올|인상).*(부담|4대보험|증가)/.test(raw))    return '직원비용부담';
-  if (/(4대보험|원천세).*(증가|부담|올라)/.test(raw))            return '직원비용부담';
+  if (/(채용|고용|뽑).*(부담|비용|많이|증가|불안)/.test(raw))                      return '직원비용부담';
+  if (/(직원).*(뽑|채용).*(부담|불안|걱정|많|늘)/.test(raw))                       return '직원비용부담';
+  if (/(월급|급여).*(올|인상).*(부담|4대보험|증가)/.test(raw))                     return '직원비용부담';
+  if (/(4대보험|원천세).*(증가|부담|올라)/.test(raw))                              return '직원비용부담';
+  if (/(알바|아르바이트).*(뽑|채용).*(부담|비용)/.test(raw))                       return '직원비용부담';
+  if (/(인건비).*(부담|증가|올라|늘)/.test(raw))                                  return '직원비용부담';
 
   /* 임대차 계약 변경 */
-  if (/(임대차|월세|이사).*(계약|변경|증가|세금)/.test(raw))      return '임대차계약변경';
-  if (/(임대차|계약).*(갱신|만료|이름)/.test(raw))                return '임대차계약변경';
+  if (/(임대차|월세|이사).*(계약|변경|증가|세금|걱정)/.test(raw))                  return '임대차계약변경';
+  if (/(임대차|계약).*(갱신|만료|이름|바뀌)/.test(raw))                            return '임대차계약변경';
+  if (/(이사).*(후|뒤).*(세금)/.test(raw))                                         return '임대차계약변경';
+  if (/(계약).*(바뀌|변경).*(세금)/.test(raw))                                     return '임대차계약변경';
+  if (/(가게|매장).*(이전|이사|이전)/.test(raw))                                   return '임대차계약변경';
 
   /* 가족 명의 거래 */
-  if (/(가족).*(명의|계좌|카드|직원|등록|근로|실근무)/.test(raw)) return '가족명의거래';
+  if (/(가족).*(명의|계좌|카드|직원|등록|근로|실근무)/.test(raw))                   return '가족명의거래';
+  if (/(배우자|남편|아내).*(계좌|카드|명의)/.test(raw))                            return '가족명의거래';
 
   /* 명의/주체 불일치 */
-  if (/(공동대표|동업).*(전환|변경|주체|발행)/.test(raw))         return '명의주체불일치';
-  if (/(명의|등록).*(불일치|다름|배우자|남편|아내)/.test(raw))    return '명의주체불일치';
-  if (/(세금계산서|발행).*(주체|꼬|혼동)/.test(raw))              return '명의주체불일치';
+  if (/(공동대표|동업).*(전환|변경|주체|발행|꼬|혼동)/.test(raw))                  return '명의주체불일치';
+  if (/(명의|등록).*(불일치|다름|배우자|남편|아내)/.test(raw))                     return '명의주체불일치';
+  if (/(세금계산서|발행).*(주체|꼬|혼동)/.test(raw))                              return '명의주체불일치';
+  if (/(가게).*(인수).*(사업자|번호)/.test(raw))                                   return '명의주체불일치';
+  if (/(사업자번호|사업자\s?번호).*(그대로|이어|인수)/.test(raw))                  return '명의주체불일치';
 
   /* 예약금 매출 인식 */
-  if (/(예약금|환불).*(인식|매출|시점)/.test(raw))                return '예약금매출인식';
+  if (/(예약금|환불|선결제).*(인식|매출|시점)/.test(raw))                          return '예약금매출인식';
+  if (/(예약금).*(받|있)/.test(raw))                                              return '예약금매출인식';
 
   /* PG/플랫폼 정산일 차이 */
-  if (/(pg|플랫폼).*(정산일|신고|기준일|달라)/.test(raw))         return '정산일신고기준차이';
+  if (/(pg|플랫폼).*(정산일|신고|기준일|달라)/.test(raw))                          return '정산일신고기준차이';
+  if (/(배달앱|쿠팡|네이버).*(정산일).*(달라|차이|기준)/.test(raw))                return '정산일신고기준차이';
+  if (/(세금계산서).*(이번\s?달).*(입금).*(다음\s?달)/.test(raw))                  return '정산일신고기준차이';
 
   /* 근로자성 판단 */
-  if (/(프리랜서|3\.3).*(근로|판정|볼\s?수\s?있)/.test(raw))     return '근로자성판단';
-  if (/(직원|알바).*(4대보험|기준).*(걸|진입)/.test(raw))         return '근로자성판단';
+  if (/(프리랜서|3\.3).*(근로|판정|볼\s?수\s?있)/.test(raw))                      return '근로자성판단';
+  if (/(직원|알바).*(4대보험|기준).*(걸|진입)/.test(raw))                          return '근로자성판단';
+  if (/(외주|용역).*(근로자|판단)/.test(raw))                                     return '근로자성판단';
 
   /* 현금 매출 누락 */
-  if (/(현금).*(매출|누락)/.test(raw))                            return '현금매출누락';
+  if (/(현금).*(매출|누락)/.test(raw))                                            return '현금매출누락';
 
   /* 매칭 안 되면 raw 앞 20자 */
   return raw.slice(0, 20);
+}
+
+/* ── 기본형 사장님 불안 패턴 감지 (서버 detectBasicOwnerAnxiety와 동일 그룹) ──
+   regenerateCount >= 2부터 강하게 제거 후보로 본다. */
+function detectBasicOwnerAnxietyClient(s) {
+  if (!s) return null;
+  var blob = (String(s.title || '') + ' ' + String(s.summary || '') + ' ' + String(s.hook || ''))
+    .toLowerCase().replace(/\s+/g, '');
+  /* 구체 사건 키워드가 있으면 면제 */
+  var concrete = /(자동결제|정기결제|예약금|환불|pg|플랫폼정산|가족명의|가족계좌|가족카드|공동대표|세금계산서.*발행|사업자번호|가게인수|프리랜서.*근로|3\.3|접대비|복리후생비|배달앱.*정산일|세금계산서.*입금)/;
+  if (concrete.test(blob)) return null;
+  var patterns = [
+    { tag: '매출늘었는데', re: /매출.*(늘|증가|올).*(통장|돈|잔고|비)/ },
+    { tag: '통장비었',     re: /(통장).*(비|돈\s?없|잔고)/ },
+    { tag: '카드비용인정',  re: /(카드).*(비용|인정).*(불안|애매|걱정)/ },
+    { tag: '직원뽑았는데',  re: /(직원|알바).*(뽑|채용).*(부담|불안|걱정)/ },
+    { tag: '지원금신청',    re: /(지원금|정책자금|보조금).*(신청).*(왜|안|연락|없|승인)/ },
+    { tag: '지원금연락',    re: /(지원금|정책자금|보조금).*(연락).*(없|안)/ },
+    { tag: '계약바뀌면',    re: /(계약|이사).*(바뀌|변경).*(세금|걱정)/ },
+    { tag: '월세늘',        re: /(월세|임대료).*(올|늘|증가).*(부담|세금|걱정)/ },
+    { tag: '이사후세금',    re: /(이사).*(후|뒤).*(세금|걱정)/ },
+    { tag: '세금폭탄',      re: /세금폭탄/ },
+    { tag: '부담늘',        re: /(부담).*(늘|커|많)/ },
+    { tag: '걱정돼요',      re: /걱정돼요|걱정이/ },
+    { tag: '불안해요',      re: /불안해요|불안이/ },
+    { tag: '돈이없',        re: /돈이?없|돈이?부족/ },
+  ];
+  for (var i = 0; i < patterns.length; i++) {
+    if (patterns[i].re.test(blob)) return patterns[i].tag;
+  }
+  return null;
+}
+
+/* ── "넓은 기본형 제목" 감지 (서버 detectBroadGenericTitle와 동일) ── */
+function detectBroadGenericTitleClient(s) {
+  if (!s) return null;
+  var title = String(s.title || '').replace(/\s+/g, '');
+  if (!title) return null;
+  var concrete = /(자동결제|예약금|환불|pg|플랫폼정산|가족계좌|가족카드|공동대표|세금계산서.*발행|사업자번호|프리랜서|3\.3|접대비|복리후생비|배달앱)/;
+  if (concrete.test(title.toLowerCase())) return null;
+  var broadStart = [
+    /^매출(은|이|을|만)?(늘|올|많)/,
+    /^직원(을|만)?(뽑|채용)/,
+    /^카드(만|를|로)?(썼|긁|사용)/,
+    /^지원금(을|만|이라도)?(신청|받)/,
+    /^계약(만|이|을)?(바뀌|변경)/,
+    /^세금(이|만)?(늘|더|많)/,
+    /^통장(이|만)?(비|없)/,
+    /^부담(이|만)?(늘|많|커)/
+  ];
+  for (var i = 0; i < broadStart.length; i++) {
+    if (broadStart[i].test(title)) return 'broad_generic_title';
+  }
+  return null;
 }
 
 /* ── 주제 후보 클라이언트 룰 기반 중복 검증 ── */

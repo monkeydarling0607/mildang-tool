@@ -20,7 +20,7 @@ const ALLOWED_TYPES = [
 // draft 타입은 긴 원고를 생성하므로 토큰을 넉넉히 설정
 const MAX_TOKENS = {
   analyze:        1400,
-  subjects:       8500,  /* 내부 10-15개 + 6개 에피소드 축 + 7개 점수 + 최종 5개 메타 — 토큰 여유 */
+  subjects:       11000, /* 내부 20-25개 + 6개 에피소드 축 + 7개 점수 + 최종 5개 메타 — 후보 확장 */
   stories:        3200,
   story_draft:    3500,
   tips:           2000,
@@ -589,10 +589,13 @@ title 필수 조건:
 [★★ 내부 후보 생성·평가·선별 파이프라인 — 반드시 이 순서로 수행 ★★]
 사용자에게 보이는 결과는 최종 5개지만, 내부적으로는 더 넓게 탐색하고 걸러야 합니다.
 
-▶ 1단계 (내부): 후보 10~15개 생성
+▶ 1단계 (내부): 후보 20~25개 생성 — 반드시 충분히 넓게 생성
    - 위 6개 에피소드 축을 다양하게 — 같은 episode_axis 후보 ≤ 2개, 같은 trigger_moment ≤ 2개, 같은 conflict_axis ≤ 2개
    - problem_axis는 균형 잡되, "기본형 후보"(아래 9번 참고)는 구체 에피소드 없으면 생성 자체 금지
-   - 의외성·생활형 ≥ 2개
+   - 의외성·생활형 ≥ 4개
+   - 사장님 불안 기본형(매출 늘었는데 통장 비었, 카드 비용 인정 불안, 직원 뽑고 부담, 지원금 신청했는데 연락 없음, 계약 바뀌면 세금 걱정)은 후보 풀에서 50% 미만으로 제한
+   - 구체 사건형(자동결제 명의, 예약금/환불, PG 정산일 차이, 가족계좌, 공동대표 발행 주체, 사업자번호 인수, 프리랜서 근로자성, 접대비/복리후생비 구분 등) ≥ 8개
+   ※ JSON 출력 크기 관리: 탈락 후보는 절대 출력하지 말 것. 최종 5개만 출력 — 후보당 필드 설명은 짧게 유지.
 
 ▶ 2단계 (내부): 후보별 0~10점 점수 부여
    - freshness_score              (20%): 과거 아카이브 topic/story/tip/quiz와 덜 겹칠수록 높음 (newsSummary 비교 제외)
@@ -1524,78 +1527,259 @@ function effectiveAxis(s) {
 
 /* ── 에피소드 정규화 (서버) — client effectiveEpisodeAxisClient와 의미 그룹 일치 ──
    episode_axis / trigger_moment / conflict_axis / title / summary를 합쳐서 의미 그룹으로 묶는다.
-   rejectedSubjects의 episode_axis와 새 후보의 episode_axis가 같은 그룹이면 같은 키로 매칭. */
+   rejectedSubjects의 episode_axis와 새 후보의 episode_axis가 같은 그룹이면 같은 키로 매칭.
+   ※ 절대 newsSummary를 입력으로 받지 말 것 — 뉴스 브리핑 단순 언급 소재는 중복 판단에서 제외. */
 function normalizeEpisodeKey(s) {
   if (!s) return '';
-  const raw = [s.episode_axis, s.trigger_moment, s.conflict_axis, s.title, s.summary]
+  const raw = [s.episode_axis, s.trigger_moment, s.conflict_axis, s.title, s.summary, s.topic, s.storySummary, s.tipSummary, s.quizSummary, s.note, s.avoidExpressions]
     .filter(Boolean).join(' ').toLowerCase().replace(/[\s·,]+/g, '');
   if (!raw) return '';
 
   /* 받은 뒤 문제 — 반납/회수 (먼저 검사: '지원금 받았는데 반납'이 신청단계탈락보다 우선) */
-  if (/(사후).*(반납|반환|점검|회수)/.test(raw))                  return '사후반납';
-  if (/(받았|받은).*(반납|반환|회수|중단|토해)/.test(raw))       return '사후반납';
-  if (/(지원금|보조금).*(반납|환수|회수)/.test(raw))             return '사후반납';
+  if (/(사후).*(반납|반환|점검|회수|환수|토해)/.test(raw))         return '사후반납';
+  if (/(받았|받은).*(반납|반환|회수|중단|토해|환수)/.test(raw))    return '사후반납';
+  if (/(지원금|보조금).*(반납|환수|회수|토해)/.test(raw))          return '사후반납';
 
-  /* 증빙 누락 — 카드/영수증/거래처 등 주체가 달라도 같은 사건 */
-  if (/(증빙|영수증|적격증빙).*(누락|빠짐|불명|없|인정|불안|애매)/.test(raw)) return '증빙누락-비용인정불안';
-  if (/(카드).*(비용|인정|경비)/.test(raw))                       return '증빙누락-비용인정불안';
-  if (/(가족카드|개인카드).*(사업|비용)/.test(raw))               return '증빙누락-비용인정불안';
+  /* 증빙 누락 / 비용 인정 불안 — 카드/영수증/거래처 등 주체가 달라도 같은 사건 */
+  if (/(증빙|영수증|적격증빙).*(누락|빠짐|불명|없|인정|불안|애매|걱정)/.test(raw)) return '증빙누락-비용인정불안';
+  if (/(카드).*(비용|인정|경비|불안|애매|걱정)/.test(raw))                       return '증빙누락-비용인정불안';
+  if (/(가족카드|개인카드).*(사업|비용|경비)/.test(raw))                          return '증빙누락-비용인정불안';
+  if (/(경비|비용).*(처리|인정).*(불안|애매|걱정|안)/.test(raw))                 return '증빙누락-비용인정불안';
+  if (/(접대비|복리후생비).*(구분|애매|혼동)/.test(raw))                          return '증빙누락-비용인정불안';
 
-  /* 자동결제 명의 문제 */
-  if (/(자동결제|정기결제|구독료|자동이체).*(개인|명의|누락|대표)/.test(raw)) return '자동결제명의문제';
+  /* 자동결제 명의 문제 — 대표 개인 명의로 빠져나가는 결제 */
+  if (/(자동결제|정기결제|구독료|자동이체).*(개인|명의|누락|대표|빠져)/.test(raw)) return '자동결제명의문제';
+  if (/(대표).*(개인).*(명의|결제|자동)/.test(raw))                                return '자동결제명의문제';
 
-  /* 신청 단계 탈락 — 서류/대상/기준/조건 */
-  if (/(서류).*(누락|빠|부족)/.test(raw))                         return '서류누락탈락';
-  if (/(매출|매출액).*(기준|착각|잘못)/.test(raw))                return '대상기준착각';
-  if (/(대상).*(아님|제외|착각)/.test(raw))                       return '대상기준착각';
-  if (/(고용|채용).*(조건|착각)/.test(raw))                       return '고용조건착각';
-  if (/(지원금|정책자금|보조금).*(신청).*(탈락|불가|못받|반려)/.test(raw)) return '신청단계탈락';
-  if (/(신청).*(탈락|불가|못받|반려)/.test(raw))                  return '신청단계탈락';
+  /* 신청 단계 탈락 — 서류/대상/기준/조건 / 지원금 연락 없음 */
+  if (/(서류).*(누락|빠|부족|미비)/.test(raw))                                    return '서류누락탈락';
+  if (/(매출|매출액).*(기준|착각|잘못|미달|초과)/.test(raw))                      return '대상기준착각';
+  if (/(대상).*(아님|제외|착각|미충족)/.test(raw))                                return '대상기준착각';
+  if (/(고용|채용).*(조건|착각|기준)/.test(raw))                                  return '고용조건착각';
+  if (/(지원금|정책자금|보조금|지원사업).*(신청).*(탈락|불가|못받|반려|승인안|연락없)/.test(raw)) return '신청단계탈락';
+  if (/(지원금|정책자금|보조금|지원사업).*(연락).*(없|안)/.test(raw))             return '신청단계탈락';
+  if (/(지원금|정책자금|보조금|지원사업).*(좋은데|왜).*(안주|안줄|못받)/.test(raw)) return '신청단계탈락';
+  if (/(신청).*(탈락|불가|못받|반려|승인안)/.test(raw))                           return '신청단계탈락';
+  if (/(지원금).*(왜).*(안)/.test(raw))                                            return '신청단계탈락';
 
-  /* 신고 후 추가 세금 — 가산세/고지서 */
-  if (/(신고).*(가산세|고지서|추가|더\s*나|더나)/.test(raw))     return '신고후추가세금';
-  if (/^가산세/.test(raw) || /가산세.*(발생|부과|붙)/.test(raw))  return '신고후추가세금';
-  if (/^고지서/.test(raw) || /고지서.*(받|통보|날아)/.test(raw))  return '신고후추가세금';
-  if (/(매출.*줄.*세금.*늘|세금이더.*나)/.test(raw))              return '신고후추가세금';
+  /* 신고 후 추가 세금 — 가산세/고지서/세금폭탄 */
+  if (/(신고).*(가산세|고지서|추가|더\s*나|더나|폭탄)/.test(raw))                 return '신고후추가세금';
+  if (/^가산세/.test(raw) || /가산세.*(발생|부과|붙)/.test(raw))                  return '신고후추가세금';
+  if (/^고지서/.test(raw) || /고지서.*(받|통보|날아)/.test(raw))                  return '신고후추가세금';
+  if (/(매출.*줄.*세금.*늘|세금이더.*나)/.test(raw))                              return '신고후추가세금';
+  if (/(세금).*(폭탄|날아|더\s*나|더나)/.test(raw))                                return '신고후추가세금';
+  if (/(직원).*(뽑|채용).*(세금).*(폭탄)/.test(raw))                              return '신고후추가세금';
 
   /* 매출-정산-현금흐름 불일치 */
-  if (/(매출).*(늘|증가).*(통장|잔고|없|부족|돈없)/.test(raw))    return '매출정산-현금흐름불일치';
-  if (/(정산).*(지연|차이|늦|부족|입금)/.test(raw))               return '매출정산-현금흐름불일치';
-  if (/(정산).*(늘|증가).*(없|부족|돈\s?없)/.test(raw))           return '매출정산-현금흐름불일치';
-  if (/(통장).*(비|잔고|돈\s?없)/.test(raw))                     return '매출정산-현금흐름불일치';
+  if (/(매출).*(늘|증가|올|많).*(통장|잔고|없|부족|돈없|비어|비었)/.test(raw))    return '매출정산-현금흐름불일치';
+  if (/(정산).*(지연|차이|늦|부족|입금|없)/.test(raw))                            return '매출정산-현금흐름불일치';
+  if (/(정산).*(늘|증가).*(없|부족|돈\s?없)/.test(raw))                           return '매출정산-현금흐름불일치';
+  if (/(통장).*(비|잔고|돈\s?없|비었)/.test(raw))                                 return '매출정산-현금흐름불일치';
+  if (/(카드매출|카드\s?매출).*(늘|증가).*(없|부족|입금)/.test(raw))              return '매출정산-현금흐름불일치';
+  if (/(정산금).*(없|부족|안\s?들어)/.test(raw))                                  return '매출정산-현금흐름불일치';
 
-  /* 직원 비용 부담 */
-  if (/(채용|고용).*(부담|비용|많이|증가)/.test(raw))             return '직원비용부담';
-  if (/(월급|급여).*(올|인상).*(부담|4대보험|증가)/.test(raw))    return '직원비용부담';
-  if (/(4대보험|원천세).*(증가|부담|올라)/.test(raw))            return '직원비용부담';
+  /* 직원 비용 부담 — "직원 뽑고/뽑았는데 부담" 류 기본형 포함 */
+  if (/(채용|고용|뽑).*(부담|비용|많이|증가|불안)/.test(raw))                      return '직원비용부담';
+  if (/(직원).*(뽑|채용).*(부담|불안|걱정|많|늘)/.test(raw))                       return '직원비용부담';
+  if (/(월급|급여).*(올|인상).*(부담|4대보험|증가)/.test(raw))                     return '직원비용부담';
+  if (/(4대보험|원천세).*(증가|부담|올라)/.test(raw))                              return '직원비용부담';
+  if (/(알바|아르바이트).*(뽑|채용).*(부담|비용)/.test(raw))                       return '직원비용부담';
+  if (/(인건비).*(부담|증가|올라|늘)/.test(raw))                                  return '직원비용부담';
 
-  /* 임대차 계약 변경 */
-  if (/(임대차|월세|이사).*(계약|변경|증가|세금)/.test(raw))      return '임대차계약변경';
-  if (/(임대차|계약).*(갱신|만료|이름)/.test(raw))                return '임대차계약변경';
+  /* 임대차 계약 변경 — 이사 후 세금 / 월세 증가 / 계약 갱신 */
+  if (/(임대차|월세|이사).*(계약|변경|증가|세금|걱정)/.test(raw))                  return '임대차계약변경';
+  if (/(임대차|계약).*(갱신|만료|이름|바뀌)/.test(raw))                            return '임대차계약변경';
+  if (/(이사).*(후|뒤).*(세금)/.test(raw))                                         return '임대차계약변경';
+  if (/(계약).*(바뀌|변경).*(세금)/.test(raw))                                     return '임대차계약변경';
+  if (/(가게|매장).*(이전|이사|이전)/.test(raw))                                   return '임대차계약변경';
 
-  /* 가족 명의 거래 */
-  if (/(가족).*(명의|계좌|카드|직원|등록|근로|실근무)/.test(raw)) return '가족명의거래';
+  /* 가족 명의 거래 — 가족 계좌/카드/직원 */
+  if (/(가족).*(명의|계좌|카드|직원|등록|근로|실근무)/.test(raw))                   return '가족명의거래';
+  if (/(배우자|남편|아내).*(계좌|카드|명의)/.test(raw))                            return '가족명의거래';
 
-  /* 명의/주체 불일치 — 공동대표 / 사업자 명의 / 발행 주체 */
-  if (/(공동대표|동업).*(전환|변경|주체|발행)/.test(raw))         return '명의주체불일치';
-  if (/(명의|등록).*(불일치|다름|배우자|남편|아내)/.test(raw))    return '명의주체불일치';
-  if (/(세금계산서|발행).*(주체|꼬|혼동)/.test(raw))              return '명의주체불일치';
+  /* 명의/주체 불일치 — 공동대표 / 사업자 명의 / 발행 주체 / 사업자번호 인수 */
+  if (/(공동대표|동업).*(전환|변경|주체|발행|꼬|혼동)/.test(raw))                  return '명의주체불일치';
+  if (/(명의|등록).*(불일치|다름|배우자|남편|아내)/.test(raw))                     return '명의주체불일치';
+  if (/(세금계산서|발행).*(주체|꼬|혼동)/.test(raw))                              return '명의주체불일치';
+  if (/(가게).*(인수).*(사업자|번호)/.test(raw))                                   return '명의주체불일치';
+  if (/(사업자번호|사업자\s?번호).*(그대로|이어|인수)/.test(raw))                  return '명의주체불일치';
 
-  /* 예약금 매출 인식 */
-  if (/(예약금|환불).*(인식|매출|시점)/.test(raw))                return '예약금매출인식';
+  /* 예약금 매출 인식 — 환불 가능성 / 선결제 */
+  if (/(예약금|환불|선결제).*(인식|매출|시점)/.test(raw))                          return '예약금매출인식';
+  if (/(예약금).*(받|있)/.test(raw))                                              return '예약금매출인식';
 
-  /* PG/플랫폼 정산일 차이 */
-  if (/(pg|플랫폼).*(정산일|신고|기준일|달라)/.test(raw))         return '정산일신고기준차이';
+  /* PG/플랫폼 정산일 차이 — 신고 기준일과 정산일 차이 / 배달앱 정산일 */
+  if (/(pg|플랫폼).*(정산일|신고|기준일|달라)/.test(raw))                          return '정산일신고기준차이';
+  if (/(배달앱|쿠팡|네이버).*(정산일).*(달라|차이|기준)/.test(raw))                return '정산일신고기준차이';
+  if (/(세금계산서).*(이번\s?달).*(입금).*(다음\s?달)/.test(raw))                  return '정산일신고기준차이';
 
-  /* 근로자성 판단 */
-  if (/(프리랜서|3\.3).*(근로|판정|볼\s?수\s?있)/.test(raw))     return '근로자성판단';
-  if (/(직원|알바).*(4대보험|기준).*(걸|진입)/.test(raw))         return '근로자성판단';
+  /* 근로자성 판단 — 프리랜서/3.3/근로 */
+  if (/(프리랜서|3\.3).*(근로|판정|볼\s?수\s?있)/.test(raw))                      return '근로자성판단';
+  if (/(직원|알바).*(4대보험|기준).*(걸|진입)/.test(raw))                          return '근로자성판단';
+  if (/(외주|용역).*(근로자|판단)/.test(raw))                                     return '근로자성판단';
 
   /* 현금 매출 누락 */
-  if (/(현금).*(매출|누락)/.test(raw))                            return '현금매출누락';
+  if (/(현금).*(매출|누락)/.test(raw))                                            return '현금매출누락';
 
   /* 매칭 안 되면 episode_axis 원본 앞 20자 */
   return raw.slice(0, 20);
+}
+
+/* ── 기본형 사장님 불안 패턴 감지 ──
+   "이미 뭔가 했고 → 뒤늦게 돈/세금/비용/부담 문제가 생길까 봐 불안" 구조의 넓은 표현.
+   regenerateCount >= 2부터 강하게 제외 후보로 본다. */
+function detectBasicOwnerAnxiety(s) {
+  if (!s) return null;
+  const blob = `${s.title || ''} ${s.summary || ''} ${s.hook || ''}`.toLowerCase().replace(/\s+/g, '');
+  /* 구체 사건이 들어 있으면 (자동결제/예약금/PG정산/가족계좌/공동대표/사업자번호/프리랜서/접대비)
+     기본형 판정을 면제 — 사용자 spec의 권장 사건형 */
+  const concretePatterns = [
+    /자동결제/, /정기결제/, /예약금/, /환불/, /pg/, /플랫폼정산/, /가족명의/, /가족계좌/, /가족카드/,
+    /공동대표/, /세금계산서.*발행/, /사업자번호/, /가게인수/, /프리랜서.*근로/, /3\.3/,
+    /접대비/, /복리후생비/, /배달앱.*정산일/, /세금계산서.*입금/
+  ];
+  if (concretePatterns.some(re => re.test(blob))) return null;
+  /* 기본형 키워드 */
+  const basicPatterns = [
+    { tag: '매출늘었는데', re: /매출.*(늘|증가|올).*(통장|돈|잔고|비)/ },
+    { tag: '통장비었',     re: /(통장).*(비|돈\s?없|잔고)/ },
+    { tag: '카드비용인정',  re: /(카드).*(비용|인정).*(불안|애매|걱정)/ },
+    { tag: '직원뽑았는데',  re: /(직원|알바).*(뽑|채용).*(부담|불안|걱정)/ },
+    { tag: '지원금신청',    re: /(지원금|정책자금|보조금).*(신청).*(왜|안|연락|없|승인)/ },
+    { tag: '지원금연락',    re: /(지원금|정책자금|보조금).*(연락).*(없|안)/ },
+    { tag: '계약바뀌면',    re: /(계약|이사).*(바뀌|변경).*(세금|걱정)/ },
+    { tag: '월세늘',        re: /(월세|임대료).*(올|늘|증가).*(부담|세금|걱정)/ },
+    { tag: '이사후세금',    re: /(이사).*(후|뒤).*(세금|걱정)/ },
+    { tag: '세금폭탄',      re: /세금폭탄/ },
+    { tag: '부담늘',        re: /(부담).*(늘|커|많)/ },
+    { tag: '걱정돼요',      re: /걱정돼요|걱정이/ },
+    { tag: '불안해요',      re: /불안해요|불안이/ },
+    { tag: '돈이없',        re: /돈이?없|돈이?부족/ },
+  ];
+  for (const p of basicPatterns) {
+    if (p.re.test(blob)) return p.tag;
+  }
+  return null;
+}
+
+/* ── "넓은 기본형 제목" 감지 — 구체 사건 없으면 제거 ──
+   매출/직원/카드/지원금/계약/세금 같은 넓은 단어로 시작하면서 구체적 trigger 없는 제목. */
+function detectBroadGenericTitle(s) {
+  if (!s) return null;
+  const title = String(s.title || '').replace(/\s+/g, '');
+  if (!title) return null;
+  /* 구체 단어 — 들어 있으면 면제 */
+  const concrete = /(자동결제|예약금|환불|pg|플랫폼정산|가족계좌|가족카드|공동대표|세금계산서.*발행|사업자번호|프리랜서|3\.3|접대비|복리후생비|배달앱)/;
+  if (concrete.test(title.toLowerCase())) return null;
+  /* 넓은 시작 단어 */
+  const broadStart = [
+    /^매출(은|이|을|만)?(늘|올|많)/,
+    /^직원(을|만)?(뽑|채용)/,
+    /^카드(만|를|로)?(썼|긁|사용)/,
+    /^지원금(을|만|이라도)?(신청|받)/,
+    /^계약(만|이|을)?(바뀌|변경)/,
+    /^세금(이|만)?(늘|더|많)/,
+    /^통장(이|만)?(비|없)/,
+    /^부담(이|만)?(늘|많|커)/,
+  ];
+  for (const re of broadStart) {
+    if (re.test(title)) return 'broad_generic_title';
+  }
+  return null;
+}
+
+/* ── 아카이브 + 거부 후보 기반 episode exclude map 생성 ──
+   archive items / rejectedSubjects / rejectedEpisodeKeys를 받아서
+   { keys: Map<key, {source, recency, title, topic, reason}>, hardKeys, strongKeys, softKeys, rejectedKeys }
+   를 반환. recencyWeight:
+     - 최근 5개:  'hard'   (최종 후보에서 강제 제거)
+     - 6~15:     'strong' (강한 제외 — 점수 패널티 + 제거)
+     - 그 이전:   'soft'   (참고 — fallback에서만 허용)
+   ※ newsSummary는 입력으로 받지 말 것 — 호출 시 archive item에서 newsSummary 필드를 빼고 넘긴다. */
+function buildEpisodeExcludeMap(opts) {
+  const archiveItems     = Array.isArray(opts && opts.archiveItems)        ? opts.archiveItems        : [];
+  const rejectedSubjects = Array.isArray(opts && opts.rejectedSubjects)    ? opts.rejectedSubjects    : [];
+  const rejectedEpKeys   = Array.isArray(opts && opts.rejectedEpisodeKeys) ? opts.rejectedEpisodeKeys : [];
+
+  const map      = new Map();
+  const hardKeys = new Set();
+  const strongKeys = new Set();
+  const softKeys = new Set();
+  const rejectedKeys = new Set();
+
+  /* 아카이브는 "최근일수록 강하게 제외"
+     payload.archive는 클라이언트에서 issueNo/date 내림차순으로 정렬돼 들어오므로
+     배열의 앞쪽일수록 최근이다. */
+  archiveItems.forEach((a, idx) => {
+    if (!a || typeof a !== 'object') return;
+    /* newsSummary는 의도적으로 무시 — 뉴스 브리핑 단순 언급은 중복 판단에서 제외 */
+    const stub = {
+      episode_axis:   '',
+      trigger_moment: '',
+      conflict_axis:  '',
+      title:          a.kakaoTitle || a.title || '',
+      summary:        '',
+      topic:          a.topic        || '',
+      storySummary:   a.storySummary || '',
+      tipSummary:     a.tipSummary   || '',
+      quizSummary:    a.quizSummary  || '',
+      note:           a.note         || '',
+      avoidExpressions: a.avoidExpressions || '',
+    };
+    const k = normalizeEpisodeKey(stub);
+    if (!k) return;
+    let recency;
+    if (idx < 5)        recency = 'hard';
+    else if (idx < 15)  recency = 'strong';
+    else                recency = 'soft';
+    if (recency === 'hard')   hardKeys.add(k);
+    if (recency === 'strong') strongKeys.add(k);
+    if (recency === 'soft')   softKeys.add(k);
+    if (!map.has(k)) {
+      map.set(k, {
+        source: 'archive',
+        recency,
+        title: stub.title,
+        topic: stub.topic,
+        reason: `archive ${recency} — #${idx + 1} 「${stub.title}」`,
+      });
+    }
+  });
+
+  /* 거부 후보 (방금 사용자가 보고 재생성을 누른 후보) — 항상 hard */
+  rejectedSubjects.forEach((r, i) => {
+    if (!r) return;
+    const k = normalizeEpisodeKey(r);
+    if (!k) return;
+    rejectedKeys.add(k);
+    hardKeys.add(k);
+    if (!map.has(k)) {
+      map.set(k, {
+        source: 'rejected',
+        recency: 'hard',
+        title: r.title || '',
+        topic: '',
+        reason: `rejected — 방금 거부한 후보 「${r.title || ''}」`,
+      });
+    } else {
+      /* 이미 archive로 들어와 있어도 rejected가 우선 */
+      const cur = map.get(k);
+      map.set(k, { ...cur, source: 'rejected', recency: 'hard', reason: cur.reason + ' / rejected 일치' });
+    }
+  });
+
+  /* 클라이언트에서 _epKey로 캐시해 보낸 명시적 거부 키 */
+  rejectedEpKeys.forEach(k => {
+    if (!k) return;
+    const key = String(k);
+    rejectedKeys.add(key);
+    hardKeys.add(key);
+    if (!map.has(key)) {
+      map.set(key, { source: 'rejected', recency: 'hard', title: '', topic: '', reason: 'rejectedEpisodeKey 직접 일치' });
+    }
+  });
+
+  return { map, hardKeys, strongKeys, softKeys, rejectedKeys };
 }
 
 function normalizeRejectedKeys(rejectedSubjects, alreadyKeys) {
@@ -3201,96 +3385,199 @@ export default async function handler(req, res) {
     }
   }
 
-  // subjects: 에피소드 축 + problem_axis 중복 자동 강등 → 중복 위험도 기준 정렬
+  // subjects: archive 기반 episode exclude map + rejected exclude + 기본형 패턴 제거.
+  // 감점이 아니라 "최종 후보에서 제거" → final 5개 산출.
   if (type === 'subjects' && Array.isArray(result.subjects)) {
-    /* 0-A단계: 재생성 누적 회피 — payload.regenerationContext의 rejected 후보와 같은
-       normalizeEpisodeKey를 가진 새 후보는 즉시 강등.
-       LLM이 프롬프트 지시를 어겨도 안전망으로 동작. */
-    const regenCtx = (payload && payload.regenerationContext) || {};
-    const rejectedKeySet = normalizeRejectedKeys(
-      Array.isArray(regenCtx.rejectedSubjects)    ? regenCtx.rejectedSubjects    : [],
-      Array.isArray(regenCtx.rejectedEpisodeKeys) ? regenCtx.rejectedEpisodeKeys : []
-    );
-    if (rejectedKeySet.size > 0) {
-      result.subjects.forEach(s => {
-        const k = normalizeEpisodeKey(s);
-        if (k && rejectedKeySet.has(k)) {
-          s.duplicate_risk = '높음';
-          s._rejected_match_key = k;
-          s._rejected_reason = `rejected 후보와 normalizedEpisodeKey="${k}" 일치 — 재생성에서 같은 사건 제출 금지`;
-          /* episode_diversity_score를 강제로 2 이하 + final_score 5.0 캡 */
-          const eds = parseFloat(s.episode_diversity_score);
-          if (!isFinite(eds) || eds > 2) s.episode_diversity_score = 2;
-          const fs = parseFloat(s.final_score);
-          if (!isFinite(fs) || fs > 5.0) s.final_score = 5.0;
-        }
-      });
-    }
+    const regenCtx        = (payload && payload.regenerationContext) || {};
+    const regenerateCount = Number(regenCtx.regenerateCount) || 0;
 
-    /* 0-B단계: episode_axis 캡 — episode_diversity_score ≤ 2면 강등.
-       LLM이 캡 룰을 따르지 않은 경우의 안전망. */
-    result.subjects.forEach(s => {
-      const eds = parseFloat(s && s.episode_diversity_score);
-      if (isFinite(eds) && eds <= 2) {
-        s.duplicate_risk = '높음';
-        s._episode_dedup_reason = `episode_diversity_score=${eds} (≤2) — 에피소드 다양성 부족`;
-        const fs = parseFloat(s.final_score);
-        if (!isFinite(fs) || fs > 5.0) s.final_score = 5.0;
-      } else if (isFinite(eds) && eds <= 3) {
-        const fs = parseFloat(s.final_score);
-        if (!isFinite(fs) || fs > 5.5) s.final_score = 5.5;
-      }
+    /* archive 기반 exclude map 생성 — newsSummary 제외 (buildEpisodeExcludeMap 내부에서 이미 차단) */
+    const archiveItems = Array.isArray(payload && payload.archive) ? payload.archive : [];
+    const excludeMap = buildEpisodeExcludeMap({
+      archiveItems,
+      rejectedSubjects:    Array.isArray(regenCtx.rejectedSubjects)    ? regenCtx.rejectedSubjects    : [],
+      rejectedEpisodeKeys: Array.isArray(regenCtx.rejectedEpisodeKeys) ? regenCtx.rejectedEpisodeKeys : [],
     });
 
-    /* 1단계: episode_axis 정규화 후 첫 등장만 유지, 같은 episode_axis 두 번째부터 강등.
-       에피소드 다양성은 problem_axis 다양성보다 우선이므로 먼저 검사. */
-    const normEpisode = (s) => {
-      const v = String(s && s.episode_axis || '').toLowerCase().replace(/\s+/g, '').trim();
-      return v;
-    };
-    const seenEpisode = new Set();
-    result.subjects.forEach(s => {
-      const ep = normEpisode(s);
-      if (!ep) return;
-      if (seenEpisode.has(ep)) {
-        s.duplicate_risk = '높음';
-        s._episode_dedup_reason = `에피소드 중복 — episode_axis "${s.episode_axis}" 이미 한 번 사용됨`;
-      } else {
-        seenEpisode.add(ep);
-      }
+    console.log('[subjects:exclude-map]', {
+      archiveHardKeys:    Array.from(excludeMap.hardKeys).filter(k => {
+        const m = excludeMap.map.get(k); return m && m.source === 'archive';
+      }),
+      archiveStrongKeys:  Array.from(excludeMap.strongKeys),
+      rejectedKeys:       Array.from(excludeMap.rejectedKeys),
+      regenerateCount,
     });
 
-    /* 2단계: problem_axis 실효 축 자동 강등 (기존 로직 유지).
-       지원사업·정책자금 축이 1개를 초과하면 동일하게 강등. */
-    const seenAxis = new Set();
-    const policyAxisName = '지원사업·정책자금';
-    result.subjects.forEach(s => {
-      const ax = effectiveAxis(s);
-      if (!ax) return;
-      if (seenAxis.has(ax)) {
-        s.duplicate_risk = '높음';
-        s._axis_dedup_reason = `축 중복 — "${ax}" 축이 이미 한 번 사용됨`;
-        if (ax === policyAxisName) {
-          s._axis_dedup_reason = `지원사업·정책자금 후보는 최대 1개 — 두 번째 후보 자동 강등`;
-        }
-      } else {
-        seenAxis.add(ax);
-      }
-    });
-
-    /* 2단계: 중복 위험도 기준 정렬 (낮음 → 보통 → 높음 → 하단으로).
-       동일 위험 등급 안에서는 final_score 내림차순 — AI가 부여한 종합 점수 우선 */
-    const riskRank = { '낮음': 0, '보통': 1, '높음': 2 };
     const toScore = (s) => {
       const v = parseFloat(s && s.final_score);
       return isFinite(v) ? v : 0;
     };
-    result.subjects.sort((a, b) => {
-      const ra = riskRank[a.duplicate_risk] !== undefined ? riskRank[a.duplicate_risk] : 0;
-      const rb = riskRank[b.duplicate_risk] !== undefined ? riskRank[b.duplicate_risk] : 0;
-      if (ra !== rb) return ra - rb;
-      return toScore(b) - toScore(a);
+
+    /* 1) 모든 후보에 normalizedEpisodeKey + 실효 축 + 기본형 패턴 + 넓은 제목 패턴 계산.
+          원본 result.subjects는 LLM이 반환한 풀(이상적으로 20-25개) — 다 검사. */
+    result.subjects.forEach(s => {
+      s._epKey            = normalizeEpisodeKey(s);
+      s._effectiveAxis    = effectiveAxis(s);
+      s._basicPattern     = detectBasicOwnerAnxiety(s);
+      s._broadGeneric     = detectBroadGenericTitle(s);
     });
+
+    /* 2) 제거 사유 태깅 — 같은 응답 내 동일 epKey 중복도 포함. */
+    const seenInBatch = new Set();
+    const policyAxisName = '지원사업·정책자금';
+    const seenPolicyAxis = { count: 0 };
+
+    /* final_score 내림차순으로 우선 처리 → 같은 키가 여러 개면 점수 높은 1개만 살린다. */
+    const ranked = result.subjects.slice().sort((a, b) => toScore(b) - toScore(a));
+
+    ranked.forEach(s => {
+      const k = s._epKey;
+      const reasons = [];
+
+      /* 같은 응답 내 epKey 중복 — 두 번째부터 제거 */
+      if (k && seenInBatch.has(k)) {
+        reasons.push(`same-batch-duplicate:${k}`);
+      } else if (k) {
+        seenInBatch.add(k);
+      }
+
+      /* archive hard (최근 5회) — 무조건 제거 */
+      if (k && excludeMap.hardKeys.has(k) && excludeMap.map.get(k) && excludeMap.map.get(k).source === 'archive') {
+        reasons.push(`archive-hard:${k}`);
+      }
+      /* rejected (방금 거부한 후보) — 무조건 제거 */
+      if (k && excludeMap.rejectedKeys.has(k)) {
+        reasons.push(`rejected:${k}`);
+      }
+      /* archive strong (6~15) — 제거 (fallback에서 살릴 수 있음) */
+      if (k && excludeMap.strongKeys.has(k) && !excludeMap.rejectedKeys.has(k)) {
+        reasons.push(`archive-strong:${k}`);
+      }
+
+      /* 지원사업·정책자금 축은 최대 1개 — 두 번째부터 제거 */
+      if (s._effectiveAxis === policyAxisName) {
+        seenPolicyAxis.count++;
+        if (seenPolicyAxis.count >= 2) {
+          reasons.push(`policy-axis-cap`);
+        }
+      }
+
+      /* episode_diversity_score ≤ 2 (LLM 자기 평가) — 제거 */
+      const eds = parseFloat(s.episode_diversity_score);
+      if (isFinite(eds) && eds <= 2) {
+        reasons.push(`episode-diversity≤2`);
+      }
+
+      /* duplicate_risk "높음" + episode_diversity_score ≤ 2 → 제거 */
+      if (s.duplicate_risk === '높음' && isFinite(eds) && eds <= 2) {
+        reasons.push(`high-risk-low-diversity`);
+      }
+
+      /* regenerateCount >= 2 ⇒ 기본형 사장님 불안 / 넓은 제목 제거 */
+      if (regenerateCount >= 2) {
+        if (s._basicPattern) reasons.push(`basic-owner-anxiety:${s._basicPattern}`);
+        if (s._broadGeneric) reasons.push(`broad-generic-title`);
+      }
+
+      s._removeReasons = reasons;
+    });
+
+    /* 3) 제거 — 사유가 1개라도 있으면 final pool 밖으로. 단 사유가 archive-strong/policy-axis 만이면
+          fallback pool에는 남겨 둔다. */
+    const HARD_PREFIXES = ['rejected:', 'archive-hard:', 'same-batch-duplicate:', 'episode-diversity≤2', 'high-risk-low-diversity'];
+    const isHardRemoval = (reasons) => reasons.some(r => HARD_PREFIXES.some(p => r.startsWith(p)));
+    const isAnyRemoval  = (reasons) => reasons.length > 0;
+
+    const keepers  = ranked.filter(s => !isAnyRemoval(s._removeReasons));
+    const softPool = ranked.filter(s => isAnyRemoval(s._removeReasons) && !isHardRemoval(s._removeReasons));
+    const blocked  = ranked.filter(s =>  isHardRemoval(s._removeReasons));
+
+    /* 4) final_score 정렬 — 동일 점수 시 episode_diversity_score */
+    const finalSort = (a, b) => {
+      const sa = toScore(a), sb = toScore(b);
+      if (sa !== sb) return sb - sa;
+      const da = parseFloat(a.episode_diversity_score) || 0;
+      const db = parseFloat(b.episode_diversity_score) || 0;
+      return db - da;
+    };
+    keepers.sort(finalSort);
+    softPool.sort(finalSort);
+
+    /* 5) 최종 5개 선택 — 모자라면 softPool로 보충, 그래도 모자라면 blocked까지(로그) */
+    let finalSubjects = keepers.slice(0, 5);
+    let fallbackCount = 0;
+    if (finalSubjects.length < 5) {
+      const need = 5 - finalSubjects.length;
+      const fallback = softPool.slice(0, need).map(s => {
+        s._fallback = true;
+        return s;
+      });
+      finalSubjects = finalSubjects.concat(fallback);
+      fallbackCount = fallback.length;
+    }
+    if (finalSubjects.length < 5) {
+      const need = 5 - finalSubjects.length;
+      const lastResort = blocked.slice(0, need).map(s => {
+        s._fallback = true;
+        s._last_resort = true;
+        return s;
+      });
+      finalSubjects = finalSubjects.concat(lastResort);
+      console.warn(`[subjects:filter] 후보 부족 — 마지막 수단으로 blocked ${lastResort.length}개 사용`);
+    }
+
+    /* 6) 로그 — 제거 사유 집계 */
+    const removedByArchiveHard       = blocked.filter(s => s._removeReasons.some(r => r.startsWith('archive-hard:'))).length;
+    const removedByRejected          = blocked.filter(s => s._removeReasons.some(r => r.startsWith('rejected:'))).length;
+    const removedBySameBatchDup      = blocked.filter(s => s._removeReasons.some(r => r.startsWith('same-batch-duplicate:'))).length;
+    const removedByBasicPattern      = ranked.filter(s => s._removeReasons.some(r => r.startsWith('basic-owner-anxiety:'))).length;
+    const removedByBroadGeneric      = ranked.filter(s => s._removeReasons.some(r => r === 'broad-generic-title')).length;
+    const removedByPolicyAxisCap     = ranked.filter(s => s._removeReasons.includes('policy-axis-cap')).length;
+    const removedByArchiveStrong     = ranked.filter(s => s._removeReasons.some(r => r.startsWith('archive-strong:'))).length;
+
+    console.log('[subjects:filter]', {
+      generatedCount:           ranked.length,
+      removedByArchiveHard,
+      removedByArchiveStrong,
+      removedByRejected,
+      removedBySameBatchDuplicate: removedBySameBatchDup,
+      removedByBasicPattern,
+      removedByBroadGeneric,
+      removedByPolicyAxisCap,
+      fallbackUsed:             fallbackCount,
+      finalSubjects:            finalSubjects.map(s => ({ title: s.title, epKey: s._epKey, fallback: !!s._fallback })),
+    });
+
+    console.log('[subjects:final]', finalSubjects.map(s => ({
+      title:                s.title,
+      normalizedEpisodeKey: s._epKey,
+      subject_category:     s.subject_category,
+      final_score:          s.final_score,
+      duplicate_risk:       s.duplicate_risk,
+      fallback:             !!s._fallback,
+    })));
+
+    /* 7) 내부 필드는 클라이언트로 노출하지 않음 — _epKey/_removeReasons/_effectiveAxis 등 정리 */
+    finalSubjects.forEach(s => {
+      delete s._epKey;
+      delete s._effectiveAxis;
+      delete s._basicPattern;
+      delete s._broadGeneric;
+      delete s._removeReasons;
+    });
+
+    result.subjects = finalSubjects;
+    result._filterMeta = {
+      generatedCount:        ranked.length,
+      removedByArchiveHard,
+      removedByRejected,
+      removedBySameBatchDup,
+      removedByBasicPattern,
+      removedByBroadGeneric,
+      fallbackUsed:          fallbackCount,
+      regenerateCount,
+    };
+    /* 기존 중복 검사도 정렬된 결과에 대해 그대로 호출 (경고만, 동작 안 함) */
     const dupCheck = checkSubjectsDuplicate(result.subjects);
     if (dupCheck.length > 0) {
       console.log('[subjects-validate] 서버 중복 경고:', dupCheck);
