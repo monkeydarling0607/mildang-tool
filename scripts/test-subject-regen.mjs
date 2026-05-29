@@ -35,6 +35,9 @@ const {
   effectiveAxis,
   detectBasicOwnerAnxiety,
   detectBroadGenericTitle,
+  detectTaxDomainMismatch,
+  detectVagueSubjectTitle,
+  detectOffTopicSocialIssue,
   buildEpisodeExcludeMap,
   processSubjects,
   CONCRETE_EPISODE_SEED_BANK,
@@ -44,6 +47,9 @@ const {
     effectiveAxis,
     detectBasicOwnerAnxiety,
     detectBroadGenericTitle,
+    detectTaxDomainMismatch,
+    detectVagueSubjectTitle,
+    detectOffTopicSocialIssue,
     buildEpisodeExcludeMap,
     processSubjects,
     CONCRETE_EPISODE_SEED_BANK,
@@ -478,6 +484,142 @@ assert('I. stats.finalCount === 5', testI_out.stats.finalCount === 5, `finalCoun
 /* 2개로 떨어지는 회귀를 직접 잡는 체크 */
 assert('I. 최종 후보가 5개 미만(2~4)이 아님', testI_out.finalSubjects.length >= 5,
   `length=${testI_out.finalSubjects.length}`);
+
+/* ═══════════════════════════════════════════════════════════════════
+   Test J. 세무 영역 혼합 오류 감지 — 연결고리 없이 두 영역 섞임
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ Test J) 세무 영역 혼합 오류 감지 ━━━');
+const testJ_cases = [
+  { title:'직원 급여랑 세금계산서 발행이 꼬였어요',                   summary:'급여 처리하면서 세금계산서 발행도 같이 꼬임.',           episode_axis:'급여와 세금계산서 혼선',          trigger_moment:'월말', conflict_axis:'두 가지 처리가 동시에 어긋남' },
+  { title:'4대보험 때문에 부가세 신고가 밀렸어요',                   summary:'4대보험 정리하다가 부가세 신고가 지연된 상황.',         episode_axis:'4대보험과 부가세 신고 지연',        trigger_moment:'신고 마감 직전', conflict_axis:'두 업무 동시 처리 어려움' },
+  { title:'원천세 신고했는데 거래처 계산서가 문제래요',              summary:'원천세 신고와 거래처 세금계산서 이슈가 동시에.',         episode_axis:'원천세와 거래처 계산서',           trigger_moment:'신고 후', conflict_axis:'두 영역 동시 문제' },
+];
+testJ_cases.forEach(c => {
+  const flag = detectTaxDomainMismatch(c);
+  assert(`J. "${c.title.slice(0,28)}" _domainMismatch=true`, flag === true, `flag=${flag}`);
+});
+/* regen >= 2 에서 hard-block 검증 */
+const testJ_regen2 = processSubjects(testJ_cases.map(c => Object.assign({ subject_category:'세무 리스크형', problem_axis:'카드·증빙·경비 관리', final_score:8.0, episode_diversity_score:7 }, c)),
+  { regenerationContext:{ regenerateCount:2 }, archive: [] });
+const testJ_remained = testJ_regen2.finalSubjects.filter(s => testJ_cases.some(c => c.title === s.title) && !s._lastResort).length;
+assert('J. regen=2에서 domain-mismatch 후보가 정상 keepers로 통과되지 않음', testJ_remained === 0,
+  `remained=${testJ_remained} | final=${JSON.stringify(testJ_regen2.finalSubjects.map(s=>({t:s.title.slice(0,30), seed:!!s._seedFallback, last:!!s._lastResort})))}`);
+
+/* ═══════════════════════════════════════════════════════════════════
+   Test K. 명확한 연결이 있으면 허용 — _domainMismatch=false
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ Test K) 명확한 연결이 있으면 _domainMismatch=false ━━━');
+const testK_cases = [
+  { title:'세금계산서는 이번 달에 끊었는데, 입금은 다음 달이라 직원 급여 줄 돈이 부족해요',
+    summary:'세금계산서/입금 시점 차이로 직원 급여 지급할 돈이 부족한 상황 — 현금흐름 매개.',
+    episode_axis:'세금계산서·입금 시점과 급여 지급',
+    trigger_moment:'월말 결산', conflict_axis:'급여 지급할 돈 부족' },
+  { title:'지원금을 받았는데 고용 유지 조건 때문에 직원 퇴사 처리가 애매해요',
+    summary:'지원금 수령 후 고용 유지 조건으로 직원 퇴사 절차가 까다로워진 상황.',
+    episode_axis:'지원금 고용 유지 조건',
+    trigger_moment:'직원 퇴사 통보일', conflict_axis:'지원금과 고용 조건이 묶임' },
+  { title:'복리후생비로 처리한 직원 식대가 접대비와 섞였어요',
+    summary:'직원 식대를 복리후생비로 처리했는데 접대비와 한 영수증에 섞임.',
+    episode_axis:'복리후생비와 접대비 구분',
+    trigger_moment:'결산 정리 중', conflict_axis:'경비 성격 구분 어려움' },
+];
+testK_cases.forEach(c => {
+  const flag = detectTaxDomainMismatch(c);
+  assert(`K. "${c.title.slice(0,30)}" _domainMismatch=false`, flag === false, `flag=${flag}`);
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   Test L. 추상 제목 감지 — _vagueTitle=true
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ Test L) 추상 제목 감지 ━━━');
+const testL_cases = [
+  { title:'하필 마감이 겹쳤네요, 꼼꼼한 경험입니다' },
+  { title:'가입하는데도 이게 왜 이렇게 복잡해?' },
+  { title:'문제가 생겼어요' },
+  { title:'이거 괜찮을까요?' },
+  { title:'비용 처리가 어렵네요' },
+];
+testL_cases.forEach(c => {
+  const flag = detectVagueSubjectTitle(c);
+  assert(`L. "${c.title}" _vagueTitle=true`, flag === true, `flag=${flag}`);
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   Test M. 구체 제목은 유지 — _vagueTitle=false
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ Test M) 구체 제목은 _vagueTitle=false ━━━');
+const testM_cases = [
+  { title:'세금계산서는 이번 달, 입금은 다음 달이면요?' },
+  { title:'가족 계좌로 매출이 들어왔는데 괜찮나요?' },
+  { title:'프리랜서로 계약했는데 근로자라고 볼 수도 있대요?' },
+  { title:'자동결제 서비스가 대표 개인 명의로 빠져나가요' },
+];
+testM_cases.forEach(c => {
+  const flag = detectVagueSubjectTitle(c);
+  assert(`M. "${c.title}" _vagueTitle=false`, flag === false, `flag=${flag}`);
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   Test N. 정치/사회 이슈성 소재 배제 — _offTopicSocialIssue=true
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ Test N) 정치/사회 이슈성 소재 배제 ━━━');
+const testN_cases = [
+  { title:'정치인 담벼락 조성으로 직원 스트레스, 괜찮을까요?',  summary:'정치인 담벼락 조성 공사로 직원 스트레스가 심해진 상황.' },
+  { title:'선거 이슈 때문에 직원 급여가 꼬였어요',              summary:'선거 기간 영향으로 급여 처리가 지연된 상황.' },
+  { title:'집회 때문에 매출이 줄었는데 세금 줄일 수 있나요?',   summary:'집회로 매출이 감소한 상황에서 세금 절감 가능 여부.' },
+];
+testN_cases.forEach(c => {
+  const flag = detectOffTopicSocialIssue(c);
+  assert(`N. "${c.title.slice(0,28)}" _offTopicSocialIssue=true`, flag === true, `flag=${flag}`);
+});
+/* 예외 — 일반 행정·정책은 허용 */
+const testN_allowed = [
+  { title:'고용지원금 신청했는데 조건이 까다로워요',          summary:'고용지원금 신청 조건이 까다로움.' },
+  { title:'지자체 지원금 사후 점검에서 환수 통보를 받았어요', summary:'지자체 지원금 사후 점검 환수.' },
+];
+testN_allowed.forEach(c => {
+  const flag = detectOffTopicSocialIssue(c);
+  assert(`N. 예외 "${c.title.slice(0,28)}" _offTopicSocialIssue=false`, flag === false, `flag=${flag}`);
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   Test O. seed bank는 품질 필터 모두 통과
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ Test O) seed bank는 모든 품질 필터 통과 ━━━');
+CONCRETE_EPISODE_SEED_BANK.forEach((seed, i) => {
+  assert(`O. seed[${i}] "${seed.title.slice(0,30)}" _domainMismatch=false`, detectTaxDomainMismatch(seed) === false, `flag=${detectTaxDomainMismatch(seed)}`);
+  assert(`O. seed[${i}] "${seed.title.slice(0,30)}" _vagueTitle=false`, detectVagueSubjectTitle(seed) === false, `flag=${detectVagueSubjectTitle(seed)}`);
+  assert(`O. seed[${i}] "${seed.title.slice(0,30)}" _offTopicSocialIssue=false`, detectOffTopicSocialIssue(seed) === false, `flag=${detectOffTopicSocialIssue(seed)}`);
+});
+
+/* ═══════════════════════════════════════════════════════════════════
+   Test P. 품질 필터를 적용해도 최종 5개 보장 유지
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ Test P) 품질 필터 적용 후에도 5개 보장 ━━━');
+/* mix: 일부 domain-mismatch, 일부 vague-title, 일부 off-topic, 일부 정상 */
+const testP_input = [
+  { title:'직원 급여랑 세금계산서 발행이 꼬였어요',                 summary:'영역 혼합', subject_category:'세무 리스크형', problem_axis:'카드·증빙·경비 관리',    episode_axis:'P-mix-1', trigger_moment:'M', conflict_axis:'C', final_score:8.5, episode_diversity_score:7 },
+  { title:'문제가 생겼어요',                                      summary:'추상 제목', subject_category:'세무 리스크형', problem_axis:'카드·증빙·경비 관리',    episode_axis:'P-vague-1', trigger_moment:'M', conflict_axis:'C', final_score:8.4, episode_diversity_score:7 },
+  { title:'정치인 담벼락 조성으로 직원 스트레스, 괜찮을까요?',     summary:'정치 이슈', subject_category:'직원·노무형',  problem_axis:'직원·급여·4대보험', episode_axis:'P-social-1', trigger_moment:'M', conflict_axis:'C', final_score:8.3, episode_diversity_score:7 },
+  { title:'가족 계좌로 매출이 들어왔는데 괜찮나요?',                summary:'정상',     subject_category:'의외성·생활형', problem_axis:'사업자 정보·명의·주소·계약', episode_axis:'P-keeper-1', trigger_moment:'M', conflict_axis:'C', final_score:8.2, episode_diversity_score:8 },
+  { title:'자동결제 서비스가 대표 개인 명의로 빠져나가요',         summary:'정상',     subject_category:'세무 리스크형', problem_axis:'카드·증빙·경비 관리',    episode_axis:'P-keeper-2', trigger_moment:'M', conflict_axis:'C', final_score:8.1, episode_diversity_score:8 },
+];
+const testP_out = processSubjects(testP_input, { regenerationContext:{ regenerateCount:2 }, archive: [] });
+assert('P. finalSubjects.length === 5', testP_out.finalSubjects.length === 5,
+  `length=${testP_out.finalSubjects.length} | final=${JSON.stringify(testP_out.finalSubjects.map(s=>s.title))}`);
+const testP_offInFinal = testP_out.finalSubjects.filter(s => detectOffTopicSocialIssue(s)).length;
+assert('P. 정치/사회 후보는 최종 5개에 등장하지 않음', testP_offInFinal === 0,
+  `offCount=${testP_offInFinal}`);
+assert('P. stats.flaggedDomainMismatch ≥ 1', testP_out.stats.flaggedDomainMismatch >= 1, `flagged=${testP_out.stats.flaggedDomainMismatch}`);
+assert('P. stats.flaggedVagueTitle ≥ 1', testP_out.stats.flaggedVagueTitle >= 1, `flagged=${testP_out.stats.flaggedVagueTitle}`);
+assert('P. stats.removedByOffTopicSocial ≥ 1', testP_out.stats.removedByOffTopicSocial >= 1, `removed=${testP_out.stats.removedByOffTopicSocial}`);
 
 /* ═══════════════════════════════════════════════════════════════════
    Summary

@@ -663,6 +663,43 @@ title 필수 조건:
 × "부가세/종소세만 바꾼 같은 이야기"
 × "사장님/직원/거래처만 바꾼 같은 문제 구조"
 
+[★ 세무 영역 혼합 금지 — 연결고리 없이 두 영역을 섞으면 즉시 탈락]
+아래 네 영역은 서로 다른 실무 맥락입니다. 명확한 연결고리(현금흐름·고용 조건·발행 주체 등)가 없으면
+한 후보 안에 두 영역 이상 섞지 마세요.
+  A. 직원·급여·노무 — 직원/급여/월급/알바/4대보험/원천세/퇴직금/근로자성/프리랜서/인건비/복리후생비
+  B. 세금계산서·매출·부가세 — 세금계산서/계산서/입금/거래처/매출/부가세/공급시기/정산일/PG/배달앱/플랫폼/예약금/선결제/환불/매출 인식
+  C. 지원금·정책자금 — 지원금/정책자금/보조금/장려금/신청/보류/반려/환수/사후점검/조건/대상
+  D. 계약·명의·사업자등록 — 계약서/명의/사업자번호/공동대표/상호/임대차/양도/권리금/가족 명의/가게 인수
+
+✅ 명확한 연결이 있으면 허용:
+  · "세금계산서는 이번 달, 입금은 다음 달이라 직원 급여 줄 돈이 부족해요" — 현금흐름으로 B+A 연결
+  · "지원금을 받았는데 고용 유지 조건 때문에 직원 퇴사 처리가 애매해요" — 고용 조건으로 C+A 연결
+  · "복리후생비로 처리한 직원 식대가 접대비와 섞였어요" — 경비 성격으로 A+B 자연스러움
+  · "공동대표로 바꿨더니 세금계산서 발행 주체가 애매해요" — 발행 주체로 D+B 자연스러움
+⛔ 연결고리 없는 금지 조합:
+  × "직원 급여랑 세금계산서 발행이 꼬였어요" (현금흐름·발행 주체 매개 없음)
+  × "4대보험 때문에 부가세 신고가 밀렸어요" (직접 인과 없음)
+  × "원천세 신고했는데 거래처 계산서가 문제래요" (두 영역 인과 불분명)
+  × "지원금 신청 + 세금계산서 발행" (각도가 다름)
+
+[★ 제목 구체성 — 추상 제목 금지]
+다음 표현 류만으로 끝나는 제목은 즉시 탈락:
+  × "문제가 생겼어요", "이거 괜찮을까요?", "큰일 날까요?"
+  × "복잡해요", "확인해야 하나요?", "어떻게 해야 하나요?"
+  × "비용 처리가 어렵네요", "직원 문제가 생겼어요"
+  × "하필 마감이 겹쳤네요, 꼼꼼한 경험입니다"
+  × "가입하는데도 이게 왜 이렇게 복잡해?"
+  × "세금 계산서 발행, 정작 못하면 큰일 나네요"
+✅ 제목 안에 다음 중 최소 2개가 보여야 합니다: 누가 / 무엇을 / 어떤 상황에서 / 왜 세무 문제인지
+✅ 구체 객체가 반드시 등장: 세금계산서·입금·예약금·가족 계좌·프리랜서·근로자·자동결제·대표 개인 명의·
+   상호·계약서·접대비·복리후생비·현금영수증·계좌이체·사업자번호·공동대표·배달앱·PG·선결제·환불
+
+[★ 정치/사회 이슈성 소재 배제]
+다음 소재는 세무·노무 실무 연결이 약하므로 후보에서 제외:
+  × 정치인 / 정당 / 선거 / 집회 / 시위 / 담벼락 조성 / 사회 갈등 / 종교 / 이념 / 논란성 공공 이슈
+✅ 예외: 실제 세무·노무 실무와 직접 연결되는 일반 행정·정책은 허용
+   예: 고용지원금, 지자체 지원금, 정부 보조금, 4대보험 기준 변경, 최저임금 변동, 세법 개정
+
 [★ "기본형 제목"은 구체 에피소드 없으면 즉시 탈락]
 아래 제목은 너무 일반적입니다. 구체적인 trigger_moment·actor_axis가 붙어 장면이 떠오를 때만 허용.
 
@@ -1728,6 +1765,120 @@ function detectBroadGenericTitle(s) {
   return null;
 }
 
+/* ── 세무 영역 혼합 오류 감지 ──
+   직원·급여·노무(A) ↔ 세금계산서·매출·부가세(B) ↔ 지원금·정책(C) ↔ 계약·명의·사업자등록(D)
+   네 영역 중 두 개 이상이 한 후보 안에 명확한 연결 키워드 없이 섞이면 _domainMismatch=true.
+   "현금흐름·고용 조건·발행 주체" 등 연결고리가 있으면 false. */
+function detectTaxDomainMismatch(s) {
+  if (!s) return false;
+  const blob = [
+    s.title, s.summary, s.why_now, s.episode_axis,
+    s.trigger_moment, s.conflict_axis, s.resolution_angle,
+  ].filter(Boolean).join(' ').toLowerCase().replace(/\s+/g, '');
+  if (!blob) return false;
+
+  /* 영역별 키워드 — 한국어 토큰 (공백 제거 후 부분 일치).
+     bare "명의"·"플랫폼"은 다른 영역과 혼동되기 쉬워(예: "결제 명의 분리"는 카드 단일 도메인,
+     "SaaS·플랫폼"은 구독 단일 도메인) D/B 매칭에서 더 구체적 표현을 요구. */
+  const A_EMPLOYEE = /(직원|급여|월급|알바|아르바이트|4대보험|원천세|원천징수|퇴직금|근로자성|프리랜서|외주.*인력|인건비|복리후생|지급명세|노무|채용|사회보험|국민연금|건강보험|고용보험|산재)/;
+  const B_INVOICE  = /(세금계산서|계산서|거래처|매출인식|부가세|공급시기|정산일|pg정산|배달앱.*정산|배달앱.*매출|플랫폼.*정산|플랫폼.*수수료|플랫폼.*매출|플랫폼.*입금|예약금|선결제|환불|판매대금|판매수수료|현금영수증|계좌이체.*매출)/;
+  const C_SUBSIDY  = /(지원금|정책자금|보조금|장려금|바우처|지자체.*지원|정부.*지원|사후점검|환수|반납|지원사업)/;
+  const D_CONTRACT = /(계약서|사업자번호|사업자등록|공동대표|상호.*바꾸|상호.*변경|임대차|양도|권리금|가족.*명의|배우자.*명의|타인.*명의|가게.*인수|포괄양수도|폐업|휴업|동업|명의.*불일치|명의.*등록|명의.*차이|명의.*변경|명의.*승계)/;
+
+  /* 명확한 연결고리 — 두 영역을 자연스럽게 묶어주는 키워드. "세금계산서 발행"만으론 부족하고
+     "발행 주체" 같이 다른 영역과의 매개가 명확한 경우만 bridge로 인정. */
+  const BRIDGES = [
+    /현금흐름/, /자금부족/, /돈이.*부족/, /돈이.*없/, /월급.*줄.*돈/, /급여.*줄.*돈/, /지급할돈/,
+    /고용유지/, /고용조건/, /고용기간/, /고용보험.*조건/,
+    /발행주체/, /계산서.*발행.*주체/, /발행.*주체/,
+    /복리후생.*접대|접대.*복리후생/, /식대.*경비/, /접대비.*직원|직원.*접대비/,
+    /증빙.*주체/, /명의.*불일치.*발행/,
+  ];
+
+  const A = A_EMPLOYEE.test(blob);
+  const B = B_INVOICE.test(blob);
+  const C = C_SUBSIDY.test(blob);
+  const D = D_CONTRACT.test(blob);
+
+  const presentCount = [A, B, C, D].filter(Boolean).length;
+  if (presentCount < 2) return false;
+
+  /* 두 영역 이상 섞였을 때 — 명확한 연결고리가 있으면 통과 */
+  if (BRIDGES.some(re => re.test(blob))) return false;
+
+  /* 자연스러운 조합 예외 — 둘이 본래 같은 맥락:
+       A + 복리후생·접대비 구분 (B의 경비 처리는 A의 직원 식대와 자연스럽게 연결)
+       D + B (사업자등록·명의 변경/가족·배우자 명의 → 세금계산서 발행/매출 입금 자동 연결)
+       C + A (고용지원금/장려금 → 고용 조건과 자연스러움) */
+  if (A && /(복리후생|접대비|직원.*식대)/.test(blob)) return false;
+  if (D && B && /(공동대표|상호.*바꾸|상호.*변경|가게.*인수|사업자번호|가족.*명의|가족.*계좌|가족.*카드|배우자.*명의|배우자.*계좌|배우자.*카드|명의.*승계|명의.*변경)/.test(blob)) return false;
+  if (C && A && /(고용지원|고용장려|고용유지|일자리지원|청년.*지원)/.test(blob)) return false;
+
+  return true;
+}
+
+/* ── 추상적 제목 감지 ──
+   "문제/복잡/큰일/괜찮/확인/어떻게/처리 어렵" 류 표현만 있고 구체 객체가 없으면 _vagueTitle=true. */
+function detectVagueSubjectTitle(s) {
+  if (!s) return false;
+  const rawTitle = String(s.title || '');
+  if (!rawTitle.trim()) return true;
+  const title = rawTitle.toLowerCase().replace(/\s+/g, '');
+
+  /* 구체 객체/소재가 있으면 통과 */
+  const CONCRETE_OBJ = /(세금계산서|계산서|입금|예약금|가족계좌|가족카드|프리랜서|근로자|자동결제|구독료|대표.*개인.*명의|상호|계약서|접대비|복리후생비|현금영수증|계좌이체|사업자번호|공동대표|배달앱|pg|선결제|환불|원천세|4대보험|퇴직금|월세|임대차|권리금|양도|보조금|지원금|정책자금|바우처|매출인식|공급시기|정산일|증빙|영수증)/;
+  if (CONCRETE_OBJ.test(title)) return false;
+
+  /* 추상 표현 패턴 */
+  const VAGUE_TOKENS = [
+    /이게.*왜.*복잡/, /왜.*이렇게.*복잡/,
+    /문제가.*생겼/, /문제가.*있/, /문제네요/,
+    /이거.*괜찮/, /괜찮을까요\??$/, /괜찮나요\??$/,
+    /큰일.*날까/, /큰일.*나/, /큰일.*나네요/,
+    /복잡해요/, /복잡합니다/, /복잡하네요/,
+    /어떻게.*해야/, /어떻게.*하나요/, /어떻게.*하죠/,
+    /확인해야.*하나요/, /확인.*필요/,
+    /어렵네요/, /어려워요/, /힘드네요/,
+    /꼼꼼한.*경험/, /하필.*겹쳤/,
+    /정작.*못하면/,
+    /가입하는데도/, /가입.*복잡/,
+  ];
+  if (VAGUE_TOKENS.some(re => re.test(title))) return true;
+
+  /* 제목이 너무 짧고 구체 객체 없음 (10자 이하) */
+  const compact = rawTitle.replace(/[\s?!.,~·]+/g, '');
+  if (compact.length <= 10) return true;
+
+  /* 종결 표현이 일반 질문/감탄형인데 구체 객체가 없음 */
+  if (/(괜찮|복잡|어렵|어떻게|확인|처리.*어렵)/.test(title)
+      && !/(때문에|이라서|에서|이라|인데|면|니까)/.test(title)) {
+    return true;
+  }
+
+  return false;
+}
+
+/* ── 정치/사회 이슈성 소재 배제 ──
+   세무·노무 실무와 직접 연결이 약한 정치·종교·이념·집회 등 소재. */
+function detectOffTopicSocialIssue(s) {
+  if (!s) return false;
+  const blob = [
+    s.title, s.summary, s.why_now, s.episode_axis,
+    s.trigger_moment, s.conflict_axis, s.topic_cluster,
+  ].filter(Boolean).join(' ').toLowerCase().replace(/\s+/g, '');
+  if (!blob) return false;
+
+  /* 명백한 정치/사회 이슈 키워드 */
+  const SOCIAL = /(정치인|정당|국회의원|선거|투표|대선|총선|지방선거|집회|시위|담벼락.*조성|사회.*갈등|종교|이념|논란|진영|좌파|우파|보수|진보)/;
+  if (!SOCIAL.test(blob)) return false;
+
+  /* 예외 — 세무·노무 실무 연결이 명확한 일반 행정·정책은 허용 */
+  const TAX_BRIDGE = /(고용지원|일자리지원|지자체.*지원금|정부.*보조금|4대보험.*기준.*변경|최저임금|세법.*개정|소득세.*개정|부가세.*개정)/;
+  if (TAX_BRIDGE.test(blob)) return false;
+
+  return true;
+}
+
 /* ── 아카이브 + 거부 후보 기반 episode exclude map 생성 ──
    archive items / rejectedSubjects / rejectedEpisodeKeys를 받아서
    { keys: Map<key, {source, recency, title, topic, reason}>, hardKeys, strongKeys, softKeys, rejectedKeys }
@@ -2076,10 +2227,13 @@ function processSubjects(rawSubjects, payload) {
 
   /* 1) 모든 후보에 보조 필드 계산 */
   subjects.forEach(s => {
-    s._epKey         = normalizeEpisodeKey(s);
-    s._effectiveAxis = effectiveAxis(s);
-    s._basicPattern  = detectBasicOwnerAnxiety(s);
-    s._broadGeneric  = detectBroadGenericTitle(s);
+    s._epKey              = normalizeEpisodeKey(s);
+    s._effectiveAxis      = effectiveAxis(s);
+    s._basicPattern       = detectBasicOwnerAnxiety(s);
+    s._broadGeneric       = detectBroadGenericTitle(s);
+    s._domainMismatch     = detectTaxDomainMismatch(s);
+    s._vagueTitle         = detectVagueSubjectTitle(s);
+    s._offTopicSocialIssue = detectOffTopicSocialIssue(s);
   });
 
   /* 2) final_score 내림차순으로 제거 사유 태깅 */
@@ -2113,14 +2267,33 @@ function processSubjects(rawSubjects, payload) {
       if (s._basicPattern) reasons.push('basic-owner-anxiety:' + s._basicPattern);
       if (s._broadGeneric) reasons.push('broad-generic-title');
     }
+
+    /* 새 품질 필터:
+       - off-topic 정치/사회 이슈: 항상 hard block
+       - domain-mismatch: regen >= 2 hard, regen 0~1 soft (archive-strong과 유사한 강도)
+       - vague-title:     regen >= 2 soft, regen 0~1 final_score 감점 (soft 처리) */
+    if (s._offTopicSocialIssue) reasons.push('off-topic-social-issue');
+    if (s._domainMismatch) {
+      reasons.push(regenerateCount >= 2 ? 'domain-mismatch-hard' : 'domain-mismatch-soft');
+    }
+    if (s._vagueTitle) {
+      reasons.push(regenerateCount >= 2 ? 'vague-title-soft' : 'vague-title-penalty');
+    }
+
     s._removeReasons = reasons;
   });
 
   /* 3) hard 제거 / soft 제거 분류
         hard: rejected, archive-hard, same-batch-duplicate, episode-diversity≤2,
-              basic-owner-anxiety (regen≥2), broad-generic-title (regen≥2)
-        soft: archive-strong, policy-axis-cap */
-  const HARD_PREFIXES = ['rejected:', 'archive-hard:', 'same-batch-duplicate:', 'episode-diversity≤2', 'basic-owner-anxiety:', 'broad-generic-title'];
+              basic-owner-anxiety (regen≥2), broad-generic-title (regen≥2),
+              off-topic-social-issue (항상), domain-mismatch-hard (regen≥2)
+        soft: archive-strong, policy-axis-cap,
+              domain-mismatch-soft (regen 0~1), vague-title-soft (regen≥2), vague-title-penalty (regen 0~1) */
+  const HARD_PREFIXES = [
+    'rejected:', 'archive-hard:', 'same-batch-duplicate:', 'episode-diversity≤2',
+    'basic-owner-anxiety:', 'broad-generic-title',
+    'off-topic-social-issue', 'domain-mismatch-hard',
+  ];
   const isHardRemoval = (reasons) => reasons.some(r => HARD_PREFIXES.some(p => r.startsWith(p)));
   const isAnyRemoval  = (reasons) => reasons.length > 0;
 
@@ -2280,10 +2453,12 @@ function processSubjects(rawSubjects, payload) {
   }
 
   /* Phase 7 — 그래도 부족하면 blocked pool 동원 (basic/broad/duplicate).
-     이들은 "유사(archive-strong)"가 아니므로 _similarFallback이 아닌 _lastResort로만 표시. */
+     이들은 "유사(archive-strong)"가 아니므로 _similarFallback이 아닌 _lastResort로만 표시.
+     단, off-topic-social-issue는 fallback에서도 최대한 사용하지 않는다 (정치/사회 이슈 배제). */
   if (finalSubjects.length < 5) {
     for (const s of blockedPool) {
       if (finalSubjects.length >= 5) break;
+      if (s._offTopicSocialIssue) continue;
       if (s._epKey && usedKeys.has(s._epKey)) continue;
       if (s._epKey) usedKeys.add(s._epKey);
       s._lastResort = true;
@@ -2343,6 +2518,9 @@ function processSubjects(rawSubjects, payload) {
     removedByBasicPattern:     ranked.filter(s => s._removeReasons.some(r => r.startsWith('basic-owner-anxiety:'))).length,
     removedByBroadGeneric:     ranked.filter(s => s._removeReasons.includes('broad-generic-title')).length,
     removedByPolicyAxisCap:    ranked.filter(s => s._removeReasons.includes('policy-axis-cap')).length,
+    removedByOffTopicSocial:   ranked.filter(s => s._removeReasons.includes('off-topic-social-issue')).length,
+    flaggedDomainMismatch:     ranked.filter(s => s._domainMismatch).length,
+    flaggedVagueTitle:         ranked.filter(s => s._vagueTitle).length,
     seedFallbackUsed,
     nonSimilarSoftUsed,
     similarFallbackUsed,
@@ -3982,6 +4160,9 @@ export default async function handler(req, res) {
       removedByBasicPattern:       stats.removedByBasicPattern,
       removedByBroadGeneric:       stats.removedByBroadGeneric,
       removedByPolicyAxisCap:      stats.removedByPolicyAxisCap,
+      removedByOffTopicSocial:     stats.removedByOffTopicSocial,
+      flaggedDomainMismatch:       stats.flaggedDomainMismatch,
+      flaggedVagueTitle:           stats.flaggedVagueTitle,
       seedFallbackUsed:            stats.seedFallbackUsed,
       nonSimilarSoftUsed:          stats.nonSimilarSoftUsed,
       similarFallbackUsed:         stats.similarFallbackUsed,
@@ -4002,13 +4183,17 @@ export default async function handler(req, res) {
       similarFallback:      !!s._similarFallback,
     })));
 
-    /* 내부 필드는 클라이언트로 노출하지 않음. seed/similar fallback 플래그는 클라이언트 안내에 사용 → 유지. */
+    /* 내부 필드는 클라이언트로 노출하지 않음. seed/similar fallback 플래그는 클라이언트 안내에 사용 → 유지.
+       domainMismatch/vagueTitle/offTopicSocial는 정상 흐름에선 서버에서 걸러져 클라이언트에 갈 일 없음 → 제거. */
     finalSubjects.forEach(s => {
       delete s._epKey;
       delete s._effectiveAxis;
       delete s._basicPattern;
       delete s._broadGeneric;
       delete s._removeReasons;
+      delete s._domainMismatch;
+      delete s._vagueTitle;
+      delete s._offTopicSocialIssue;
     });
 
     result.subjects = finalSubjects;
