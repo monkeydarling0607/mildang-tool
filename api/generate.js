@@ -2178,6 +2178,7 @@ function processSubjects(rawSubjects, payload) {
   let nonSimilarSoftUsed       = 0;
   let similarFallbackUsed      = 0;
   let similarOverflowPrevented = 0;
+  let emergencyFillUsed        = 0;
   const usedKeys = new Set();
 
   /* Phase 1: keepers (정상 후보) */
@@ -2247,26 +2248,76 @@ function processSubjects(rawSubjects, payload) {
     }
   }
 
-  /* Phase 6: 정말 마지막 — blocked 후보 동원. similar cap 2개는 그대로 유지. */
+  /* Phase 6 — 5개 미달 시 seed bank lenient 우선 보강 (archive-strong까지 허용).
+     "blocked pool(basic/duplicate) 보다 seed bank 후보가 화면에서 더 낫다"는 원칙. */
+  if (finalSubjects.length < 5) {
+    const lenientSeeds = CONCRETE_EPISODE_SEED_BANK.map(seed => {
+      const e = Object.assign({}, seed);
+      e._epKey         = normalizeEpisodeKey(e);
+      e._effectiveAxis = effectiveAxis(e);
+      e._basicPattern  = detectBasicOwnerAnxiety(e);
+      e._broadGeneric  = detectBroadGenericTitle(e);
+      e._seedFallback  = true;
+      if (!isFinite(parseFloat(e.final_score)))             e.final_score = 7.0;
+      if (!isFinite(parseFloat(e.episode_diversity_score))) e.episode_diversity_score = 8;
+      if (!e.duplicate_risk) e.duplicate_risk = '낮음';
+      return e;
+    }).filter(seed => {
+      const k = seed._epKey;
+      if (!k) return false;
+      if (usedKeys.has(k)) return false;
+      if (excludeMap.hardKeys.has(k))     return false;
+      if (excludeMap.rejectedKeys.has(k)) return false;
+      return true;  /* archive-strong 허용 */
+    });
+    for (const seed of lenientSeeds) {
+      if (finalSubjects.length >= 5) break;
+      if (usedKeys.has(seed._epKey)) continue;
+      usedKeys.add(seed._epKey);
+      finalSubjects.push(seed);
+      seedFallbackUsed++;
+    }
+  }
+
+  /* Phase 7 — 그래도 부족하면 blocked pool 동원 (basic/broad/duplicate).
+     이들은 "유사(archive-strong)"가 아니므로 _similarFallback이 아닌 _lastResort로만 표시. */
   if (finalSubjects.length < 5) {
     for (const s of blockedPool) {
       if (finalSubjects.length >= 5) break;
-      if (similarFallbackUsed >= SIMILAR_CAP_EMERGENCY) {
-        similarOverflowPrevented++;
-        break;
-      }
       if (s._epKey && usedKeys.has(s._epKey)) continue;
       if (s._epKey) usedKeys.add(s._epKey);
-      s._similarFallback = true;
       s._lastResort = true;
       finalSubjects.push(s);
-      similarFallbackUsed++;
+      emergencyFillUsed++;
+    }
+  }
+
+  /* Phase 8 — 절대 보장. seed bank 전체 동원 (hard/rejected까지). usedKeys만 회피. */
+  if (finalSubjects.length < 5) {
+    console.warn('[subjects:filter] 5개 보장 desperate phase 진입 — current=' + finalSubjects.length);
+    const desperateSeeds = CONCRETE_EPISODE_SEED_BANK.map(seed => {
+      const e = Object.assign({}, seed);
+      e._epKey         = normalizeEpisodeKey(e);
+      e._effectiveAxis = effectiveAxis(e);
+      e._seedFallback  = true;
+      if (!isFinite(parseFloat(e.final_score)))             e.final_score = 6.5;
+      if (!isFinite(parseFloat(e.episode_diversity_score))) e.episode_diversity_score = 7;
+      if (!e.duplicate_risk) e.duplicate_risk = '낮음';
+      return e;
+    }).filter(seed => seed._epKey && !usedKeys.has(seed._epKey));
+    for (const seed of desperateSeeds) {
+      if (finalSubjects.length >= 5) break;
+      usedKeys.add(seed._epKey);
+      finalSubjects.push(seed);
+      seedFallbackUsed++;
+      emergencyFillUsed++;
     }
   }
 
   /* 안전망: 어떤 경로로든 finalSubjects 안에 similar cap을 초과한 후보가 들어가면 잘라낸다.
-     (정상 흐름에서는 발생하지 않지만, 위 phase 변경 시 회귀 방지용.) */
-  if (finalSubjects.filter(s => s._similarFallback).length > SIMILAR_CAP_EMERGENCY) {
+     단, finalSubjects.length가 이미 5 미만이면 잘라내지 않는다 — 5개 보장이 우선. */
+  if (finalSubjects.length >= 5
+      && finalSubjects.filter(s => s._similarFallback).length > SIMILAR_CAP_EMERGENCY) {
     let kept = 0;
     finalSubjects = finalSubjects.filter(s => {
       if (!s._similarFallback) return true;
@@ -2276,6 +2327,10 @@ function processSubjects(rawSubjects, payload) {
       return false;
     });
     similarFallbackUsed = finalSubjects.filter(s => s._similarFallback).length;
+  }
+
+  if (finalSubjects.length < 5) {
+    console.warn('[subjects:filter] 5개 보장 최종 실패 — finalSubjects.length=' + finalSubjects.length);
   }
 
   /* 7) 통계 */
@@ -2292,6 +2347,8 @@ function processSubjects(rawSubjects, payload) {
     nonSimilarSoftUsed,
     similarFallbackUsed,
     similarOverflowPrevented,
+    emergencyFillUsed,
+    finalCount: finalSubjects.length,
     regenerateCount,
   };
 
@@ -3929,6 +3986,8 @@ export default async function handler(req, res) {
       nonSimilarSoftUsed:          stats.nonSimilarSoftUsed,
       similarFallbackUsed:         stats.similarFallbackUsed,
       similarOverflowPrevented:    stats.similarOverflowPrevented,
+      emergencyFillUsed:           stats.emergencyFillUsed,
+      finalCount:                  stats.finalCount,
       finalSubjects: finalSubjects.map(s => ({
         title: s.title, epKey: s._epKey, seedFallback: !!s._seedFallback, similarFallback: !!s._similarFallback,
       })),

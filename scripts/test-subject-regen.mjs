@@ -349,6 +349,137 @@ assert('E. normalizedEpisodeKey 중복 없음', testE_uniqueKeys.size === testE_
 assert('E. 구체 사건형/seed 후보 ≥ 4개', testE_concreteOrSeed >= 4, `count=${testE_concreteOrSeed}`);
 
 /* ═══════════════════════════════════════════════════════════════════
+   Test F. 최종 후보 5개 보장 — 극단 상황에서 emergency phase 동작
+   입력: LLM 후보 25개 대부분이 basic/rejected/archive로 제거되는 mock,
+         seed bank의 거의 모든 epKey가 archive strong에 차단됨
+   기대: finalSubjects.length === 5
+         seedFallback 또는 emergency fallback으로 5개 채워짐
+         similarFallback <= 1 기본 유지 (cap 1)
+         basic_owner_anxiety 후보는 0개 또는 emergency 상황에서도 최소화
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ Test F) 극단 상황에서도 최종 후보 5개 보장 ━━━');
+/* 25개 LLM 후보 중 keepers 2개만 남기고 나머지는 basic-owner-anxiety/broad-generic으로 제거되도록 구성 */
+const testF_keepers = [
+  { title:'F. 아니, 카드 비용을 인정 안 해준다고요?',     summary:'카드 결제 비용 인정이 안 되는 상황.', subject_category:'세무 리스크형', problem_axis:'카드·증빙·경비 관리',    episode_axis:'F-카드비용인정-keeper-AAA', trigger_moment:'세무사 안내', conflict_axis:'경비 인정', final_score:9.0, episode_diversity_score:8 },
+  { title:'F. 매출은 늘었는데, 현금 흐름이 이상해요!',  summary:'매출 증가에도 통장 잔고가 모자란 상황.', subject_category:'사업 운영형',   problem_axis:'매출·정산·현금흐름',    episode_axis:'F-매출현금흐름-keeper-BBB', trigger_moment:'월말 결산',   conflict_axis:'매출/현금 차이', final_score:8.9, episode_diversity_score:8 },
+];
+/* basic-owner-anxiety + broad-generic으로 23개를 채워 hard 제거되도록 만든다 (regen=2 환경 가정). */
+const testF_basics = [];
+for (let i = 0; i < 23; i++) {
+  testF_basics.push({
+    title:'직원 뽑고 부담이 너무 늘었어요? ' + i,
+    summary:'직원 채용 후 부담 증가로 어려운 상황입니다.',
+    subject_category:'직원·노무형',
+    problem_axis:'직원·급여·4대보험',
+    episode_axis:'직원 채용 부담 증가 ' + i,
+    trigger_moment:'첫 월급일',
+    conflict_axis:'예상보다 큰 부담',
+    final_score: 8.0 - i*0.1,
+    episode_diversity_score: 6
+  });
+}
+/* seed bank 대부분을 차단할 만큼 강한 archive 슬롯 — Test A의 보조 헬퍼와 같은 패턴 */
+const testF_archive = [];
+for (let i = 0; i < 5; i++) testF_archive.push({ kakaoTitle:'hard-pad-'+i, topic:'unrelated-'+i });
+for (const item of buildAllSeedBlockingStrongSlots()) testF_archive.push(item);
+
+const testF_out = processSubjects([...testF_keepers, ...testF_basics], {
+  regenerationContext:{ regenerateCount:2 },
+  archive: testF_archive
+});
+assert('F. finalSubjects.length === 5', testF_out.finalSubjects.length === 5,
+  `length=${testF_out.finalSubjects.length} | final=${JSON.stringify(testF_out.finalSubjects.map(s=>({t:s.title, seed:!!s._seedFallback, sim:!!s._similarFallback, last:!!s._lastResort})))}`);
+const testF_seedOrEmergency = testF_out.finalSubjects.filter(s => s._seedFallback || s._lastResort).length;
+assert('F. seedFallback 또는 emergency lastResort로 보강됨 (≥ 3)', testF_seedOrEmergency >= 3,
+  `seedOrEmergency=${testF_seedOrEmergency} | seedFallbackUsed=${testF_out.stats.seedFallbackUsed} | emergencyFillUsed=${testF_out.stats.emergencyFillUsed}`);
+assert('F. similarFallback <= 1 (기본 cap 유지 — blocked pool은 similar이 아님)', testF_out.stats.similarFallbackUsed <= 1,
+  `similarFallbackUsed=${testF_out.stats.similarFallbackUsed}`);
+/* emergency 상황에서 blocked pool(basic)로 보강되면 basic 후보가 끼어들 수 있다.
+   사용자 spec: "0개 또는 emergency 상황에서도 최소화". 5개를 보장하는 게 우선이므로
+   _lastResort=true로 표시된 basic은 허용 (≤ 2). */
+const testF_basicNonSeed = testF_out.finalSubjects.filter(s => detectBasicOwnerAnxiety(s) && !s._seedFallback).length;
+const testF_basicNonLast = testF_out.finalSubjects.filter(s => detectBasicOwnerAnxiety(s) && !s._seedFallback && !s._lastResort).length;
+assert('F. basic_owner_anxiety 후보 최소화 (emergency lastResort 제외 ≤ 1)', testF_basicNonLast <= 1,
+  `basicNonLast=${testF_basicNonLast} | final=${JSON.stringify(testF_out.finalSubjects.map(s=>({t:s.title.slice(0,30), seed:!!s._seedFallback, last:!!s._lastResort})))}`);
+assert('F. basic 후보 전체 ≤ 2 (emergency 한계)', testF_basicNonSeed <= 2, `basicCount=${testF_basicNonSeed}`);
+assert('F. stats.finalCount === 5', testF_out.stats.finalCount === 5, `finalCount=${testF_out.stats.finalCount}`);
+
+/* ═══════════════════════════════════════════════════════════════════
+   Test G. 클라이언트 renderSubjects는 후보를 제거하지 않음
+   index.html의 renderSubjects 함수 본문 안에서 subjects 배열을 splice/filter로
+   "줄이는" 패턴이 있는지 정적 검사한다. (filter는 counting/매핑용은 허용)
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ Test G) 클라이언트 renderSubjects는 후보 제거 금지 ━━━');
+const renderStart = html.indexOf('function renderSubjects()');
+const renderEnd   = html.indexOf('\nfunction ', renderStart + 1);
+const renderBody  = html.slice(renderStart, renderEnd > renderStart ? renderEnd : renderStart + 5000);
+assert('G. renderSubjects 함수 본문 찾음', renderBody.length > 200, `length=${renderBody.length}`);
+/* 절대 금지 패턴: data.subjects = data.subjects.filter, subjects.splice(*) — 배열 길이를 줄이는 호출 */
+const forbidden = [
+  /data\.subjects\s*=\s*data\.subjects\.filter/,
+  /S\.subjectData\.subjects\s*=\s*[^;]*\.filter/,
+  /data\.subjects\.splice\s*\(/,
+  /S\.subjectData\.subjects\.splice\s*\(/,
+  /subjects\s*=\s*subjects\.filter/,
+];
+forbidden.forEach((re, i) => {
+  assert(`G. 금지 패턴 ${i+1} 미사용 (${re})`, !re.test(renderBody),
+    `forbidden pattern matched: ${re}`);
+});
+/* counting/매핑용 filter는 허용되지만 결과를 data.subjects에 재대입하면 안 된다 */
+const reassignRegex = /(data\.subjects|S\.subjectData\.subjects)\s*=\s*[^;]+\.filter\(/;
+assert('G. data.subjects 재대입(.filter) 없음', !reassignRegex.test(renderBody), 'filter 결과를 subjects에 재대입하는 코드 존재');
+
+/* ═══════════════════════════════════════════════════════════════════
+   Test H. seed fallback 후보는 정상 후보로 표시
+   - _seedFallback === true
+   - _similarFallback === false (또는 undefined)
+   - 상단 안내 count에 포함되지 않음
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ Test H) seed fallback 후보는 정상 후보로 표시 ━━━');
+/* test1Subjects는 5개 모두 basic-owner-anxiety로 제거되어 seed bank로 5개 보강된다. */
+const testH_out = processSubjects(test1Subjects.slice(), { regenerationContext:{ regenerateCount:2 }, archive: [] });
+const testH_seeds = testH_out.finalSubjects.filter(s => s._seedFallback);
+assert('H. seedFallback 후보 ≥ 1', testH_seeds.length >= 1, `seeds=${testH_seeds.length}`);
+testH_seeds.forEach((s, i) => {
+  assert(`H. seed[${i}] "${s.title.slice(0,30)}" _seedFallback === true`, s._seedFallback === true, `_seedFallback=${s._seedFallback}`);
+  assert(`H. seed[${i}] "${s.title.slice(0,30)}" _similarFallback falsy`, !s._similarFallback, `_similarFallback=${s._similarFallback}`);
+});
+/* 상단 안내 count: similarFallback만 카운트. seed 후보는 포함 안 됨. */
+const testH_similarCount = testH_out.finalSubjects.filter(s => s._similarFallback).length;
+assert('H. seedFallback은 상단 안내 count에서 제외', testH_similarCount === testH_out.stats.similarFallbackUsed,
+  `final-count=${testH_similarCount} stats=${testH_out.stats.similarFallbackUsed}`);
+assert('H. 카드 "유사 후보" 배지 대상 아님 (similar < 2 이므로 배너 없음)', testH_similarCount < 2,
+  `similarCount=${testH_similarCount}`);
+
+/* ═══════════════════════════════════════════════════════════════════
+   Test I. 최종 후보 2개만 표시되는 회귀 방지
+   입력: LLM이 2개만 반환하고 archive가 거의 모든 seed를 strong으로 차단하는 시나리오.
+         (사용자가 보고한 "2개만 표시" 상황 직접 재현)
+   기대: finalSubjects.length === 5 (emergency phase 발동)
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ Test I) 최종 후보 2개만 표시되는 회귀 방지 ━━━');
+/* 사용자 보고 시나리오: keepers 2개만 통과. seed bank는 archive strong으로 거의 차단. */
+const testI_input = [
+  { title:'I. 아니, 카드 비용을 인정 안 해준다고요?',  summary:'카드 비용 인정 거부.', subject_category:'세무 리스크형', problem_axis:'카드·증빙·경비 관리', episode_axis:'I-카드비용인정-keeper-XYZ', trigger_moment:'세무사 안내', conflict_axis:'경비 인정', final_score:9.0, episode_diversity_score:8 },
+  { title:'I. 매출은 늘었는데, 현금 흐름이 이상해요!', summary:'매출 증가 vs 현금 부족.', subject_category:'사업 운영형', problem_axis:'매출·정산·현금흐름', episode_axis:'I-매출현금흐름-keeper-ZZZ', trigger_moment:'월말 결산',   conflict_axis:'매출/현금', final_score:8.9, episode_diversity_score:8 },
+];
+const testI_archive = [];
+for (let i = 0; i < 5; i++) testI_archive.push({ kakaoTitle:'hard-pad-'+i, topic:'unrelated-'+i });
+for (const item of buildAllSeedBlockingStrongSlots()) testI_archive.push(item);
+const testI_out = processSubjects(testI_input, { regenerationContext:{ regenerateCount:0 }, archive: testI_archive });
+assert('I. finalSubjects.length === 5 (회귀 방지)', testI_out.finalSubjects.length === 5,
+  `length=${testI_out.finalSubjects.length} | final=${JSON.stringify(testI_out.finalSubjects.map(s=>({t:s.title.slice(0,30), seed:!!s._seedFallback, sim:!!s._similarFallback, last:!!s._lastResort})))}`);
+assert('I. stats.finalCount === 5', testI_out.stats.finalCount === 5, `finalCount=${testI_out.stats.finalCount}`);
+/* 2개로 떨어지는 회귀를 직접 잡는 체크 */
+assert('I. 최종 후보가 5개 미만(2~4)이 아님', testI_out.finalSubjects.length >= 5,
+  `length=${testI_out.finalSubjects.length}`);
+
+/* ═══════════════════════════════════════════════════════════════════
    Summary
    ═══════════════════════════════════════════════════════════════════ */
 console.log('');

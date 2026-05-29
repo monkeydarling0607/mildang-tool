@@ -1637,9 +1637,14 @@ function renderSubjects() {
   }
 
   /* ── 클라이언트 안전망 ──
-     서버가 이미 archive/rejected/basic-pattern 기준으로 필터하고 seed bank로 보강했지만,
-     혹시 새어 들어온 후보가 있으면 _similarFallback 플래그를 붙여 안내 배지를 표시한다.
-     서버가 보낸 _seedFallback 후보는 정상 후보로 그대로 통과. */
+     서버 processSubjects()가 최종 5개를 보장한다(emergency phase 포함). 클라이언트는
+     서버가 보낸 subjects를 절대 splice/filter로 제거하지 않는다. 표시용 배지/상단 안내만 담당.
+     서버가 5개 미만으로 내려보내면 그것 자체가 비정상 상황 → console.warn으로만 알린다.
+     (server processSubjects() 변경 시 5개 미만 가능성이 생기면 클라이언트가 무리하게 자르면 안 됨.) */
+  if (data.subjects.length < 5) {
+    console.warn('[subjects:client-render] 서버가 5개 미만 후보 반환 — count=' + data.subjects.length
+      + ' (서버 emergency phase 확인 필요)');
+  }
   var regenCount = S.subjectRegenCount || 0;
   var rejectedKeySet = {};
   (S.subjectRejectedHistory || []).forEach(function(r) {
@@ -1666,7 +1671,8 @@ function renderSubjects() {
     }
     var eds = parseFloat(s.episode_diversity_score);
     if (isFinite(eds) && eds <= 2) reasons.push('episode-diversity≤2');
-    /* 제거 사유가 있으면 _similarFallback 플래그 — 카드 안내 배지/상단 안내에 사용. */
+    /* 제거 사유가 있으면 _similarFallback 플래그 — 카드 안내 배지/상단 안내에 사용.
+       절대 후보를 배열에서 제거하지 않는다. 후보 제거는 서버 processSubjects()에서 끝난다. */
     if (reasons.length > 0) s._similarFallback = true;
     s._removeReasons = reasons;
   });
