@@ -248,10 +248,10 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <button class="tb locked"  onclick="goTab(4)">5 꿀팁 후보</button>
   <button class="tb locked"  onclick="goTab(5)">6 꿀팁 원고</button>
   <button class="tb locked"  onclick="goTab(6)">7 세무퀴즈</button>
-  <button class="tb locked"  onclick="goTab(7)">8 뉴스 브리핑</button>
-  <button class="tb locked"  onclick="goTab(8)">9 오프닝</button>
-  <button class="tb locked"  onclick="goTab(9)">10 미리보기</button>
-  <button class="tb locked"  onclick="goTab(10)">11 제목</button>
+  <button class="tb locked"  onclick="goTab(7)">8 오프닝</button>
+  <button class="tb locked"  onclick="goTab(8)">9 미리보기</button>
+  <button class="tb locked"  onclick="goTab(9)">10 제목</button>
+  <button class="tb"         onclick="goTab(10)">11 뉴스 브리핑</button>
   <button class="tb"         onclick="goTab(11)">12 아카이브</button>
   <button class="reset-btn"
     onclick="softReset()"
@@ -471,10 +471,62 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <div class="btn-row"><button class="btn-next" id="next6" disabled onclick="completeTab(6,7)">다음 →</button></div>
 </div>
 
-<!-- ══════ TAB 8 — 뉴스 브리핑 ══════ -->
+<!-- ══════ TAB 8 — 오프닝 ══════ -->
+<div class="panel" id="p9">
+  <div class="ph"><span class="ph-title">오프닝 멘트</span></div>
+  <p class="ph-sub">이번 회차 구성 전체를 반영한 오프닝 후보 3개를 생성합니다. 후보 선택 후 완성형 원고를 만듭니다.</p>
+  <div class="carry" id="t10carry"></div>
+  <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
+    <button class="btn-main" id="btn-opening" onclick="callOpening()">후보 생성</button>
+    <button class="btn-main" id="btn-regen-opening" style="display:none" onclick="callOpening()">재생성</button>
+  </div>
+  <div id="t10area"><div class="skel"><p>후보 생성 버튼을 눌러주세요</p></div></div>
+
+  <!-- 완성 원고 (후보 선택 후 표시) -->
+  <div id="t10draft" style="display:none">
+    <div class="divider"></div>
+    <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
+      <button class="btn-main" id="btn-opening-draft" onclick="callOpeningDraft()">완성 원고 생성</button>
+      <button class="btn-main" id="btn-regen-opening-draft" style="display:none" onclick="callOpeningDraft()">재생성</button>
+    </div>
+    <div id="t10draftArea"><div class="skel"><p>완성 원고 생성 버튼을 눌러주세요</p></div></div>
+  </div>
+
+  <div class="btn-row"><button class="btn-next" id="next9" disabled onclick="completeTab(7,8)">다음 →</button></div>
+</div>
+
+<!-- ══════ TAB 9 — 미리보기 ══════ -->
+<div class="panel" id="p10">
+  <div class="ph"><span class="ph-title">미리보기 문구</span></div>
+  <p class="ph-sub">뉴스레터 카드에 들어갈 미리보기 본문 문구를 생성합니다. 이번 회차에서 가장 후킹되는 소재를 골라 2~3문장으로 정리합니다.</p>
+  <div class="carry" id="t11carry"></div>
+  <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
+    <button class="btn-main" id="btn-remind" onclick="callRemind()">후보 생성</button>
+    <button class="btn-main" id="btn-regen-remind" style="display:none" onclick="callRemind()">재생성</button>
+  </div>
+  <div id="t11area"><div class="skel"><p>후보 생성 버튼을 눌러주세요</p></div></div>
+
+  <div class="btn-row"><button class="btn-next" id="next10" disabled onclick="completeTab(8,9)">다음 →</button></div>
+</div>
+
+<!-- ══════ TAB 10 — 제목 ══════ -->
+<div class="panel" id="p11">
+  <div class="ph"><span class="ph-title">카카오 플친 제목</span></div>
+  <p class="ph-sub">카카오톡 플친 메시지에서 보일 클릭 유도 제목을 생성합니다. 짧고 강하게, 이번 회차 핵심 소재를 압축합니다.</p>
+  <div class="carry" id="t12carry"></div>
+  <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
+    <button class="btn-main" id="btn-titles" onclick="callTitles()">제목 후보 생성</button>
+    <button class="btn-main" id="btn-regen-titles" style="display:none" onclick="callTitles()">재생성</button>
+  </div>
+  <div id="t12area"><div class="skel"><p>생성 버튼을 눌러주세요</p></div></div>
+
+  <div class="btn-row"><button class="btn-next" id="next11" disabled onclick="completeTab(9,10)">다음 →</button></div>
+</div>
+
+<!-- ══════ TAB 11 — 뉴스 브리핑 (선택 탭 — 필수 플로우 아님) ══════ -->
 <div class="panel" id="p7">
   <div class="ph"><span class="ph-title">뉴스 브리핑</span></div>
-  <p class="ph-sub">뉴스 링크를 넣으면 기사 내용을 읽고, 300자 이내 뉴스 한입 브리핑으로 정리합니다.</p>
+  <p class="ph-sub">뉴스 링크를 넣으면 기사 내용을 읽고, 300자 이내 뉴스 한입 브리핑으로 정리합니다. (선택 기능 — 없어도 다른 단계 진행에 영향 없음)</p>
   <p style="font-size:12px;color:var(--text3);margin-top:-0.8rem;margin-bottom:1.25rem">일부 기사 링크는 자동으로 읽지 못할 수 있습니다. 이 경우 메모칸에 기사 본문이나 핵심 내용을 붙여넣어 주세요.</p>
   <div class="carry" id="t8carry"></div>
 
@@ -498,59 +550,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <div id="newsBriefingList"></div>
   </div>
 
-  <div class="btn-row" style="margin-top:1.25rem"><button class="btn-next" id="next7" disabled onclick="completeTab(7,8)">다음 →</button></div>
-</div>
-
-<!-- ══════ TAB 9 — 오프닝 ══════ -->
-<div class="panel" id="p9">
-  <div class="ph"><span class="ph-title">오프닝 멘트</span></div>
-  <p class="ph-sub">이번 회차 구성 전체를 반영한 오프닝 후보 3개를 생성합니다. 후보 선택 후 완성형 원고를 만듭니다.</p>
-  <div class="carry" id="t10carry"></div>
-  <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
-    <button class="btn-main" id="btn-opening" onclick="callOpening()">후보 생성</button>
-    <button class="btn-main" id="btn-regen-opening" style="display:none" onclick="callOpening()">재생성</button>
-  </div>
-  <div id="t10area"><div class="skel"><p>후보 생성 버튼을 눌러주세요</p></div></div>
-
-  <!-- 완성 원고 (후보 선택 후 표시) -->
-  <div id="t10draft" style="display:none">
-    <div class="divider"></div>
-    <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
-      <button class="btn-main" id="btn-opening-draft" onclick="callOpeningDraft()">완성 원고 생성</button>
-      <button class="btn-main" id="btn-regen-opening-draft" style="display:none" onclick="callOpeningDraft()">재생성</button>
-    </div>
-    <div id="t10draftArea"><div class="skel"><p>완성 원고 생성 버튼을 눌러주세요</p></div></div>
-  </div>
-
-  <div class="btn-row"><button class="btn-next" id="next9" disabled onclick="completeTab(8,9)">다음 →</button></div>
-</div>
-
-<!-- ══════ TAB 10 — 리마인드 ══════ -->
-<div class="panel" id="p10">
-  <div class="ph"><span class="ph-title">미리보기 문구</span></div>
-  <p class="ph-sub">뉴스레터 카드에 들어갈 미리보기 본문 문구를 생성합니다. 이번 회차에서 가장 후킹되는 소재를 골라 2~3문장으로 정리합니다.</p>
-  <div class="carry" id="t11carry"></div>
-  <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
-    <button class="btn-main" id="btn-remind" onclick="callRemind()">후보 생성</button>
-    <button class="btn-main" id="btn-regen-remind" style="display:none" onclick="callRemind()">재생성</button>
-  </div>
-  <div id="t11area"><div class="skel"><p>후보 생성 버튼을 눌러주세요</p></div></div>
-
-  <div class="btn-row"><button class="btn-next" id="next10" disabled onclick="completeTab(9,10)">다음 →</button></div>
-</div>
-
-<!-- ══════ TAB 11 — 제목 ══════ -->
-<div class="panel" id="p11">
-  <div class="ph"><span class="ph-title">카카오 플친 제목</span></div>
-  <p class="ph-sub">카카오톡 플친 메시지에서 보일 클릭 유도 제목을 생성합니다. 짧고 강하게, 이번 회차 핵심 소재를 압축합니다.</p>
-  <div class="carry" id="t12carry"></div>
-  <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
-    <button class="btn-main" id="btn-titles" onclick="callTitles()">제목 후보 생성</button>
-    <button class="btn-main" id="btn-regen-titles" style="display:none" onclick="callTitles()">재생성</button>
-  </div>
-  <div id="t12area"><div class="skel"><p>생성 버튼을 눌러주세요</p></div></div>
-
-  <div class="btn-row"><button class="btn-next" id="next11" disabled onclick="completeTab(10,11)">다음 →</button></div>
+  <div class="btn-row" style="margin-top:1.25rem"><button class="btn-next" id="next7" onclick="completeTab(10,11)">아카이브로 →</button></div>
 </div>
 
 <!-- ══════ TAB 12 — 아카이브 ══════ -->
@@ -701,6 +701,7 @@ var S = {
   tipDraft: null,
   /* 탭7 — 퀴즈 */
   quizFormat: 'ox', quizDiff: 'normal', quizData: null,
+  rejectedQuizHistory: [], /* 재생성 누적 — 같은 구조 퀴즈 반복 방지 (최근 10개 슬림 객체) */
   /* 탭8 — 뉴스 브리핑 (링크 → 300자 원고 누적) */
   newsCandidates: [], /* [{ id, url, memo, original_title, source, published_at, briefing_title, briefing_text, keywords[], read_status }] */
   /* 탭9 — 오프닝 */
@@ -710,7 +711,7 @@ var S = {
   /* 탭12 — 제목 */
   titleData: null, title: null,
   /* UI 상태 */
-  activeTab: 0, unlockedTabs: [0, 11], doneTabs: [],
+  activeTab: 0, unlockedTabs: [0, 10, 11], doneTabs: [],
   /* 과거 회차 아카이브 */
   archive: [],
   /* 삭제된 아카이브 키 묶음 — 페이지 새로고침 시 공용 archive.json이 재병합되며
@@ -768,13 +769,14 @@ function restoreState() {
     setBtn('next0', false);
   }
 
-  /* 탭 잠금/완료 복원 — 12 아카이브는 항상 잠금 해제 */
-  if (Array.isArray(S.unlockedTabs) && S.unlockedTabs.indexOf(11) === -1) {
-    S.unlockedTabs.push(11);
+  /* 탭 잠금/완료 복원 — 11 뉴스 브리핑(선택 탭)·12 아카이브는 항상 잠금 해제 */
+  if (Array.isArray(S.unlockedTabs)) {
+    if (S.unlockedTabs.indexOf(10) === -1) S.unlockedTabs.push(10);
+    if (S.unlockedTabs.indexOf(11) === -1) S.unlockedTabs.push(11);
   }
   tbs().forEach(function(btn, idx) {
     btn.classList.remove('active','done','locked');
-    if (idx !== 11 && S.unlockedTabs.indexOf(idx) === -1) btn.classList.add('locked');
+    if (idx !== 11 && idx !== 10 && S.unlockedTabs.indexOf(idx) === -1) btn.classList.add('locked');
     if (S.doneTabs.indexOf(idx) !== -1)                  btn.classList.add('done');
   });
   var ai = S.activeTab || 0;
@@ -851,12 +853,12 @@ function hardReset() {
   S.tipUserNews = '';
   S.tipData = null; S.tip = null; S.tipDraft = null;
   S.benefitSearch = null; S.benefitTip = null;
-  S.quizFormat = 'ox'; S.quizDiff = 'normal'; S.quizData = null;
+  S.quizFormat = 'ox'; S.quizDiff = 'normal'; S.quizData = null; S.rejectedQuizHistory = [];
   S.newsCandidates = [];
   S.openingData = null; S.opening = null; S.openingDraft = null;
   S.remindData = null;  S.remind  = null;
   S.titleData = null;   S.title   = null;
-  S.activeTab = 0; S.unlockedTabs = [0, 11]; S.doneTabs = [];
+  S.activeTab = 0; S.unlockedTabs = [0, 10, 11]; S.doneTabs = [];
   S.archive            = preservedArchive;
   S.archiveDeletedKeys = preservedDeletedKeys;
 
@@ -873,10 +875,10 @@ function hardReset() {
   /* 혜택형 PDF 입력 초기화 */
   if (typeof clearBenefitPdf === 'function') clearBenefitPdf();
 
-  /* 탭 상태 초기화 — 첫 탭으로 이동, 12 아카이브는 항상 잠금 해제 */
+  /* 탭 상태 초기화 — 첫 탭으로 이동, 11 뉴스 브리핑(선택)·12 아카이브는 항상 잠금 해제 */
   tbs().forEach(function(btn, idx) {
     btn.classList.remove('active','done','locked');
-    if (idx > 0 && idx !== 11) btn.classList.add('locked');
+    if (idx > 0 && idx !== 11 && idx !== 10) btn.classList.add('locked');
   });
   tbs()[0].classList.add('active');
   pnls().forEach(function(p, i) { p.classList.toggle('active', i === 0); });
@@ -946,14 +948,14 @@ function softReset() {
   S.subjectRegenCount = 0; S.subjectRejectedHistory = [];
   S.storyData=null;   S.story=null;    S.storyDraft=null;
   S.tipUserNews='';   S.tipData=null;  S.tip=null; S.tipDraft=null; S.benefitSearch=null; S.benefitTip=null;
-  S.quizFormat='ox';  S.quizDiff='normal'; S.quizData=null;
+  S.quizFormat='ox';  S.quizDiff='normal'; S.quizData=null; S.rejectedQuizHistory=[];
   S.newsCandidates=[];
   S.openingData=null; S.opening=null;   S.openingDraft=null;
   S.remindData=null;  S.remind=null;
   S.titleData=null;   S.title=null;
-  S.activeTab=0; S.unlockedTabs=[0,11]; S.doneTabs=[];
+  S.activeTab=0; S.unlockedTabs=[0,10,11]; S.doneTabs=[];
 
-  tbs().forEach(function(btn,idx){ btn.classList.remove('active','done','locked'); if(idx>0 && idx!==11) btn.classList.add('locked'); });
+  tbs().forEach(function(btn,idx){ btn.classList.remove('active','done','locked'); if(idx>0 && idx!==11 && idx!==10) btn.classList.add('locked'); });
   tbs()[0].classList.add('active');
   pnls().forEach(function(p,i){ p.classList.toggle('active', i===0); });
 
@@ -1047,8 +1049,9 @@ document.querySelectorAll('.opt-btn').forEach(function(btn) {
    carry 업데이트
 ══════════════════════════════════════ */
 function updateCarry(tabIdx) {
+  /* DOM 탭 인덱스 → carry 박스 id (뉴스 브리핑이 11번으로 이동하면서 7~10 매핑 변경) */
   var ids={1:'t2carry',2:'t3carry',3:'t4carry',4:'t5carry',5:'t6carry',
-           6:'t7carry',7:'t8carry',8:'t10carry',9:'t11carry',10:'t12carry'};
+           6:'t7carry',7:'t10carry',8:'t11carry',9:'t12carry',10:'t8carry'};
   var el = document.getElementById(ids[tabIdx]); if (!el) return;
   var parts = ['CTR ' + (S.ctr||0).toFixed(1) + '%'];
   if (S.analysis && S.analysis.topic) parts.push('직전주제: ' + S.analysis.topic);
@@ -2048,6 +2051,14 @@ async function callStories() {
       newAngle:          S.subject.new_angle || '',
       whyNotDuplicate:   S.subject.why_not_duplicate || '',
       problemAxis:       S.subject.problem_axis || '',
+      subjectCategory:   S.subject.subject_category || '',
+      /* ── 선택 주제 episode lock 필드 (3번 탭 사연 후보 episode 고정) ── */
+      episodeAxis:       S.subject.episode_axis || '',
+      triggerMoment:     S.subject.trigger_moment || '',
+      conflictAxis:      S.subject.conflict_axis || '',
+      moneyFlowAxis:     S.subject.money_flow_axis || '',
+      resolutionAngle:   S.subject.resolution_angle || '',
+      whyNow:            S.subject.why_now || '',
       ctr: S.ctr
     });
     S.storyData = result;
@@ -2849,6 +2860,8 @@ async function callExtractBenefit() {
     }
 
     S.benefitTip = data.tip;
+    /* 직접 입력 원문 보존 — 6번 탭 원고에서 공고형으로 뭉개지 않도록 전달 */
+    if (S.benefitTip) S.benefitTip.raw_user_input = paste || '';
     saveState();
     renderBenefitTip();
   } catch(e) {
@@ -2972,6 +2985,9 @@ async function callTipDraft() {
       fetchedBodySummary:  S.tip.fetched_body_summary || '',
       benefitFacts:        S.tip.benefit_facts        || null,
       sourceWarning:       S.tip.source_warning       || '',
+      /* ★ 직접 입력 보존 — 공고형으로 뭉개지 않도록 원문 + 직접입력 플래그 전달 */
+      tipIsUserProvided: !!(S.tip && S.tip.is_user_provided),
+      tipRawInput:       (S.tip && S.tip.raw_user_input) || '',
       /* ★ 참고용 컨텍스트 (원고 주제 변경 금지) */
       subjectTitle:  S.subject ? S.subject.title : '',
       storyText:     S.story ? S.story.text : '',
@@ -3007,7 +3023,31 @@ function renderTipDraft(r) {
 /* ══════════════════════════════════════
    TAB 7 — 세무퀴즈
 ══════════════════════════════════════ */
+function _slimQuizForHistory(q) {
+  if (!q) return null;
+  return {
+    question:               q.question || '',
+    choices:                Array.isArray(q.options) ? q.options.slice() : [],
+    answer:                 q.answer,
+    explanation:            q.explanation || '',
+    quiz_axis:              q.quiz_axis || '',
+    answer_type:            q.answer_type || '',
+    correct_choice_pattern: q.correct_choice_pattern || '',
+  };
+}
+
 async function callQuiz() {
+  /* 재생성이면 직전 퀴즈를 history에 누적 (같은 구조 반복 방지) */
+  if (S.quizData) {
+    if (!Array.isArray(S.rejectedQuizHistory)) S.rejectedQuizHistory = [];
+    var slim = _slimQuizForHistory(S.quizData);
+    if (slim) {
+      S.rejectedQuizHistory.push(slim);
+      if (S.rejectedQuizHistory.length > 10) {
+        S.rejectedQuizHistory = S.rejectedQuizHistory.slice(-10);
+      }
+    }
+  }
   document.getElementById('t7area').innerHTML = loading();
   setBtn('next6', true);
   try {
@@ -3022,6 +3062,7 @@ async function callQuiz() {
       tipIsUserProvided: !!(S.tip && S.tip.is_user_provided),
       format:            S.quizFormat,
       difficulty:        S.quizDiff,
+      rejectedQuizHistory: Array.isArray(S.rejectedQuizHistory) ? S.rejectedQuizHistory : [],
     });
     S.quizData = result;
     renderQuiz(result);
@@ -3207,7 +3248,7 @@ function renderNewsBriefingList() {
   if (!S.newsCandidates || !S.newsCandidates.length) {
     list.innerHTML = '';
     if (section) section.style.display = 'none';
-    setBtn('next7', true);
+    /* 뉴스 브리핑은 선택 탭 — 비어 있어도 다음(아카이브) 버튼을 막지 않는다 */
     return;
   }
 

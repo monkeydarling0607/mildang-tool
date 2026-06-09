@@ -888,6 +888,31 @@ function buildStoriesPrompt(p) {
 `;
   }
 
+  /* ── 선택 주제 episode lock 블록 ──
+     선택 subject의 episode를 사연 후보가 벗어나지 못하도록 allowed/banned를 명시한다. */
+  const _lockSubject = {
+    title: p.subjectTitle || '', summary: p.subjectSummary || '',
+    episode_axis: p.episodeAxis || '', trigger_moment: p.triggerMoment || '',
+    conflict_axis: p.conflictAxis || '', money_flow_axis: p.moneyFlowAxis || '',
+    resolution_angle: p.resolutionAngle || '', problem_axis: p.problemAxis || '',
+  };
+  const _lockGuard = getStoryEpisodeGuard(_lockSubject);
+  const episodeLockBlock = _lockGuard ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[★★ 선택 주제 episode lock — 절대 준수]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+선택 주제의 핵심 episode: ${p.episodeAxis || p.subjectTitle || ''}
+- 사연 후보 5개는 선택 주제의 episode_axis / trigger_moment / money_flow_axis / resolution_angle을 벗어나면 안 됩니다.
+- 사연 후보 5개는 서로 다른 주인공·업종·상황으로 보일 수 있지만, 반드시 같은 episode 안에서만 변주해야 합니다.
+- 이 episode 안에 머물러야 하는 신호(아래 중 하나 이상이 각 사연에 자연스럽게 드러나야 함):
+  ${_lockGuard.allowed.join(' / ')}
+- 다른 episode로 새면 안 되는 금지 소재(하나라도 사연 중심이 되면 즉시 교체):
+  ${_lockGuard.banned.join(' / ')}
+${p.episodeAxis && /예약금/.test(p.episodeAxis + (p.subjectTitle||'')) ? `
+※ 예) 예약금 주제라면 모든 사연 후보는 예약금/선결제/환불/서비스 제공월/잔금/현금영수증/노쇼/매출 인식 안에 있어야 합니다.
+   정산 지연, 플랫폼 수수료, 단순 매출 감소, 계약금 불리함, 직원 급여, 지원금, 임대차 등 다른 episode로 새면 안 됩니다.` : ''}
+` : '';
+
   return `당신은 세무법인 밀당레터 사연 기획자입니다.
 선택된 주제를 기반으로 사연 후보 카드 5개를 생성하세요.
 완성형 원고는 불필요합니다. 후보 카드 선택용 정보만 작성하세요.
@@ -898,7 +923,7 @@ function buildStoriesPrompt(p) {
 단, 다양성 이전에 "선택 주제의 업종·상황 맥락"이 사연에 자연스럽게 살아 있어야 합니다.
 주제의 핵심 키워드(예: 플랫폼 정산, 직원 급여, 카드 증빙 등)가 사연에서 사라지면
 업종만 그럴듯해 보여도 부적합한 사연으로 간주됩니다.
-${newAngleBlock}${industryGuide}
+${episodeLockBlock}${newAngleBlock}${industryGuide}
 [선택 주제]
 주제명: ${p.subjectTitle}
 요약: ${p.subjectSummary || ''}
@@ -2543,6 +2568,356 @@ function normalizeRejectedKeys(rejectedSubjects, alreadyKeys) {
   return out;
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   3번 탭 사연 후보 — 선택 주제 episode lock
+   선택된 subject의 episode를 사연 후보가 벗어나지 못하도록 가드한다.
+   사연 후보 5개는 서로 다른 주인공/업종/상황으로 보이되, 같은 episode 안에서만
+   변주해야 한다. (예: 예약금 주제 → 모든 사연은 예약금/선결제/환불/매출 인식 안)
+   ════════════════════════════════════════════════════════════════════ */
+
+/* 키워드 정규화 — 공백·구분자 제거 + 소문자 */
+function _normKw(s) {
+  return String(s || '').toLowerCase().replace(/[\s·,.\/]+/g, '');
+}
+
+/* episode별 allowed / banned 키워드 가드.
+   allowed: 이 episode 안에 머무르는 신호 / banned: 다른 episode로 새는 신호.
+   매칭은 정규화된 substring 포함으로 판단한다. */
+const STORY_EPISODE_GUARDS = {
+  /* A. 예약금 매출 인식 */
+  '예약금매출인식': {
+    allowed: ['예약금', '선결제', '환불', '취소', '잔금', '서비스 제공', '제공월', '매출 인식',
+              '현금영수증', '입금', '발행 시점', '위약금', '노쇼', '예약'],
+    banned: ['플랫폼 정산', 'pg 정산', '배달앱 정산', '수수료', '매출 감소', '수익 감소', '통장 잔고',
+             '잔고', '직원 급여', '4대보험', '지원금', '임대차', '월세', '사업자번호', '공동대표'],
+  },
+  /* B. 정산일·신고 기준 차이 */
+  '정산일신고기준차이': {
+    allowed: ['pg', '플랫폼', '배달앱', '정산일', '입금일', '신고 기준', '매출 집계', '수수료 차감',
+              '카드 매출', '실제 입금', '정산'],
+    banned: ['예약금', '환불 가능', '잔금', '직원 급여', '가족 명의', '지원금', '임대차'],
+  },
+  /* C. 가족 명의 거래 */
+  '가족명의거래': {
+    allowed: ['가족 계좌', '가족카드', '가족 카드', '배우자 명의', '가족 명의', '부모님 계좌', '남편 카드',
+              '아내 카드', '매출 입금', '사업비 결제', '증빙 주체', '가족'],
+    banned: ['예약금', '플랫폼 정산', '지원금 신청', '지원금', '직원 급여', '세금계산서 입금월'],
+  },
+  /* D. 근로자성 판단 */
+  '근로자성판단': {
+    allowed: ['프리랜서', '외주', '알바', '근로자성', '출퇴근', '지휘 감독', '고정 근무', '4대보험',
+              '원천세', '인건비', '계속근로', '근로'],
+    banned: ['예약금', '세금계산서 발행월', '플랫폼 정산', '가족 계좌', '임대차'],
+  },
+  /* E. 명의 주체 불일치 */
+  '명의주체불일치': {
+    allowed: ['공동대표', '사업자 명의', '계약 명의', '세금계산서 발행', '발행 주체', '사업자등록',
+              '상호 변경', '계약서', '계산서', '명의 불일치', '명의'],
+    banned: ['예약금', '직원 급여', '플랫폼 수수료', '지원금 보류', '지원금'],
+  },
+  /* F. 자동결제 명의 문제 */
+  '자동결제명의문제': {
+    allowed: ['자동결제', '구독료', '대표 개인 명의', '개인카드', '개인 카드', '사업용 카드', '업무툴',
+              '증빙 주체', '경비 처리', '구독', '정기결제'],
+    banned: ['예약금', '환불', '지원금', '직원 급여', '임대차', '플랫폼 정산'],
+  },
+  /* G. 접대비·복리후생비 구분 / 증빙 누락·비용 인정 불안 */
+  '증빙누락-비용인정불안': {
+    allowed: ['접대비', '복리후생비', '직원 식대', '거래처 식대', '간식비', '회식비', '영수증', '증빙',
+              '경비 인정', '카드 결제', '경비', '적격증빙'],
+    banned: ['예약금', '지원금', '플랫폼 정산', '세금계산서 입금월'],
+  },
+  /* H. 신청 단계 탈락 / 사후 반납 (지원금 family) */
+  '신청단계탈락': {
+    allowed: ['지원금', '정책자금', '보조금', '장려금', '신청', '보류', '반려', '대상', '조건',
+              '사후점검', '환수', '반납', '고용 유지', '증빙 서류'],
+    banned: ['예약금', '플랫폼 정산', '카드 경비', '세금계산서 발행월'],
+  },
+  /* I. 임대차 계약 변경 */
+  '임대차계약변경': {
+    allowed: ['임대차', '월세', '보증금', '계약 갱신', '이사', '사업장 이전', '임대인', '계약 명의',
+              '사업자등록 주소', '임대'],
+    banned: ['예약금', '플랫폼 정산', '직원 급여', '지원금 신청', '지원금'],
+  },
+  /* J. 현금 매출 누락 / 계좌이체 현금영수증 */
+  '현금매출누락': {
+    allowed: ['현금 매출', '계좌이체', '현금영수증', '누락', '단골 손님', '입금 내역', '매출 정리', '현금'],
+    banned: ['예약금', '플랫폼 정산', '직원 급여', '지원금 신청', '지원금'],
+  },
+};
+
+/* normalizeEpisodeKey 출력 → guard 키로 정규화.
+   지원금 계열(사후반납/대상기준착각/서류누락탈락/고용조건착각)은 신청단계탈락 가드로 통합. */
+function normalizeSubjectEpisodeKey(subject) {
+  const base = normalizeEpisodeKey(subject);
+  if (!base) return '';
+  const ALIAS = {
+    '사후반납': '신청단계탈락',
+    '대상기준착각': '신청단계탈락',
+    '서류누락탈락': '신청단계탈락',
+    '고용조건착각': '신청단계탈락',
+  };
+  const mapped = ALIAS[base] || base;
+  return STORY_EPISODE_GUARDS[mapped] ? mapped : base;
+}
+
+/* 선택 subject에 해당하는 episode guard 반환 (없으면 null) */
+function getStoryEpisodeGuard(subject) {
+  const key = normalizeSubjectEpisodeKey(subject);
+  return STORY_EPISODE_GUARDS[key] || null;
+}
+
+/* 사연 후보가 선택 주제 episode를 벗어났는지 판정.
+   - banned 키워드가 잡히면 즉시 off-episode (다른 episode로 샌 것)
+   - allowed 신호가 하나도 없으면 off-episode (episode 앵커 없음) */
+function isStoryCandidateOffEpisode(story, guard) {
+  if (!guard) return false;
+  const blob = _normKw([
+    story.title, story.text, story.concern, story.question, story.emotion_point,
+    story.conflict_axis, story.problem_structure, story.industry, story.narrator_profile,
+    story.tax_question_axis, story.resolution_axis, story.differentiator,
+  ].filter(Boolean).join(' '));
+  if (!blob) return false;
+  const hasBanned  = guard.banned.some(w => blob.includes(_normKw(w)));
+  if (hasBanned) return true;
+  const hasAllowed = guard.allowed.some(w => blob.includes(_normKw(w)));
+  if (!hasAllowed) return true;
+  return false;
+}
+
+/* episode별 story seed fallback — 후보가 부족할 때 같은 episode 안에서 보강.
+   화면에는 seed 여부 노출하지 않음 (_storySeedFallback 내부 플래그만). */
+const STORY_SEED_BANK = {
+  '예약금매출인식': [
+    {
+      tone: '처음 겪는 상황형', industry: '소규모 행사 대행 2년차',
+      narrator_profile: '돌잔치·소규모 행사 대행, 30대',
+      title: '예약금 받았는데, 취소하면 매출은 어떻게 되나요?',
+      text: '행사 예약을 받으면서 예약금을 먼저 받았는데요. 고객이 취소할 수도 있다고 해서, 이걸 이번 달 매출로 잡아야 할지 헷갈리더라고요.',
+      concern: '받긴 받았는데 아직 행사를 한 것도 아니라서요.',
+      emotion_point: '돈은 들어왔는데 진짜 내 매출이 맞나 싶어요.',
+      question: '취소될 수도 있는 예약금도 이번 달 매출로 잡아야 하나요?',
+      conflict_axis: '예약금 매출 인식 시점', problem_structure: '받은 예약금을 매출로 볼지 환불 대비로 둘지 모호',
+      tax_question_axis: '예약금 매출 인식 시점', resolution_axis: '예약금 매출 인식 기준 정리',
+    },
+    {
+      tone: '뒤늦게 발견형', industry: '스튜디오 촬영 3년차',
+      narrator_profile: '사진 스튜디오 운영, 30대',
+      title: '입금은 이번 달, 서비스는 다음 달이에요',
+      text: '촬영 예약금을 이번 달에 받았는데, 실제 촬영은 다음 달이거든요. 그러면 매출은 언제 잡는 게 맞는 건지 모르겠어요.',
+      concern: '입금된 달이랑 서비스 하는 달이 다르니까요.',
+      emotion_point: '잘못 잡으면 신고가 꼬일까 봐 걱정돼요.',
+      question: '선결제 예약금은 입금월과 서비스월 중 언제 매출로 잡나요?',
+      conflict_axis: '선결제 매출 인식 시점', problem_structure: '입금 시점과 서비스 제공월이 달라 인식 시점 모호',
+      tax_question_axis: '선결제 매출 인식 시점', resolution_axis: '서비스 제공월 기준 매출 정리',
+    },
+    {
+      tone: '실무자 실수형', industry: '소형 숙박업 4년차',
+      narrator_profile: '게스트하우스 운영, 40대',
+      title: '예약금 일부를 환불했는데 장부가 꼬였어요',
+      text: '고객이 예약을 취소해서 예약금 일부를 돌려줬는데요. 처음 받은 금액이랑 환불한 금액을 어떻게 정리해야 할지 장부가 엉켰어요.',
+      concern: '받은 것도 돌려준 것도 다 기록해야 하나 싶어서요.',
+      emotion_point: '괜히 잘못 적었다가 매출이 부풀려질까 봐요.',
+      question: '예약금을 일부 환불하면 매출과 환불을 어떻게 정리하나요?',
+      conflict_axis: '예약금 환불 처리', problem_structure: '받은 예약금과 환불액 정리 방식 혼란',
+      tax_question_axis: '예약금 환불 시 매출 조정', resolution_axis: '예약금·환불 분리 기록 정리',
+    },
+    {
+      tone: '억울함·착각형', industry: '필라테스 레슨 2년차',
+      narrator_profile: '1인 필라테스 강사, 30대',
+      title: '예약금에도 현금영수증을 끊어야 하나요?',
+      text: '계좌로 레슨 예약금을 받았는데, 고객이 현금영수증을 끊어달라고 하시더라고요. 예약금인데도 발행해야 하는 건지, 시점은 언제인지 헷갈려요.',
+      concern: '아직 레슨을 한 것도 아닌데 영수증부터 끊어도 되나요.',
+      emotion_point: '괜히 잘못 발행했다가 문제 될까 봐요.',
+      question: '예약금에도 현금영수증을 발행해야 하나요? 시점은요?',
+      conflict_axis: '예약금 현금영수증 발행', problem_structure: '예약금 단계의 현금영수증 발행 시점·금액 혼란',
+      tax_question_axis: '예약금 현금영수증 발행 시점', resolution_axis: '예약금 현금영수증 발행 기준 정리',
+    },
+    {
+      tone: '돈 흐름 압박형', industry: '웨딩 플라워 3년차',
+      narrator_profile: '웨딩 플라워 샵 운영, 30대',
+      title: '예약금과 잔금이 나뉘어 들어왔어요',
+      text: '예약할 때 예약금 먼저 받고, 잔금은 행사 당일에 받는 구조예요. 그러면 매출을 예약금 받은 날 잡아야 하는지, 잔금 받은 날 잡아야 하는지 모르겠어요.',
+      concern: '돈이 두 번에 나눠 들어오니까 헷갈려요.',
+      emotion_point: '시점을 잘못 잡으면 한 달 매출이 들쭉날쭉해질까 봐요.',
+      question: '예약금과 잔금이 나뉘면 매출은 어느 시점에 잡나요?',
+      conflict_axis: '예약금·잔금 매출 인식', problem_structure: '예약금과 잔금 입금 시점이 달라 매출 인식 시점 모호',
+      tax_question_axis: '예약금·잔금 매출 인식 시점', resolution_axis: '서비스 제공 기준 매출 인식 정리',
+    },
+    {
+      tone: '반전형', industry: '소형 공연장 5년차',
+      narrator_profile: '소규모 공연 기획, 40대',
+      title: '노쇼 위약금도 매출로 봐야 하나요?',
+      text: '예약하고 안 오신 고객한테 위약금을 받았는데요. 이건 서비스를 한 것도 아닌데 매출로 잡아야 하는 건지 애매하더라고요.',
+      concern: '서비스를 제공한 게 아니라 위약금만 받은 거라서요.',
+      emotion_point: '이런 돈까지 매출이면 좀 억울한 느낌이에요.',
+      question: '노쇼 위약금도 매출로 잡아야 하나요?',
+      conflict_axis: '노쇼 위약금 처리', problem_structure: '서비스 미제공 위약금의 매출 인식 여부 혼란',
+      tax_question_axis: '위약금 매출 인식 여부', resolution_axis: '위약금 성격별 처리 기준 정리',
+    },
+  ],
+};
+
+/* 사연 후보 후처리 — off-episode 후보 제거 + episode seed로 5개 보강.
+   - LLM 사연 후보 중 선택 subject의 episode를 벗어난 것은 최종 후보에서 제외
+   - 후보가 5개에 못 미치면 같은 episode의 story seed로 보강 (seed 부재 시 가능한 만큼만)
+   - guard가 없는(미정의 episode) 주제는 필터링하지 않고 그대로 통과 */
+function processStoriesWithEpisodeLock(stories, subject) {
+  const list = Array.isArray(stories) ? stories.slice() : [];
+  const guard = getStoryEpisodeGuard(subject);
+  const epKey = normalizeSubjectEpisodeKey(subject);
+
+  if (!guard) {
+    return {
+      stories: list.slice(0, 5),
+      stats: { guarded: false, episodeKey: epKey, offEpisodeRemoved: 0, seedFallbackUsed: 0, finalCount: Math.min(list.length, 5) },
+    };
+  }
+
+  const evaluated = list.map(s => Object.assign({}, s, { _offEpisode: isStoryCandidateOffEpisode(s, guard) }));
+  let keep = evaluated.filter(s => !s._offEpisode);
+  const offEpisodeRemoved = evaluated.length - keep.length;
+
+  /* seed fallback — 같은 episode seed로 5개까지 보강 */
+  let seedFallbackUsed = 0;
+  const seeds = STORY_SEED_BANK[epKey] || [];
+  const usedTitles = new Set(keep.map(s => _normKw(s.title)));
+  for (const seed of seeds) {
+    if (keep.length >= 5) break;
+    const tk = _normKw(seed.title);
+    if (usedTitles.has(tk)) continue;
+    keep.push(Object.assign({}, seed, { _storySeedFallback: true, _offEpisode: false }));
+    usedTitles.add(tk);
+    seedFallbackUsed++;
+  }
+
+  keep = keep.slice(0, 5);
+  return {
+    stories: keep,
+    stats: { guarded: true, episodeKey: epKey, offEpisodeRemoved, seedFallbackUsed, finalCount: keep.length },
+  };
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   6번 탭 꿀팁 원고 — 직접 입력 유형 분류
+   직접 입력이 지원사업 공고형인지, 대처방안/체크리스트/주의사항/절차/기록/권리형인지
+   판정해서, 비-공고형 입력을 공고형 템플릿(지원대상/신청기간/신청방법)으로 뭉개지 않도록 한다.
+   ════════════════════════════════════════════════════════════════════ */
+function classifyTipInputType(raw) {
+  const blob = _normKw(raw);
+  if (!blob) return '미상';
+
+  /* 1) 지원사업/공고형 — 공고 구조 신호 2개 이상 */
+  const policySignals = ['지원대상', '지원내용', '신청기간', '신청방법', '신청자격', '지원금액',
+                         '모집공고', '접수기간', '접수처', '선정', '공고문', '보조금', '정책자금', '바우처'];
+  const policyHits = policySignals.filter(w => blob.includes(_normKw(w))).length;
+  if (policyHits >= 2) return '지원사업/공고형';
+
+  /* 비-공고형 세부 분류 — 가장 구체적인 신호부터 */
+  if (/(권리|법적|손실보상|악성|민원|피해방지|반복피해|보상받|대응권리)/.test(blob)
+      && !/(체크리스트|확인할|기록|메모)/.test(blob)) return '피해 방지/권리 확인형';
+  if (/(기록|메모|장부|증빙|영수증|캡처|보관|남기)/.test(blob)
+      && !/(체크리스트|대응|대처|확인할)/.test(blob)) return '기록/증빙 관리형';
+  if (/(체크리스트|대처|대응|확인할|점검|챙길|준비할)/.test(blob)) return '대처방안/실무 체크리스트형';
+  if (/(주의|유의|조심|불이익|가산세|원천세|4대보험|근로계약|세무|노무)/.test(blob)) return '세무·노무 주의사항형';
+  if (/(절차|순서|단계|신고방법|처리방법|진행)/.test(blob)) return '절차 안내형';
+  return '대처방안/실무 체크리스트형';
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   7번 탭 세무퀴즈 — 재생성 다양성 (rejectedQuizHistory 기반)
+   재생성 시 같은 quiz_axis / answer_type / "모두 확인" 정답 구조 반복을 막는다.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* 주제별 quiz_axis 후보 — 같은 주제라도 매번 다른 학습 포인트를 물을 수 있게 */
+const QUIZ_AXIS_BANK = {
+  '자동결제': [
+    '사업용/개인용 결제수단 구분',
+    '증빙 주체',
+    '자동결제 누락 방지 장부 기록',
+    '비용 인정 요건',
+    '매출 감소가 아니라 고정비 증가 체크',
+    '카드 명세서/계좌 내역 확인',
+    '구독 서비스 해지·유지 판단',
+    '대표 개인 명의 결제 처리',
+  ],
+};
+
+/* 선택 주제/사연/꿀팁 맥락에서 사용할 수 있는 quiz_axis 후보 목록을 제안 */
+function suggestQuizAxes(p) {
+  const blob = _normKw([
+    p && p.subjectTitle, p && p.problemAxis, p && p.tipTitle,
+    p && p.storyText, p && p.storyConflictAxis,
+  ].filter(Boolean).join(' '));
+  if (/자동결제|정기결제|구독/.test(blob)) return QUIZ_AXIS_BANK['자동결제'].slice();
+  return [];
+}
+
+/* 정답이 "모두 확인 / 모두 해당 / 전부 맞음 / 모두 맞음" 류인지 감지 */
+function detectAllConfirmAnswer(quiz) {
+  if (!quiz) return false;
+  const opts = quiz.options || quiz.choices || null;
+  let answerText = '';
+  if (Array.isArray(opts)) {
+    const idx = typeof quiz.answer === 'number' ? quiz.answer : -1;
+    answerText = (idx >= 0 && opts[idx] != null) ? opts[idx]
+      : (typeof quiz.answer === 'string' ? quiz.answer : '');
+  } else {
+    answerText = String(quiz.answer || '');
+  }
+  return /모두확인|모두해당|전부맞|모두맞|전부해당|전부확인/.test(_normKw(answerText));
+}
+
+/* 후보 퀴즈가 이전 퀴즈 history와 구조적으로 너무 유사한지 판정.
+   - 같은 quiz_axis → 중복
+   - "모두 확인" 정답이 history에도 있으면 → 중복 (정답 구조 반복)
+   - 보기 구성 60% 이상 겹침 → 중복 */
+function isQuizDuplicateOfHistory(quiz, history) {
+  if (!quiz || !Array.isArray(history) || !history.length) return false;
+  const qAxis = _normKw(quiz.quiz_axis);
+  const qAllConfirm = detectAllConfirmAnswer(quiz);
+  const qc = (quiz.choices || quiz.options || []).map(_normKw).filter(Boolean);
+  for (const h of history) {
+    if (qAxis && _normKw(h.quiz_axis) === qAxis) return true;
+    if (qAllConfirm && detectAllConfirmAnswer(h)) return true;
+    const hc = (h.choices || h.options || []).map(_normKw).filter(Boolean);
+    if (qc.length && hc.length) {
+      const overlap = qc.filter(c => hc.includes(c)).length / Math.max(qc.length, hc.length);
+      if (overlap >= 0.6) return true;
+    }
+  }
+  return false;
+}
+
+/* 이전 퀴즈 history를 프롬프트용 텍스트 블록으로 요약 (재생성 시 회피 대상으로 명시) */
+function summarizeQuizHistoryForPrompt(history) {
+  if (!Array.isArray(history) || !history.length) return '';
+  const allConfirmCount = history.filter(detectAllConfirmAnswer).length;
+  const lines = history.slice(-6).map((h, i) => {
+    const opts = (h.choices || h.options || []);
+    const ansLabel = typeof h.answer === 'number'
+      ? ((h.answer + 1) + '번' + (opts[h.answer] ? ' ' + opts[h.answer] : ''))
+      : String(h.answer || '');
+    return `[이전 퀴즈 ${i + 1}]\n`
+      + `  학습축(quiz_axis): ${h.quiz_axis || '미상'}\n`
+      + `  정답유형(answer_type): ${h.answer_type || '미상'}\n`
+      + `  질문: ${h.question || ''}\n`
+      + `  보기: ${opts.length ? opts.join(' / ') : '(O/X)'}\n`
+      + `  정답: ${ansLabel}`;
+  });
+  return '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    + '[★★ 재생성 — 이전 퀴즈와 다른 학습 포인트를 물어야 합니다]\n'
+    + '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    + '아래는 이미 출제한 퀴즈입니다. 표현만 바꾸지 말고 "다른 학습 포인트"를 출제하세요.\n'
+    + lines.join('\n') + '\n\n'
+    + '[재생성 금지 규칙]\n'
+    + '  × 위 이전 퀴즈와 같은 quiz_axis(학습축) 절대 금지 — 반드시 다른 축을 선택\n'
+    + '  × 같은 answer_type 반복 제한 (가능하면 다른 정답 유형으로)\n'
+    + (allConfirmCount >= 1 ? '  × 이전에 이미 "모두 확인" 정답을 사용했습니다 — 이번엔 "모두 확인/모두 해당/전부 맞음" 정답 절대 금지\n' : '  × "모두 확인" 정답은 남발하지 말 것\n')
+    + '  × 질문 문장만 바꾸고 보기·정답 구조가 같으면 안 됨 (question/choices/answer/explanation 60% 이상 유사 금지)\n'
+    + '  ✅ 재생성은 표현 변주가 아니라 "다른 학습 포인트"를 묻는 것입니다.\n';
+}
+
 /* TEST_HELPERS_END */
 
 /**
@@ -3021,6 +3396,47 @@ cta: 이 숫자들로 [무엇을 판단할 수 있는지] 한 줄`,
 
   const formatHint = formatGuide[p.tipType] || '';
 
+  /* ── 직접 입력 보존 모드 판정 ──
+     사용자가 직접 입력한 내용(체크리스트·대처방안·주의사항·절차·기록·권리)을
+     공고형(지원대상/신청기간/신청방법)으로 뭉개지 않도록 한다. */
+  const isUserProvided = !!(p.tipIsUserProvided);
+  const rawInput = String(p.tipRawInput || '').trim();
+  const tipInputType = (isUserProvided && rawInput) ? classifyTipInputType(rawInput) : '';
+  const isNonPolicyDirect = !!(isUserProvided && rawInput && tipInputType && tipInputType !== '지원사업/공고형');
+
+  console.log('[tip-draft prompt] isUserProvided:', isUserProvided, '| tipInputType:', tipInputType, '| isNonPolicyDirect:', isNonPolicyDirect);
+
+  const directPreserveBlock = isNonPolicyDirect ? `
+intro: 사장님이 실제 겪는 상황으로 시작 (아래 입력 내용 맥락에 맞게, 1~2문장)
+
+body 포맷 (실무 체크리스트형 — 입력 내용을 그대로 살려서 작성):
+✅ 지금 바로 챙길 것
+1. [아래 직접 입력에서 가져온 구체 행동 — 의미 보존]
+2. [직접 입력에서 가져온 구체 행동]
+3. [직접 입력에서 가져온 구체 행동]
+4. [직접 입력에서 가져온 구체 행동]
+
+⚠️ 놓치면 생기는 문제 / 주의할 점
+[입력에 담긴 주의·권리·피해 방지 포인트를 그대로 반영]
+
+cta: 입력 내용 기반의 실천 한 줄` : '';
+
+  const directInputSection = isNonPolicyDirect ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[★★ 직접 입력 보존 모드 — 입력 유형: ${tipInputType}]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+아래는 사용자가 직접 입력한 내용입니다. 이 입력은 지원사업 공고가 아닙니다.
+⛔ 절대 "지원대상 / 지원내용 / 신청기간 / 신청방법" 공고형 템플릿으로 재해석하지 마세요.
+⛔ 입력에 신청기간·지원대상·지원금액 정보가 없으면 임의로 만들지 마세요.
+⛔ 일반적인 지원사업 안내처럼 뭉개지 마세요.
+✅ 사용자가 적은 구체 행동 지침(체크리스트·주의사항·대응 절차·기록 방법·권리 확인·피해 방지법)을 원고에 반드시 반영하세요.
+✅ 입력 원문의 핵심 문장 중 최소 60~70%는 의미가 보존되어야 합니다.
+✅ 사장님이 바로 따라 할 수 있는 실무형 원고로 작성하세요.
+
+[사용자 직접 입력 원문 — 이 내용을 최우선으로 보존]
+${rawInput}
+` : '';
+
   return `당신은 세무법인 밀당레터 꿀팁 원고 작가입니다.
 밀당레터 꿀팁은 "긴 설명문"이 아니라 "정보 카드형"입니다.
 친구 세무사가 사장님에게 짧고 명확하게 귀띔해주는 실전 정보 코너입니다.
@@ -3049,11 +3465,13 @@ ${overrideWarning}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ${tipDataSection}
-${p.tipType === '혜택형' ? buildBenefitHint(p) : ''}
+${(p.tipType === '혜택형' && !isNonPolicyDirect) ? buildBenefitHint(p) : ''}
+${directInputSection}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${isNonPolicyDirect
+  ? '[★ 직접 입력 보존 — 실무형 포맷으로 작성 (공고형 금지)]'
+  : '[★ "' + p.tipType + '" 전용 포맷 — 반드시 이 구조로 작성]'}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-[★ "${p.tipType}" 전용 포맷 — 반드시 이 구조로 작성]
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${formatHint}
+${isNonPolicyDirect ? directPreserveBlock : formatHint}
 
 [공통 톤 & 규칙]
 ✓ 구어체, 짧고 직접적, 세법 조문 금지
@@ -3121,6 +3539,18 @@ function buildQuizPrompt(p) {
     : '';
 
   const penaltyQuizBlock = (penaltyMode && !policyMode) ? '\n[참고: 이번 선택 주제는 가산세/신고 결과 축이라 가산세 소재 허용]\n' : '';
+
+  /* ── 재생성 다양성 — 이전 퀴즈 history 회피 블록 ── */
+  const quizHistoryBlock = summarizeQuizHistoryForPrompt(p.rejectedQuizHistory);
+
+  /* ── 주제별 quiz_axis 후보 제안 (같은 주제라도 매번 다른 학습축) ── */
+  const axisCandidates = suggestQuizAxes(p);
+  const quizAxisBlock = axisCandidates.length ? '\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    + '[★ 이 주제에서 고를 수 있는 quiz_axis(학습축) 후보 — 매번 다른 축을 선택]\n'
+    + '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
+    + axisCandidates.map((a, i) => `  ${i + 1}. ${a}`).join('\n') + '\n'
+    + '※ 같은 주제라도 위 축 중 매번 다른 축을 골라, 표현만 바꾼 반복 퀴즈를 피하세요.\n'
+    : '';
 
   /* ══════════════════════════════════════════════════════
      난이도별 문제 유형 — 구조 자체가 달라야 합니다
@@ -3315,16 +3745,22 @@ function buildQuizPrompt(p) {
       + '  "question": "O/X 문장 — 참/거짓을 명확하게 판단할 수 있는 사실 확인 한 문장 (필수)\\n  × 비교 표현 금지: \'아래 중\', \'가장 적절한\', \'무엇인가요\'\\n  × 조건에 따라 답이 달라지는 애매한 문장 금지 (\'~수 있다\' 남용 주의)",\n'
       + '  "answer": "O 또는 X — 반드시 대문자 문자열 (필수)",\n'
       + '  "explanation": "정답 해설 — 2~3문장, 쉬운 말로 (필수, 세법 조문·법률 용어 금지)",\n'
-      + '  "key_point": "정답 핵심을 짧게 정리하는 한 줄 (필수 — 절대 비워두지 마세요)"\n'
+      + '  "key_point": "정답 핵심을 짧게 정리하는 한 줄 (필수 — 절대 비워두지 마세요)",\n'
+      + '  "quiz_axis": "이 퀴즈가 묻는 학습 포인트 한 줄 (재생성 시 이전과 달라야 함)",\n'
+      + '  "answer_type": "정답 유형 (예: 참/거짓 판단, 개념 확인, 상황 판단)",\n'
+      + '  "correct_choice_pattern": "정답 구조 한 줄 (O/X는 \'O\' 또는 \'X\')"\n'
       + '}'
-    : '⚠ 아래 6개 필드를 반드시 모두 출력하세요. 하나라도 빠지면 안 됩니다.\n'
+    : '⚠ 아래 9개 필드를 반드시 모두 출력하세요. 하나라도 빠지면 안 됩니다.\n'
       + '{\n'
       + '  "quiz_title": "퀴즈 제목 — 사장님이 가볍게 읽을 수 있는 질문형 문장 (필수)",\n'
       + '  "question": "4지선다 문제 — 구어체, 법조문식 표현 금지 (필수)",\n'
       + '  ' + mcOptionDesc + ',\n'
       + '  "answer": 0,\n'
       + '  "explanation": "정답 해설 — 2~3문장, 쉬운 말로 (필수, 세법 조문·법률 용어 금지, 실무 상황 중심)",\n'
-      + '  "key_point": "정답 핵심을 짧게 정리하는 한 줄 (필수 — 절대 비워두지 마세요)"\n'
+      + '  "key_point": "정답 핵심을 짧게 정리하는 한 줄 (필수 — 절대 비워두지 마세요)",\n'
+      + '  "quiz_axis": "이 퀴즈가 묻는 학습 포인트 한 줄 (재생성 시 이전 quiz_axis와 반드시 달라야 함)",\n'
+      + '  "answer_type": "정답 유형 (예: 단일 정답, 비교 판단, 모두 확인)",\n'
+      + '  "correct_choice_pattern": "정답 선택지의 구조 한 줄 (예: \'단일 항목\', \'모두 확인\' — \'모두 확인\'은 남발 금지)"\n'
       + '}';
 
   return '당신은 세무법인 밀당레터 세무내공 +1 퀴즈 출제자입니다.\n'
@@ -3349,6 +3785,8 @@ function buildQuizPrompt(p) {
     + (topicHint ? '\n' + topicHint + '\n' : '')
     + policyQuizBlock
     + penaltyQuizBlock
+    + quizAxisBlock
+    + quizHistoryBlock
     + '\n'
     + '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'
     + '[퀴즈 주제 선택 우선순위 — 반드시 이 순서대로]\n'
@@ -3376,6 +3814,14 @@ function buildQuizPrompt(p) {
     + '  × "가산세가 발생할 수 있는 경우는?" 유형 금지 (여러 선택지가 해당될 수 있음)\n'
     + '  ✅ 비교형 질문으로 정답을 하나로 좁히세요\n'
     + '     예: "가장 위험이 낮은 경우" / "가장 먼저 할 행동" / "가장 안전한 사장님"\n'
+    + '\n'
+    + '[★ 재생성·다양성 공통 규칙]\n'
+    + '  ✅ 같은 주제라도 매번 다른 quiz_axis(학습축)를 선택한다.\n'
+    + '  ✅ 보기는 단순히 순서만 바꾸지 않는다.\n'
+    + '  ✅ 정답이 "모두 확인"인 문제는 남발하지 않는다. (특히 4지선다에서 "모두 확인" 정답 반복 금지)\n'
+    + '  ✅ 이전 퀴즈와 question/choices/answer/explanation 구조가 60% 이상 유사하면 제외한다.\n'
+    + '  ✅ 4지선다 퀴즈에서는 오답도 실제로 헷갈릴 만해야 한다.\n'
+    + '  ✅ 재생성은 표현만 바꾸는 것이 아니라 다른 학습 포인트를 물어야 한다.\n'
     + '\n'
     + '✅ quiz_title: 사장님이 자연스럽게 읽을 수 있는 질문형 문장\n'
     + '   좋은 예: "신고했는데도 가산세가 나올 수 있을까요?"\n'
@@ -3456,6 +3902,30 @@ function buildOpeningPrompt(p) {
 밀당레터 오프닝은 사장님에게 자연스럽게 말을 거는 업무형 공감 도입문입니다.
 오프닝 후보 3개는 서로 소재가 달라야 합니다.
 후보 3개가 모두 같은 주제(가산세, 신고 후 확인 등)로만 시작하면 안 됩니다.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[★ 오프닝 멘트 가이드 — 반드시 반영]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+오프닝 멘트는 "밥 먹었어?" 같은 가벼운 인삿말에 가깝습니다.
+무겁게 세법 설명이나 과한 경고로 시작하지 말고, 가볍고 자연스럽게 말을 걸어야 합니다.
+하지만 단순 인사처럼 흐려지면 안 됩니다. 전체 콘텐츠의 핵심 episode를 정확히 찔러야 합니다.
+
+기준:
+✅ 가볍게 말을 걸되, 오늘 내용의 중심(이번 회차 핵심 episode)을 정확히 찌르는 오프닝
+✅ 사장님이 편하게 듣기 시작할 수 있는 자연스러운 말투
+✅ 뒤에 나올 사연/꿀팁/퀴즈와 연결되는 상황 제시
+✅ 3~5문장 이내
+❌ 세법 설명으로 시작하지 말 것
+❌ 과한 공포/경고로 시작하지 말 것
+❌ "오늘은 ~에 대해 알아보겠습니다" 같은 공고문식 문장 지양
+
+[가이드 예시 — 예약금 주제일 때]
+사장님, 예약금 먼저 받아놓고 나중에 취소될까 봐 애매했던 적 있으세요?
+
+돈은 들어왔는데 아직 서비스를 제공한 건 아니고,
+환불 가능성도 남아 있으면 매출로 봐야 할지 헷갈릴 수 있습니다.
+
+오늘은 예약금 받을 때 헷갈리는 매출 처리 기준을 쉽게 정리해볼게요.
 
 [이번 회차 정보]
 주제: ${p.subjectTitle}
@@ -4206,8 +4676,39 @@ export default async function handler(req, res) {
     }
   }
 
-  // stories: 중복 검증 (재생성 트리거 없이 경고만 — 클라이언트에서 표시)
+  // stories: 선택 주제 episode lock — off-episode 후보 제거 + episode seed로 5개 보강
   if (type === 'stories' && Array.isArray(result.stories)) {
+    const subjectForGuard = {
+      title:           (payload && payload.subjectTitle)   || '',
+      summary:         (payload && payload.subjectSummary) || '',
+      episode_axis:    (payload && payload.episodeAxis)    || '',
+      trigger_moment:  (payload && payload.triggerMoment)  || '',
+      conflict_axis:   (payload && payload.conflictAxis)   || '',
+      money_flow_axis: (payload && payload.moneyFlowAxis)  || '',
+      resolution_angle:(payload && payload.resolutionAngle)|| '',
+      problem_axis:    (payload && payload.problemAxis)    || '',
+      subject_category:(payload && payload.subjectCategory)|| '',
+      tax_question:    (payload && payload.taxQuestion)    || '',
+    };
+    const lock = processStoriesWithEpisodeLock(result.stories, subjectForGuard);
+    if (lock.stats.guarded) {
+      console.log('[stories:episode-lock]', {
+        episodeKey: lock.stats.episodeKey,
+        offEpisodeRemoved: lock.stats.offEpisodeRemoved,
+        seedFallbackUsed: lock.stats.seedFallbackUsed,
+        finalCount: lock.stats.finalCount,
+      });
+      result.stories = lock.stories;
+      result._episode_lock = {
+        episodeKey: lock.stats.episodeKey,
+        offEpisodeRemoved: lock.stats.offEpisodeRemoved,
+        seedFallbackUsed: lock.stats.seedFallbackUsed,
+      };
+      /* 내부 플래그는 화면에 노출하지 않음 (seed 여부 숨김) */
+      result.stories.forEach(s => { delete s._offEpisode; delete s._storySeedFallback; });
+    }
+
+    // stories: 중복 검증 (재생성 트리거 없이 경고만 — 클라이언트에서 표시)
     const dupCheck = checkStoriesDuplicate(result.stories);
     if (dupCheck.length > 0) {
       console.log('[stories-validate] 서버 중복 경고:', dupCheck);
