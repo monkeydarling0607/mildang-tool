@@ -292,24 +292,28 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <div id="t1fetchResult"></div>
   </div>
 
-  <!-- 보조 입력 — 카드 밖 -->
+  <!-- 보조 입력 — 아코디언 (기본 접힘) -->
   <div class="t1-sec-aux">
-    <div class="t1-sec-title" style="color:var(--text2);font-weight:600;margin-bottom:12px">보조 입력</div>
-    <div class="fl" style="margin-bottom:4px">(선택) 직전 회차 제목 직접 입력</div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:6px">자동 불러오기가 어려운 경우 직접 입력하세요.</div>
-    <input class="fi" id="t1prevTitle" placeholder="예: 사장님, 이 지출 비용처리 못 하면 손해입니다" style="margin-bottom:14px">
-    <div class="fl" style="margin-bottom:4px">(선택) 직전 회차 HTML 붙여넣기</div>
-    <div class="paste-area-wrap" id="pasteWrap">
-      <textarea class="fi paste-area" id="t1html"
-        placeholder="직전 회차 뉴스레터 HTML 전체를 여기에 붙여넣으세요.&#10;제목·주제·키워드·오프닝·CTA 패턴이 자동으로 추출됩니다."
-        oninput="onPasteInput()"></textarea>
-      <button class="paste-clear" onclick="clearPaste()">지우기</button>
+    <button onclick="toggleAuxInput()" id="btn-aux-toggle" type="button"
+      style="background:none;border:none;padding:0;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit;letter-spacing:.01em">
+      <span id="aux-toggle-icon" style="font-size:9px">▶</span> (선택) 직전 회차 직접 입력
+    </button>
+    <div id="t1auxWrap" style="display:none;margin-top:12px">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:12px">스티비 링크를 불러오지 못한 경우, 직전 회차 제목이나 HTML을 직접 입력할 수 있습니다.</div>
+      <div class="fl" style="margin-bottom:4px">제목</div>
+      <input class="fi" id="t1prevTitle" placeholder="예: 사장님, 이 지출 비용처리 못 하면 손해입니다" style="margin-bottom:14px">
+      <div class="fl" style="margin-bottom:4px">직전회차 HTML 붙여넣기</div>
+      <div class="paste-area-wrap" id="pasteWrap">
+        <textarea class="fi paste-area" id="t1html"
+          placeholder="직전 회차 뉴스레터 HTML을 붙여넣으세요.&#10;제목·주제·키워드·오프닝·CTA 패턴이 자동으로 추출됩니다."
+          oninput="onPasteInput()"></textarea>
+        <button class="paste-clear" onclick="clearPaste()">지우기</button>
+      </div>
     </div>
   </div>
 
   <div class="btn-row">
     <button class="btn-main" id="btn-analyze" onclick="runAnalyze()">분석 생성</button>
-    <button class="btn-next" id="next0" disabled onclick="completeTab(0,1)">다음 →</button>
   </div>
 
   <!-- 분석 결과 -->
@@ -322,28 +326,13 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
       <button class="btn-sm" id="btn-archive-t1" onclick="addAnalysisToArchive()">이 회차를 아카이브에 저장</button>
       <span id="archive-t1-saved" style="display:none;margin-left:8px;font-size:12px;color:var(--teal-text);font-weight:500">✓ 저장됨</span>
     </div>
-  </div>
-
-  <!-- 과거 회차 일괄 등록 (접힘/펼침) -->
-  <div style="margin-top:1.5rem">
-    <div class="divider"></div>
-    <button onclick="toggleBulkArchive()" id="btn-bulk-toggle"
-      style="background:none;border:none;padding:0;font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;display:inline-flex;align-items:center;gap:4px;font-family:inherit;letter-spacing:.01em">
-      <span id="bulk-toggle-icon" style="font-size:9px">▶</span> 과거 회차 일괄 등록
-    </button>
-    <div id="t1bulkWrap" style="display:none;margin-top:12px">
-      <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px">과거 회차 일괄 등록</div>
-      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">여러 회차 링크를 한 번에 아카이브에 저장할 수 있습니다.</div>
-      <div class="fl">스티비 회차 링크 목록 <span style="font-weight:400;text-transform:none;color:var(--text3)">(한 줄에 하나씩, 최대 20개)</span></div>
-      <textarea class="fi" id="t1bulkUrls" rows="5"
-        placeholder="https://saemmil.stibee.com/p/24/&#10;https://saemmil.stibee.com/p/23/&#10;https://saemmil.stibee.com/p/22/"
-        style="margin-bottom:6px"></textarea>
-      <div class="btn-row" style="margin-top:0">
-        <button class="btn-main" id="btn-bulk-archive" onclick="callBulkArchive()">아카이브에 일괄 등록</button>
-      </div>
-      <div id="t1bulkResult"></div>
+    <!-- 다음 버튼 — 분석 결과 아래 (결과 생성 후 활성화) -->
+    <div class="btn-row" id="t1next-row">
+      <button class="btn-next" id="next0" disabled onclick="completeTab(0,1)">다음 →</button>
     </div>
   </div>
+
+  <!-- 과거 회차 일괄 등록은 12번 아카이브 페이지에서 관리합니다. (이전: 1번 페이지 일괄 등록 영역 제거) -->
 </div>
 
 <!-- ══════ TAB 2 — 주제 선정 ══════ -->
@@ -760,6 +749,12 @@ function restoreState() {
     document.getElementById('t1html').value = S.rawHtml;
     onPasteInput();
   }
+  /* 직접 입력값이 복원되면 아코디언을 펼쳐 내용이 보이도록 */
+  if ((S.prevTitle || S.rawHtml) && document.getElementById('t1auxWrap')) {
+    document.getElementById('t1auxWrap').style.display = 'block';
+    var auxIcon = document.getElementById('aux-toggle-icon');
+    if (auxIcon) auxIcon.textContent = '▼';
+  }
 
   /* 분석 결과 복원 */
   if (S.analysis) {
@@ -863,7 +858,7 @@ function hardReset() {
   S.archiveDeletedKeys = preservedDeletedKeys;
 
   /* DOM 입력값 초기화 */
-  ['t1ctr','t1share','t1note','t1prevTitle','t1html','t1stibeeUrl','t1bulkUrls',
+  ['t1ctr','t1share','t1note','t1prevTitle','t1html','t1stibeeUrl',
    't5newsInput','t5benefitUrl','t5benefitPaste',
    'newsUrlInput','newsMemoInput',
    'arc-date','arc-title','arc-ctr','arc-share','arc-topic','arc-story',
@@ -871,6 +866,12 @@ function hardReset() {
   ].forEach(function(id) {
     var el = document.getElementById(id); if (el) el.value = '';
   });
+
+  /* 보조 입력 아코디언 접기 */
+  var auxWrapEl = document.getElementById('t1auxWrap');
+  if (auxWrapEl) auxWrapEl.style.display = 'none';
+  var auxIconEl = document.getElementById('aux-toggle-icon');
+  if (auxIconEl) auxIconEl.textContent = '▶';
 
   /* 혜택형 PDF 입력 초기화 */
   if (typeof clearBenefitPdf === 'function') clearBenefitPdf();
@@ -890,7 +891,6 @@ function hardReset() {
   if (t1skel) t1skel.style.display = 'block';
   var t1fr = document.getElementById('t1fetchResult'); if (t1fr) t1fr.innerHTML = '';
   var t1ar = document.getElementById('t1archive-row'); if (t1ar) t1ar.style.display = 'none';
-  var t1bulkResult = document.getElementById('t1bulkResult'); if (t1bulkResult) t1bulkResult.innerHTML = '';
   var pasteWrap = document.getElementById('pasteWrap');
   if (pasteWrap) pasteWrap.classList.remove('has-content');
 
@@ -1390,93 +1390,20 @@ function renderFetchResult(entry, containerId) {
     + (rows.length > 0
         ? '<div class="fetch-result-meta" style="margin-top:5px">' + rows.join('&nbsp;&nbsp;·&nbsp;&nbsp;') + '</div>'
         : '')
-    + '<div style="font-size:11px;color:var(--teal-text);margin-top:8px;opacity:.75">HTML이 아래 붙여넣기 영역에 자동으로 채워졌습니다. 분석 생성 후 아카이브에 저장하거나, 바로 아카이브 저장 버튼을 누르세요.</div>'
+    + '<div style="font-size:11px;color:var(--teal-text);margin-top:8px;opacity:.75">회차 구성을 불러왔습니다. 분석 생성 후 아카이브에 저장하거나, 바로 아카이브 저장 버튼을 누르세요.</div>'
     + '</div>';
 }
 
-function toggleBulkArchive() {
-  var wrap = document.getElementById('t1bulkWrap');
-  var icon = document.getElementById('bulk-toggle-icon');
+function toggleAuxInput() {
+  var wrap = document.getElementById('t1auxWrap');
+  var icon = document.getElementById('aux-toggle-icon');
   var open = wrap.style.display === 'none';
   wrap.style.display = open ? 'block' : 'none';
   icon.textContent   = open ? '▼' : '▶';
 }
 
-async function callBulkArchive() {
-  var raw = (document.getElementById('t1bulkUrls').value || '').trim();
-  if (!raw) { alert('등록할 스티비 링크를 입력해주세요'); return; }
-
-  var urls = raw.split('\n').map(function(u){ return u.trim(); }).filter(function(u){ return u.length > 0; });
-  if (urls.length === 0) { alert('유효한 링크가 없습니다'); return; }
-  if (urls.length > 20) { alert('한 번에 최대 20개까지 처리 가능합니다'); return; }
-
-  var resultEl = document.getElementById('t1bulkResult');
-  resultEl.innerHTML = '<div class="loading-pulse"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span style="margin-left:6px">' + urls.length + '개 링크 처리 중...</span></div>';
-  setBtn('btn-bulk-archive', true);
-
-  try {
-    var res = await fetch('/api/fetch-archive', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ urls: urls, includeHtml: false })
-    });
-    var data = await res.json();
-    if (!res.ok || !data.ok) throw new Error((data && data.error) || ('HTTP ' + res.status));
-
-    var results = Array.isArray(data.results) ? data.results : [];
-    var errors  = Array.isArray(data.errors)  ? data.errors  : [];
-
-    /* 중복 체크 + tombstone 체크 후 아카이브에 추가 */
-    if (!Array.isArray(S.archive))            S.archive = [];
-    if (!Array.isArray(S.archiveDeletedKeys)) S.archiveDeletedKeys = [];
-    var deletedSet = new Set(S.archiveDeletedKeys.filter(Boolean));
-    var added = 0;
-    var skipped = 0;
-    results.forEach(function(entry) {
-      var candidate = {
-        issueNo:          entry.issueNo || '',
-        date:             entry.date    || new Date().toISOString().slice(0, 10),
-        kakaoTitle:       entry.kakaoTitle    || entry.title       || '',
-        topic:            entry.topic         || '',                          /* 새 파서가 title에서 추출 */
-        storySummary:     entry.storySummary  || '',                          /* 비어 있어도 OK — 잘못된 값보다 빈 값 */
-        tipSummary:       entry.tipSummary    || '',
-        quizSummary:      entry.quizSummary   || '',
-        newsSummary:      entry.newsSummary   || '',
-        avoidExpressions: entry.avoidExpressions || '',
-        ctr:              0,
-        share:            0,
-        note:             ''
-      };
-      var key = archiveItemKey(candidate);
-      if (key && deletedSet.has(key)) { skipped++; return; }   /* tombstone — 부활 금지 */
-      var isDup = S.archive.some(function(a) {
-        var ak = archiveItemKey(a);
-        return key && ak && ak === key;
-      });
-      if (isDup) { skipped++; return; }
-      S.archive.push(candidate);
-      added++;
-    });
-
-    saveState();
-    renderArchive();
-
-    var lines = [];
-    if (added   > 0) lines.push('✓ ' + added + '개 회차를 아카이브에 추가했습니다.');
-    if (skipped > 0) lines.push('⚠ ' + skipped + '개는 이미 아카이브에 있어 건너뛰었습니다.');
-    if (errors.length > 0) {
-      lines.push('✕ ' + errors.length + '개 링크 오류:');
-      errors.forEach(function(e){ lines.push('  ' + escHtml(e.url) + ' — ' + escHtml(e.message)); });
-    }
-
-    resultEl.innerHTML = '<div class="bulk-result-card">' + lines.map(function(l){ return escHtml(l); }).join('<br>') + '</div>';
-
-  } catch(e) {
-    resultEl.innerHTML = '<div class="err-box">일괄 등록 실패: ' + escHtml(e.message) + '</div>';
-  } finally {
-    setBtn('btn-bulk-archive', false);
-  }
-}
+/* 과거 회차 일괄 등록은 12번 아카이브 페이지에서 관리합니다.
+   (1번 페이지의 toggleBulkArchive / callBulkArchive 는 제거됨) */
 
 /* ══════════════════════════════════════
    TAB 2 — 주제 후보
