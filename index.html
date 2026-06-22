@@ -381,54 +381,55 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <!-- ① 주제 기반 꿀팁 후보 생성 -->
   <div class="t1-sub-title">주제 기반 꿀팁 후보</div>
   <div id="t5topicGuide" style="display:none;font-size:12px;color:var(--text3);background:var(--bg2);border-radius:var(--radius);padding:9px 12px;margin-bottom:10px">
-    주제를 선택하면 주제·사연에 맞는 추천 꿀팁 후보가 생성됩니다. 주제 없이도 아래 <b>참고 자료로 꿀팁 만들기</b>는 바로 사용할 수 있습니다.
+    주제를 선택하면 주제·사연에 맞는 추천 꿀팁 후보가 생성됩니다. 주제 없이도 아래 <b>[선택] 직접 꿀팁 만들기</b>는 바로 사용할 수 있습니다.
   </div>
-  <div class="fl">참고 뉴스·정책 메모 <span style="font-weight:400;text-transform:none;color:var(--text3)">(선택 — 꿀팁 생성에 반영됩니다)</span></div>
-  <textarea class="fi" id="t5newsInput" rows="3" placeholder="예: 소상공인 전기요금 특별지원 신청 기한 5월 31일 / 24년 종합소득세 신고 5월 ..."></textarea>
   <div class="btn-row" style="margin-bottom:1rem">
     <button class="btn-main" id="btn-tips" onclick="callTips()">꿀팁 후보 생성</button>
     <button class="btn-main" id="btn-regen-tips" style="display:none" onclick="callTips()">재생성</button>
   </div>
   <div id="t5area"><div class="skel"><p>생성 버튼을 눌러주세요</p></div></div>
 
-  <!-- ② 참고 자료로 꿀팁 만들기 -->
-  <div class="divider" style="margin:1.5rem 0 1.5rem"></div>
-  <div class="ph" style="margin-bottom:6px">
-    <span class="tag" style="font-size:11px;background:var(--tip-benefit-bg);border-color:var(--tip-benefit-bd);color:var(--tip-benefit-text)">참고</span>
-    <span class="ph-title" style="font-size:14px">참고 자료로 꿀팁 만들기</span>
-  </div>
-  <p class="ph-sub" style="font-size:12px;margin-bottom:1.25rem">URL / PDF / 직접 입력을 바탕으로 꿀팁을 만들 수 있습니다. 지원사업 공고뿐 아니라 정보성 가이드, 체크리스트, 대처방안도 사용할 수 있습니다.</p>
-
-  <div class="fl">참고 URL</div>
-  <input type="text" class="fi" id="t5benefitUrl" placeholder="정보성 글, 공고문, 가이드 URL을 붙여넣으세요." style="margin-bottom:10px">
-
-  <div class="fl">참고 PDF</div>
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-    <label style="display:inline-block;padding:5px 12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);font-size:12px;cursor:pointer;color:var(--text)">
-      PDF 선택
-      <input type="file" id="t5benefitPdf" accept=".pdf" style="display:none" onchange="handleBenefitPdf(this)">
-    </label>
-    <span id="t5pdfName" style="font-size:12px;color:var(--text2)">선택된 파일 없음</span>
-    <button id="t5pdfClear" onclick="clearBenefitPdf()" style="display:none;padding:3px 8px;border:0.5px solid var(--border);border-radius:4px;background:transparent;font-size:11px;color:var(--text3);cursor:pointer">✕ 제거</button>
-  </div>
-
-  <!-- 직접 입력 — 보조 입력 (아코디언, 기본 접힘) -->
-  <div style="margin-bottom:10px">
-    <button onclick="toggleBenefitPaste()" id="btn-benefit-paste-toggle" type="button"
-      style="background:transparent;border:none;padding:4px 0;font-size:12px;font-weight:400;color:var(--text3);cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;text-decoration:none">
-      <span id="benefit-paste-icon" style="font-size:8px">▶</span> 직접 입력하기
+  <!-- ② [선택] 직접 꿀팁 만들기 — 보조 옵션 아코디언 (기본 접힘) -->
+  <div style="margin:1.25rem 0">
+    <button onclick="toggleBenefitSection()" id="btn-benefit-toggle" type="button"
+      style="background:transparent;border:none;padding:4px 0;font-size:13px;font-weight:400;color:var(--text3);cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit;text-decoration:none">
+      <span id="benefit-toggle-icon" style="font-size:8px">▶</span> [선택] 직접 꿀팁 만들기
     </button>
-    <div id="t5benefitPasteWrap" style="display:none;margin-top:8px">
-      <div style="font-size:12px;color:var(--text3);margin-bottom:6px">URL이나 PDF를 읽지 못한 경우, 또는 직접 정리한 내용을 넣고 싶을 때 사용하세요.</div>
-      <textarea class="fi" id="t5benefitPaste" rows="6" placeholder="기사/공고/가이드/체크리스트/대처방안을 붙여넣으세요."></textarea>
+    <div id="t5benefitSection" style="display:none;margin-top:12px">
+      <p class="ph-sub" style="font-size:12px;margin-bottom:1rem">URL / PDF / 직접 입력을 바탕으로 꿀팁을 만들 수 있습니다. 지원사업 공고뿐 아니라 정보성 가이드, 체크리스트, 대처방안도 사용할 수 있습니다.</p>
+
+      <div class="fl">참고 URL</div>
+      <input type="text" class="fi" id="t5benefitUrl" placeholder="정보성 글, 공고문, 가이드 URL을 붙여넣으세요." style="margin-bottom:10px">
+
+      <div class="fl">참고 PDF</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <label style="display:inline-block;padding:5px 12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);font-size:12px;cursor:pointer;color:var(--text)">
+          PDF 선택
+          <input type="file" id="t5benefitPdf" accept=".pdf" style="display:none" onchange="handleBenefitPdf(this)">
+        </label>
+        <span id="t5pdfName" style="font-size:12px;color:var(--text2)">선택된 파일 없음</span>
+        <button id="t5pdfClear" onclick="clearBenefitPdf()" style="display:none;padding:3px 8px;border:0.5px solid var(--border);border-radius:4px;background:transparent;font-size:11px;color:var(--text3);cursor:pointer">✕ 제거</button>
+      </div>
+
+      <!-- 직접 입력 — 보조 입력 (아코디언, 기본 접힘) -->
+      <div style="margin-bottom:10px">
+        <button onclick="toggleBenefitPaste()" id="btn-benefit-paste-toggle" type="button"
+          style="background:transparent;border:none;padding:4px 0;font-size:12px;font-weight:400;color:var(--text3);cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;text-decoration:none">
+          <span id="benefit-paste-icon" style="font-size:8px">▶</span> 직접 입력하기
+        </button>
+        <div id="t5benefitPasteWrap" style="display:none;margin-top:8px">
+          <div style="font-size:12px;color:var(--text3);margin-bottom:6px">URL이나 PDF를 읽지 못한 경우, 또는 직접 정리한 내용을 넣고 싶을 때 사용하세요.</div>
+          <textarea class="fi" id="t5benefitPaste" rows="6" placeholder="기사/공고/가이드/체크리스트/대처방안을 붙여넣으세요."></textarea>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:10px;margin-bottom:0">
+        <button class="btn-main" id="btn-extract-benefit" onclick="callExtractBenefit()">참고 자료로 꿀팁 만들기</button>
+        <button class="btn-sm" onclick="resetBenefitInput()" style="color:var(--text3)">입력 초기화</button>
+      </div>
+      <div id="t5benefitArea"></div>
     </div>
   </div>
-
-  <div class="btn-row" style="margin-top:10px;margin-bottom:1rem">
-    <button class="btn-main" id="btn-extract-benefit" onclick="callExtractBenefit()">참고 자료로 꿀팁 만들기</button>
-    <button class="btn-sm" onclick="resetBenefitInput()" style="color:var(--text3)">입력 초기화</button>
-  </div>
-  <div id="t5benefitArea"></div>
 
   <!-- ③ 꿀팁 완성 원고 (선택/생성된 꿀팁 기반) -->
   <div class="divider" style="margin:1.5rem 0 1.5rem"></div>
@@ -693,7 +694,6 @@ var S = {
   /* 탭4 — 사연 원고 */
   storyDraft: null,
   /* 탭5 — 꿀팁 */
-  tipUserNews: '',
   tipData: null, tip: null, benefitSearch: null,
   benefitTip: null,   /* 사용자가 직접 입력한 혜택형 꿀팁 */
   /* 탭6 — 꿀팁 원고 */
@@ -792,7 +792,7 @@ function restoreState() {
   if (S.storyData)    { renderStories();  showRegenBtn('stories');  }
   if (S.storyDraft)   { renderStoryDraft(S.storyDraft); showRegenBtn('story-draft'); }
   if (S.tipData)      { renderTips();     showRegenBtn('tips');     }
-  if (S.benefitTip)  { renderBenefitTip(); }
+  if (S.benefitTip)  { renderBenefitTip(); setBenefitSectionOpen(true); }  /* 직접 만든 꿀팁 결과가 있으면 보조 섹션 펼침 */
   if (S.tipDraft)     { renderTipDraft(S.tipDraft); showRegenBtn('tip-draft'); }
   if (S.quizData)     { renderQuiz(S.quizData); showRegenBtn('quiz'); }
   /* 뉴스 브리핑 원고 복원 */
@@ -854,7 +854,6 @@ function hardReset() {
   S.subjectData = null; S.subject = null;
   S.subjectRegenCount = 0; S.subjectRejectedHistory = [];
   S.storyData = null;   S.story = null;   S.storyDraft = null;
-  S.tipUserNews = '';
   S.tipData = null; S.tip = null; S.tipDraft = null;
   S.benefitSearch = null; S.benefitTip = null;
   S.quizFormat = 'ox'; S.quizDiff = 'normal'; S.quizData = null; S.rejectedQuizHistory = [];
@@ -868,7 +867,7 @@ function hardReset() {
 
   /* DOM 입력값 초기화 */
   ['t1ctr','t1share','t1note','t1prevTitle','t1html','t1stibeeUrl',
-   't5newsInput','t5benefitUrl','t5benefitPaste',
+   't5benefitUrl','t5benefitPaste',
    'newsUrlInput','newsMemoInput',
    'arc-date','arc-title','arc-ctr','arc-share','arc-topic','arc-story',
    'arc-tip','arc-quiz','arc-news','arc-avoid','arc-note'
@@ -876,11 +875,16 @@ function hardReset() {
     var el = document.getElementById(id); if (el) el.value = '';
   });
 
-  /* 보조 입력 아코디언 접기 */
+  /* 보조 입력 아코디언 접기 (탭1 직접 입력 / 꿀팁 직접 만들기 섹션·직접 입력하기) */
   var auxWrapEl = document.getElementById('t1auxWrap');
   if (auxWrapEl) auxWrapEl.style.display = 'none';
   var auxIconEl = document.getElementById('aux-toggle-icon');
   if (auxIconEl) auxIconEl.textContent = '▶';
+  if (typeof setBenefitSectionOpen === 'function') setBenefitSectionOpen(false);
+  var benefitPasteWrapEl = document.getElementById('t5benefitPasteWrap');
+  if (benefitPasteWrapEl) benefitPasteWrapEl.style.display = 'none';
+  var benefitPasteIconEl = document.getElementById('benefit-paste-icon');
+  if (benefitPasteIconEl) benefitPasteIconEl.textContent = '▶';
 
   /* 혜택형 PDF 입력 초기화 */
   if (typeof clearBenefitPdf === 'function') clearBenefitPdf();
@@ -956,7 +960,7 @@ function softReset() {
   S.subjectData=null; S.subject=null;
   S.subjectRegenCount = 0; S.subjectRejectedHistory = [];
   S.storyData=null;   S.story=null;    S.storyDraft=null;
-  S.tipUserNews='';   S.tipData=null;  S.tip=null; S.tipDraft=null; S.benefitSearch=null; S.benefitTip=null;
+  S.tipData=null;  S.tip=null; S.tipDraft=null; S.benefitSearch=null; S.benefitTip=null;
   S.quizFormat='ox';  S.quizDiff='normal'; S.quizData=null; S.rejectedQuizHistory=[];
   S.newsCandidates=[];
   S.openingData=null; S.opening=null;   S.openingDraft=null;
@@ -980,7 +984,16 @@ function softReset() {
   if (nbl) nbl.innerHTML = '';
   var nbs = document.getElementById('newsBriefingSection');
   if (nbs) nbs.style.display = 'none';
-  document.getElementById('t5newsInput').value='';
+  /* 꿀팁 직접 만들기 입력·보조 섹션 초기화 */
+  ['t5benefitUrl','t5benefitPaste'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+  if (typeof clearBenefitPdf === 'function') clearBenefitPdf();
+  if (typeof setBenefitSectionOpen === 'function') setBenefitSectionOpen(false);
+  var sbPasteWrap = document.getElementById('t5benefitPasteWrap');
+  if (sbPasteWrap) sbPasteWrap.style.display = 'none';
+  var sbPasteIcon = document.getElementById('benefit-paste-icon');
+  if (sbPasteIcon) sbPasteIcon.textContent = '▶';
+  var sbBenefitArea = document.getElementById('t5benefitArea');
+  if (sbBenefitArea) sbBenefitArea.innerHTML = '';
 
   ['next1','next2','next3','next4','next6','next7','next8','next9','next10','next11'].forEach(function(id){ setBtn(id,true); });
 
@@ -1425,6 +1438,16 @@ function toggleAuxInput() {
   icon.textContent   = open ? '▼' : '▶';
 }
 
+/* 꿀팁 탭 — '[선택] 직접 꿀팁 만들기' 보조 섹션 아코디언 토글 */
+function toggleBenefitSection() {
+  var wrap = document.getElementById('t5benefitSection');
+  var icon = document.getElementById('benefit-toggle-icon');
+  if (!wrap) return;
+  var open = wrap.style.display === 'none';
+  wrap.style.display = open ? 'block' : 'none';
+  if (icon) icon.textContent = open ? '▼' : '▶';
+}
+
 /* 꿀팁 탭 — 참고 자료 '직접 입력하기' 아코디언 토글 */
 function toggleBenefitPaste() {
   var wrap = document.getElementById('t5benefitPasteWrap');
@@ -1432,6 +1455,14 @@ function toggleBenefitPaste() {
   if (!wrap) return;
   var open = wrap.style.display === 'none';
   wrap.style.display = open ? 'block' : 'none';
+  if (icon) icon.textContent = open ? '▼' : '▶';
+}
+
+/* 꿀팁 탭 — 보조 섹션 펼침/접힘 헬퍼 (복원/초기화용) */
+function setBenefitSectionOpen(open) {
+  var wrap = document.getElementById('t5benefitSection');
+  var icon = document.getElementById('benefit-toggle-icon');
+  if (wrap) wrap.style.display = open ? 'block' : 'none';
   if (icon) icon.textContent = open ? '▼' : '▶';
 }
 
@@ -2504,12 +2535,11 @@ async function callTips() {
       '<div style="padding:14px 16px;background:var(--bg2);border-radius:var(--radius);font-size:13px;line-height:1.7;color:var(--text2)">'
       + '<b>주제 선정 후 사용 가능</b><br>'
       + '주제 기반 추천 꿀팁 후보는 2번 탭에서 주제를 선택하면 생성됩니다.<br>'
-      + '주제 없이도 아래 <b>참고 자료로 꿀팁 만들기</b>(URL·PDF·직접 입력)는 바로 사용할 수 있습니다.'
+      + '주제 없이도 아래 <b>[선택] 직접 꿀팁 만들기</b>(URL·PDF·직접 입력)는 바로 사용할 수 있습니다.'
       + '</div>';
     return;
   }
   S.tip = null; S.tipDraft = null;
-  S.tipUserNews = document.getElementById('t5newsInput').value.trim();
   document.getElementById('t5area').innerHTML = loading();
   setBtn('next4', true);
   try {
@@ -2521,7 +2551,6 @@ async function callTips() {
       storyText:       S.story ? S.story.text : '',
       storyConflictAxis: S.story ? (S.story.conflict_axis || '') : '',
       ctr:             S.ctr,
-      userNewsInput:   S.tipUserNews,
       archive:         Array.isArray(S.archive) ? S.archive : [],
     });
     /* ── 클라이언트 안전망: 서버 필터를 통과한 것도 재검증 (선택 주제 축 컨텍스트 전달) ── */
@@ -2928,7 +2957,7 @@ async function callTipDraft() {
     document.getElementById('t6area').innerHTML =
       '<div style="padding:18px 20px;background:#FFF8F0;border:1px solid #F3C49C;border-radius:var(--radius);font-size:13px;line-height:1.7;color:#7A4A00">'
       + '<div style="font-weight:700;font-size:14px;margin-bottom:8px">📋 참고 자료가 필요합니다</div>'
-      + '<p style="margin:0 0 10px">위쪽 <b>참고 자료로 꿀팁 만들기</b> 섹션에서 참고 URL, PDF, 또는 직접 입력 내용을 넣은 뒤 [참고 자료로 꿀팁 만들기]를 눌러주세요.</p>'
+      + '<p style="margin:0 0 10px">위쪽 <b>[선택] 직접 꿀팁 만들기</b> 섹션을 펼쳐 참고 URL, PDF, 또는 직접 입력 내용을 넣은 뒤 [참고 자료로 꿀팁 만들기]를 눌러주세요.</p>'
       + '</div>';
     return;
   }

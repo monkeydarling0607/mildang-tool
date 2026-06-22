@@ -83,7 +83,7 @@ assert('callTips 주제 없을 때 참고 자료 안내(주제 선정 후 사용
    ═══════════════════════════════════════════════════════════════════ */
 console.log('');
 console.log('━━━ UI Test D) 참고 자료 입력 명칭 ━━━');
-assert('섹션 제목 "참고 자료로 꿀팁 만들기"', /참고 자료로 꿀팁 만들기/.test(html));
+assert('생성 버튼 문구 "참고 자료로 꿀팁 만들기"', /참고 자료로 꿀팁 만들기/.test(html));
 assert('필드 "참고 URL"', /<div class="fl">참고 URL<\/div>/.test(html));
 assert('필드 "참고 PDF"', /<div class="fl">참고 PDF<\/div>/.test(html));
 assert('"공고 URL" 명칭 제거', !/\(선택\) 공고 URL/.test(html));
@@ -117,6 +117,40 @@ assert('다음 버튼 next4 → completeTab(4,5)', /id="next4"[^>]*onclick="comp
 /* 다음은 원고 생성 후 활성화 (후보 선택만으로는 비활성) */
 assert('원고 생성 후 next4 활성화 복원', /if \(S\.tipDraft\)\s*setBtn\('next4', false\)/.test(html));
 assert('후보 선택만으로 next4 활성화하지 않음', !/if \(S\.tip\)\s*setBtn\('next4', false\)/.test(html));
+
+/* ═══════════════════════════════════════════════════════════════════
+   UI Test G) 꿀팁 탭 단순화 (상단 메모 삭제 + 직접 만들기 보조 아코디언)
+   ═══════════════════════════════════════════════════════════════════ */
+console.log('');
+console.log('━━━ UI Test G) 꿀팁 탭 단순화 ━━━');
+/* 1) 상단 "참고 뉴스·정책 메모" 입력란 완전 삭제 */
+assert('"참고 뉴스·정책 메모" 라벨 제거', !/참고 뉴스·정책 메모/.test(html));
+assert('t5newsInput textarea 제거', !/id="t5newsInput"/.test(html));
+assert('tipUserNews state 참조 제거', !/tipUserNews/.test(html));
+assert('userNewsInput payload 참조 제거', !/userNewsInput/.test(html));
+/* 2) 하단 섹션명 → "[선택] 직접 꿀팁 만들기" 토글 */
+assert('보조 섹션 토글 "[선택] 직접 꿀팁 만들기"', /toggleBenefitSection\(\)[\s\S]*?\[선택\] 직접 꿀팁 만들기/.test(html));
+assert('toggleBenefitSection 함수 정의', /function toggleBenefitSection\(\)/.test(html));
+assert('"\\[참고\\] 참고 자료로 꿀팁 만들기" 헤더(ph-title) 제거', !/<span class="ph-title"[^>]*>참고 자료로 꿀팁 만들기<\/span>/.test(html));
+/* 3) 직접 만들기 영역 기본 접힘 */
+const benefitSectionMatch = html.match(/<div id="t5benefitSection" style="([^"]*)"/);
+assert('t5benefitSection 기본 접힘(display:none)', !!benefitSectionMatch && /display:none/.test(benefitSectionMatch[1]), benefitSectionMatch ? benefitSectionMatch[1] : '');
+/* 4) 참고 URL/PDF/직접입력/버튼이 보조 섹션 안에 위치 (접힘 시 숨김) */
+const sectionBody = (html.match(/<div id="t5benefitSection"[\s\S]*?<div id="t6area"/) || [''])[0];
+assert('참고 URL 입력이 보조 섹션 내부', /id="t5benefitUrl"/.test(sectionBody));
+assert('참고 PDF 입력이 보조 섹션 내부', /id="t5benefitPdf"/.test(sectionBody));
+assert('직접 입력 textarea가 보조 섹션 내부', /id="t5benefitPaste"/.test(sectionBody));
+assert('참고 자료 생성 버튼이 보조 섹션 내부', /id="btn-extract-benefit"/.test(sectionBody));
+assert('입력 초기화 버튼이 보조 섹션 내부', /resetBenefitInput\(\)/.test(sectionBody));
+/* 5) 메인 흐름: t5area(후보) → 보조 토글 → t6area(원고) 순서 */
+const idxT5area   = html.indexOf('id="t5area"');
+const idxToggle   = html.indexOf('id="btn-benefit-toggle"');
+const idxT6area   = html.indexOf('id="t6area"');
+assert('순서: 후보(t5area) → 직접만들기 토글 → 원고(t6area)', idxT5area > 0 && idxToggle > idxT5area && idxT6area > idxToggle,
+  `t5area=${idxT5area}, toggle=${idxToggle}, t6area=${idxT6area}`);
+/* 6) 복원 시 직접 만든 결과 있으면 자동 펼침 / 초기화 시 접힘 */
+assert('복원 시 benefitTip 있으면 보조 섹션 펼침', /renderBenefitTip\(\);\s*setBenefitSectionOpen\(true\)/.test(html));
+assert('hardReset에서 보조 섹션 접힘', /setBenefitSectionOpen\(false\)/.test(html));
 
 /* ═══════════════════════════════════════════════════════════════════
    API Test A) extract-benefit — 정보성 URL 허용 + 분류
