@@ -3401,12 +3401,120 @@ cta: 이 숫자들로 [무엇을 판단할 수 있는지] 한 줄`,
      공고형(지원대상/신청기간/신청방법)으로 뭉개지 않도록 한다. */
   const isUserProvided = !!(p.tipIsUserProvided);
   const rawInput = String(p.tipRawInput || '').trim();
-  const tipInputType = (isUserProvided && rawInput) ? classifyTipInputType(rawInput) : '';
+  /* 입력 유형: 참고 자료 분류(p.tipInputType)가 있으면 우선 사용, 없으면 원문에서 분류 */
+  const tipInputType = (p.tipInputType && String(p.tipInputType).trim())
+    || ((isUserProvided && rawInput) ? classifyTipInputType(rawInput) : '');
   const isNonPolicyDirect = !!(isUserProvided && rawInput && tipInputType && tipInputType !== '지원사업/공고형');
 
   console.log('[tip-draft prompt] isUserProvided:', isUserProvided, '| tipInputType:', tipInputType, '| isNonPolicyDirect:', isNonPolicyDirect);
 
-  const directPreserveBlock = isNonPolicyDirect ? `
+  /* ── 입력 유형별 실무형 포맷 (공고형으로 뭉개지 않고 원문 보존) ── */
+  const DIRECT_FORMATS = {
+    '정보성 가이드형': `
+intro: 사장님이 실제 겪는 상황·궁금증으로 시작 (1~2문장)
+
+body 포맷 (정보성 가이드형 — 입력 내용을 그대로 살려서 작성):
+📌 핵심 상황
+[이 자료가 다루는 상황을 사장님 눈높이로 1~2문장]
+
+✅ 지금 확인할 것
+1. [입력 근거 — 구체 행동]
+2. [입력 근거 — 구체 행동]
+3. [입력 근거 — 구체 행동]
+
+📝 바로 할 수 있는 체크리스트
+- [구체 항목]
+- [구체 항목]
+
+⚠️ 주의할 점
+[입력에 담긴 주의·한계를 그대로 반영 / 없으면 생략]
+
+cta: 입력 내용 기반의 실천 한 줄`,
+
+    '대처방안/체크리스트형': `
+intro: 사장님이 겪는 곤란한 상황으로 시작 (1~2문장)
+
+body 포맷 (대처방안/체크리스트형 — 입력 내용을 그대로 살려서 작성):
+🚨 이런 상황이 문제예요
+[입력에 담긴 문제 1~2문장]
+
+✅ 바로 해야 할 일
+1. [입력 근거 — 구체 행동]
+2. [입력 근거 — 구체 행동]
+3. [입력 근거 — 구체 행동]
+
+🗂️ 남겨야 할 기록 / 확인할 자료
+- [기록·자료]
+
+🛡️ 반복 피해를 줄이려면
+[예방·재발 방지 — 입력 근거가 있으면]
+
+cta: 입력 내용 기반의 실천 한 줄`,
+
+    '세무·노무 주의사항형': `
+intro: 사장님이 놓치기 쉬운 주의점 상황으로 시작 (1~2문장)
+
+body 포맷 (세무·노무 주의사항형 — 입력 내용을 그대로 살려서 작성):
+⚠️ 놓치면 생기는 문제
+[입력에 담긴 불이익·리스크 — 임의 수치 생성 금지]
+
+✅ 먼저 확인할 것
+1. [입력 근거 — 구체 행동]
+2. [입력 근거 — 구체 행동]
+3. [입력 근거 — 구체 행동]
+
+cta: 진행 전 확인 한 줄`,
+
+    '절차 안내형': `
+intro: 무엇을 처리해야 하는 상황으로 시작 (1~2문장)
+
+body 포맷 (절차 안내형 — 입력 내용을 그대로 살려서 작성):
+🧭 진행 순서
+1단계. [입력 근거 — 행동]
+2단계. [입력 근거 — 행동]
+3단계. [입력 근거 — 행동]
+
+⚠️ 주의할 점
+[입력에 담긴 주의 / 없으면 생략]
+
+cta: 다음 단계 한 줄`,
+
+    '기록/증빙 관리형': `
+intro: 기록·증빙이 왜 필요한지 상황으로 시작 (1~2문장)
+
+body 포맷 (기록/증빙 관리형 — 입력 내용을 그대로 살려서 작성):
+🗂️ 남겨야 할 기록
+- [입력 근거 항목]
+- [입력 근거 항목]
+
+✅ 이렇게 관리하세요
+1. [입력 근거 — 구체 방법]
+2. [입력 근거 — 구체 방법]
+
+⚠️ 빠지기 쉬운 것
+[입력에 담긴 주의 / 없으면 생략]
+
+cta: 실천 한 줄`,
+
+    '피해 방지/권리 확인형': `
+intro: 사장님이 당할 수 있는 피해 상황으로 시작 (1~2문장)
+
+body 포맷 (피해 방지/권리 확인형 — 입력 내용을 그대로 살려서 작성):
+🚨 이런 점이 문제예요
+[입력에 담긴 문제 1~2문장]
+
+✅ 확인할 권리 / 대응 방법
+1. [입력 근거 — 구체 행동]
+2. [입력 근거 — 구체 행동]
+
+🗂️ 남겨야 할 증거
+- [기록·자료]
+
+cta: 권리 행사·대응 한 줄`,
+  };
+
+  /* 기본(분류 불명) — 일반 실무 체크리스트형 */
+  const DEFAULT_DIRECT_FORMAT = `
 intro: 사장님이 실제 겪는 상황으로 시작 (아래 입력 내용 맥락에 맞게, 1~2문장)
 
 body 포맷 (실무 체크리스트형 — 입력 내용을 그대로 살려서 작성):
@@ -3419,7 +3527,14 @@ body 포맷 (실무 체크리스트형 — 입력 내용을 그대로 살려서 
 ⚠️ 놓치면 생기는 문제 / 주의할 점
 [입력에 담긴 주의·권리·피해 방지 포인트를 그대로 반영]
 
-cta: 입력 내용 기반의 실천 한 줄` : '';
+cta: 입력 내용 기반의 실천 한 줄`;
+
+  /* '대처방안/실무 체크리스트형'(classifyTipInputType 출력)도 체크리스트형으로 매핑 */
+  const directPreserveBlock = isNonPolicyDirect
+    ? (DIRECT_FORMATS[tipInputType]
+        || (tipInputType.includes('체크리스트') ? DIRECT_FORMATS['대처방안/체크리스트형'] : '')
+        || DEFAULT_DIRECT_FORMAT)
+    : '';
 
   const directInputSection = isNonPolicyDirect ? `
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

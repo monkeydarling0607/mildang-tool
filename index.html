@@ -244,14 +244,13 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <button class="tb locked"  onclick="goTab(1)">2 주제 선정</button>
   <button class="tb locked"  onclick="goTab(2)">3 사연 후보</button>
   <button class="tb locked"  onclick="goTab(3)">4 사연 원고</button>
-  <button class="tb locked"  onclick="goTab(4)">5 꿀팁 후보</button>
-  <button class="tb locked"  onclick="goTab(5)">6 꿀팁 원고</button>
-  <button class="tb locked"  onclick="goTab(6)">7 세무퀴즈</button>
-  <button class="tb locked"  onclick="goTab(7)">8 오프닝</button>
-  <button class="tb locked"  onclick="goTab(8)">9 미리보기</button>
-  <button class="tb locked"  onclick="goTab(9)">10 제목</button>
-  <button class="tb"         onclick="goTab(10)">11 뉴스 브리핑</button>
-  <button class="tb"         onclick="goTab(11)">12 아카이브</button>
+  <button class="tb"         onclick="goTab(4)">5 꿀팁</button>
+  <button class="tb locked"  onclick="goTab(5)">6 세무퀴즈</button>
+  <button class="tb locked"  onclick="goTab(6)">7 오프닝</button>
+  <button class="tb locked"  onclick="goTab(7)">8 미리보기</button>
+  <button class="tb locked"  onclick="goTab(8)">9 제목</button>
+  <button class="tb"         onclick="goTab(9)">10 뉴스 브리핑</button>
+  <button class="tb"         onclick="goTab(10)">11 아카이브</button>
   <button class="reset-btn"
     onclick="softReset()"
     title="직전 분석 데이터는 유지하고 이번 회차 생성 결과만 초기화">생성 결과 다시 시작</button>
@@ -373,11 +372,17 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   <div class="btn-row"><button class="btn-next" id="next3" disabled onclick="completeTab(3,4)">다음 →</button></div>
 </div>
 
-<!-- ══════ TAB 5 — 꿀팁 후보 ══════ -->
+<!-- ══════ TAB 5 — 꿀팁 (후보 + 완성 원고 통합) ══════ -->
 <div class="panel" id="p4">
-  <div class="ph"><span class="ph-title">꿀팁 후보</span></div>
-  <p class="ph-sub">주제·사연에 맞는 꿀팁 후보 3개(실무리스크·현금흐름·이슈연결)를 자동 생성합니다. 혜택형은 아래 직접 입력 섹션에서 공식 공고를 넣으면 생성됩니다.</p>
+  <div class="ph"><span class="ph-title">꿀팁</span></div>
+  <p class="ph-sub">주제 기반 추천 후보 또는 참고 자료(URL·PDF·직접 입력)로 꿀팁을 만들고, 같은 화면에서 완성 원고까지 생성합니다. 앞 단계를 거치지 않아도 참고 자료만으로 바로 사용할 수 있습니다.</p>
   <div class="carry" id="t5carry"></div>
+
+  <!-- ① 주제 기반 꿀팁 후보 생성 -->
+  <div class="t1-sub-title">주제 기반 꿀팁 후보</div>
+  <div id="t5topicGuide" style="display:none;font-size:12px;color:var(--text3);background:var(--bg2);border-radius:var(--radius);padding:9px 12px;margin-bottom:10px">
+    주제를 선택하면 주제·사연에 맞는 추천 꿀팁 후보가 생성됩니다. 주제 없이도 아래 <b>참고 자료로 꿀팁 만들기</b>는 바로 사용할 수 있습니다.
+  </div>
   <div class="fl">참고 뉴스·정책 메모 <span style="font-weight:400;text-transform:none;color:var(--text3)">(선택 — 꿀팁 생성에 반영됩니다)</span></div>
   <textarea class="fi" id="t5newsInput" rows="3" placeholder="예: 소상공인 전기요금 특별지원 신청 기한 5월 31일 / 24년 종합소득세 신고 5월 ..."></textarea>
   <div class="btn-row" style="margin-bottom:1rem">
@@ -386,18 +391,18 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   </div>
   <div id="t5area"><div class="skel"><p>생성 버튼을 눌러주세요</p></div></div>
 
-  <!-- ── 공고 내용 직접 입력 섹션 ── -->
+  <!-- ② 참고 자료로 꿀팁 만들기 -->
   <div class="divider" style="margin:1.5rem 0 1.5rem"></div>
   <div class="ph" style="margin-bottom:6px">
-    <span class="tag" style="font-size:11px;background:var(--tip-benefit-bg);border-color:var(--tip-benefit-bd);color:var(--tip-benefit-text)">직접</span>
-    <span class="ph-title" style="font-size:14px">공고 내용 입력하기</span>
+    <span class="tag" style="font-size:11px;background:var(--tip-benefit-bg);border-color:var(--tip-benefit-bd);color:var(--tip-benefit-text)">참고</span>
+    <span class="ph-title" style="font-size:14px">참고 자료로 꿀팁 만들기</span>
   </div>
-  <p class="ph-sub" style="font-size:12px;margin-bottom:1.25rem">공고 URL / PDF / 직접 공고 입력을 통해 꿀팁을 생성합니다.</p>
+  <p class="ph-sub" style="font-size:12px;margin-bottom:1.25rem">URL / PDF / 직접 입력을 바탕으로 꿀팁을 만들 수 있습니다. 지원사업 공고뿐 아니라 정보성 가이드, 체크리스트, 대처방안도 사용할 수 있습니다.</p>
 
-  <div class="fl">(선택) 공고 URL</div>
-  <input type="text" class="fi" id="t5benefitUrl" placeholder="https://bizinfo.go.kr/..." style="margin-bottom:10px">
+  <div class="fl">참고 URL</div>
+  <input type="text" class="fi" id="t5benefitUrl" placeholder="정보성 글, 공고문, 가이드 URL을 붙여넣으세요." style="margin-bottom:10px">
 
-  <div class="fl">(선택) 공고 PDF</div>
+  <div class="fl">참고 PDF</div>
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
     <label style="display:inline-block;padding:5px 12px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);font-size:12px;cursor:pointer;color:var(--text)">
       PDF 선택
@@ -407,29 +412,35 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <button id="t5pdfClear" onclick="clearBenefitPdf()" style="display:none;padding:3px 8px;border:0.5px solid var(--border);border-radius:4px;background:transparent;font-size:11px;color:var(--text3);cursor:pointer">✕ 제거</button>
   </div>
 
-  <div class="fl">(선택) 직접 공고 입력</div>
-  <textarea class="fi" id="t5benefitPaste" rows="6" placeholder="공고 본문, PDF 내용, 첨부 공고문 텍스트를 붙여넣어 주세요."></textarea>
+  <!-- 직접 입력 — 보조 입력 (아코디언, 기본 접힘) -->
+  <div style="margin-bottom:10px">
+    <button onclick="toggleBenefitPaste()" id="btn-benefit-paste-toggle" type="button"
+      style="background:transparent;border:none;padding:4px 0;font-size:12px;font-weight:400;color:var(--text3);cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:inherit;text-decoration:none">
+      <span id="benefit-paste-icon" style="font-size:8px">▶</span> 직접 입력하기
+    </button>
+    <div id="t5benefitPasteWrap" style="display:none;margin-top:8px">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:6px">URL이나 PDF를 읽지 못한 경우, 또는 직접 정리한 내용을 넣고 싶을 때 사용하세요.</div>
+      <textarea class="fi" id="t5benefitPaste" rows="6" placeholder="기사/공고/가이드/체크리스트/대처방안을 붙여넣으세요."></textarea>
+    </div>
+  </div>
 
   <div class="btn-row" style="margin-top:10px;margin-bottom:1rem">
-    <button class="btn-main" id="btn-extract-benefit" onclick="callExtractBenefit()">꿀팁 만들기</button>
+    <button class="btn-main" id="btn-extract-benefit" onclick="callExtractBenefit()">참고 자료로 꿀팁 만들기</button>
     <button class="btn-sm" onclick="resetBenefitInput()" style="color:var(--text3)">입력 초기화</button>
   </div>
   <div id="t5benefitArea"></div>
 
-  <div class="btn-row"><button class="btn-next" id="next4" disabled onclick="completeTab(4,5)">다음 →</button></div>
-</div>
-
-<!-- ══════ TAB 6 — 꿀팁 원고 ══════ -->
-<div class="panel" id="p5">
-  <div class="ph"><span class="ph-title">꿀팁 완성 원고</span></div>
-  <p class="ph-sub">선택한 꿀팁을 기반으로 스티비에 붙여넣을 수 있는 완성형 꿀팁 원고를 생성합니다.</p>
-  <div class="carry" id="t6carry"></div>
+  <!-- ③ 꿀팁 완성 원고 (선택/생성된 꿀팁 기반) -->
+  <div class="divider" style="margin:1.5rem 0 1.5rem"></div>
+  <div class="t1-sub-title">꿀팁 완성 원고</div>
+  <p class="ph-sub" style="font-size:12px;margin-bottom:1rem">위에서 꿀팁을 선택하거나 참고 자료로 만든 뒤 완성 원고를 생성하세요.</p>
   <div class="btn-row" style="margin-top:0;margin-bottom:1rem">
     <button class="btn-main" id="btn-tip-draft" onclick="callTipDraft()">원고 생성</button>
     <button class="btn-main" id="btn-regen-tip-draft" style="display:none" onclick="callTipDraft()">재생성</button>
   </div>
   <div id="t6area"><div class="skel"><p>원고 생성 버튼을 눌러주세요</p></div></div>
-  <div class="btn-row"><button class="btn-next" id="next5" disabled onclick="completeTab(5,6)">다음 →</button></div>
+
+  <div class="btn-row"><button class="btn-next" id="next4" disabled onclick="completeTab(4,5)">다음 →</button></div>
 </div>
 
 <!-- ══════ TAB 7 — 세무퀴즈 ══════ -->
@@ -456,7 +467,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <button class="btn-main" id="btn-regen-quiz" style="display:none" onclick="callQuiz()">재생성</button>
   </div>
   <div id="t7area"><div class="skel"><p>형식과 난이도를 선택 후 생성 버튼을 눌러주세요</p></div></div>
-  <div class="btn-row"><button class="btn-next" id="next6" disabled onclick="completeTab(6,7)">다음 →</button></div>
+  <div class="btn-row"><button class="btn-next" id="next6" disabled onclick="completeTab(5,6)">다음 →</button></div>
 </div>
 
 <!-- ══════ TAB 8 — 오프닝 ══════ -->
@@ -480,7 +491,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <div id="t10draftArea"><div class="skel"><p>완성 원고 생성 버튼을 눌러주세요</p></div></div>
   </div>
 
-  <div class="btn-row"><button class="btn-next" id="next9" disabled onclick="completeTab(7,8)">다음 →</button></div>
+  <div class="btn-row"><button class="btn-next" id="next9" disabled onclick="completeTab(6,7)">다음 →</button></div>
 </div>
 
 <!-- ══════ TAB 9 — 미리보기 ══════ -->
@@ -494,7 +505,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   </div>
   <div id="t11area"><div class="skel"><p>후보 생성 버튼을 눌러주세요</p></div></div>
 
-  <div class="btn-row"><button class="btn-next" id="next10" disabled onclick="completeTab(8,9)">다음 →</button></div>
+  <div class="btn-row"><button class="btn-next" id="next10" disabled onclick="completeTab(7,8)">다음 →</button></div>
 </div>
 
 <!-- ══════ TAB 10 — 제목 ══════ -->
@@ -508,7 +519,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
   </div>
   <div id="t12area"><div class="skel"><p>생성 버튼을 눌러주세요</p></div></div>
 
-  <div class="btn-row"><button class="btn-next" id="next11" disabled onclick="completeTab(9,10)">다음 →</button></div>
+  <div class="btn-row"><button class="btn-next" id="next11" disabled onclick="completeTab(8,9)">다음 →</button></div>
 </div>
 
 <!-- ══════ TAB 11 — 뉴스 브리핑 (선택 탭 — 필수 플로우 아님) ══════ -->
@@ -538,7 +549,7 @@ select.fi{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
     <div id="newsBriefingList"></div>
   </div>
 
-  <div class="btn-row" style="margin-top:1.25rem"><button class="btn-next" id="next7" onclick="completeTab(10,11)">아카이브로 →</button></div>
+  <div class="btn-row" style="margin-top:1.25rem"><button class="btn-next" id="next7" onclick="completeTab(9,10)">아카이브로 →</button></div>
 </div>
 
 <!-- ══════ TAB 12 — 아카이브 ══════ -->
@@ -698,8 +709,8 @@ var S = {
   remindData: null, remind: null,
   /* 탭12 — 제목 */
   titleData: null, title: null,
-  /* UI 상태 */
-  activeTab: 0, unlockedTabs: [0, 10, 11], doneTabs: [],
+  /* UI 상태 — 0 직전분석 / 4 꿀팁(독립 사용 가능) / 9 뉴스 / 10 아카이브는 항상 잠금 해제 */
+  activeTab: 0, unlockedTabs: [0, 4, 9, 10], doneTabs: [],
   /* 과거 회차 아카이브 */
   archive: [],
   /* 삭제된 아카이브 키 묶음 — 페이지 새로고침 시 공용 archive.json이 재병합되며
@@ -763,14 +774,13 @@ function restoreState() {
     setBtn('next0', false);
   }
 
-  /* 탭 잠금/완료 복원 — 11 뉴스 브리핑(선택 탭)·12 아카이브는 항상 잠금 해제 */
+  /* 탭 잠금/완료 복원 — 5 꿀팁(독립)·10 뉴스 브리핑(선택 탭)·11 아카이브는 항상 잠금 해제 */
   if (Array.isArray(S.unlockedTabs)) {
-    if (S.unlockedTabs.indexOf(10) === -1) S.unlockedTabs.push(10);
-    if (S.unlockedTabs.indexOf(11) === -1) S.unlockedTabs.push(11);
+    [4, 9, 10].forEach(function(t){ if (S.unlockedTabs.indexOf(t) === -1) S.unlockedTabs.push(t); });
   }
   tbs().forEach(function(btn, idx) {
     btn.classList.remove('active','done','locked');
-    if (idx !== 11 && idx !== 10 && S.unlockedTabs.indexOf(idx) === -1) btn.classList.add('locked');
+    if (idx !== 4 && idx !== 9 && idx !== 10 && S.unlockedTabs.indexOf(idx) === -1) btn.classList.add('locked');
     if (S.doneTabs.indexOf(idx) !== -1)                  btn.classList.add('done');
   });
   var ai = S.activeTab || 0;
@@ -799,8 +809,8 @@ function restoreState() {
   if (S.subject)     setBtn('next1', false);
   if (S.story)       setBtn('next2', false);
   if (S.storyDraft)  setBtn('next3', false);
-  if (S.tip)         setBtn('next4', false);
-  if (S.tipDraft)    setBtn('next5', false);
+  /* 꿀팁 탭 '다음'은 완성 원고가 생성된 뒤 활성화 (후보 선택만으로는 비활성) */
+  if (S.tipDraft)    setBtn('next4', false);
   if (S.quizData)    setBtn('next6', false);
   if (S.newsCandidates && S.newsCandidates.length > 0) setBtn('next7', false);
   if (S.openingDraft) setBtn('next9', false);
@@ -852,7 +862,7 @@ function hardReset() {
   S.openingData = null; S.opening = null; S.openingDraft = null;
   S.remindData = null;  S.remind  = null;
   S.titleData = null;   S.title   = null;
-  S.activeTab = 0; S.unlockedTabs = [0, 10, 11]; S.doneTabs = [];
+  S.activeTab = 0; S.unlockedTabs = [0, 4, 9, 10]; S.doneTabs = [];
   S.archive            = preservedArchive;
   S.archiveDeletedKeys = preservedDeletedKeys;
 
@@ -875,10 +885,10 @@ function hardReset() {
   /* 혜택형 PDF 입력 초기화 */
   if (typeof clearBenefitPdf === 'function') clearBenefitPdf();
 
-  /* 탭 상태 초기화 — 첫 탭으로 이동, 11 뉴스 브리핑(선택)·12 아카이브는 항상 잠금 해제 */
+  /* 탭 상태 초기화 — 첫 탭으로 이동, 5 꿀팁(독립)·10 뉴스 브리핑(선택)·11 아카이브는 항상 잠금 해제 */
   tbs().forEach(function(btn, idx) {
     btn.classList.remove('active','done','locked');
-    if (idx > 0 && idx !== 11 && idx !== 10) btn.classList.add('locked');
+    if (idx > 0 && idx !== 4 && idx !== 9 && idx !== 10) btn.classList.add('locked');
   });
   tbs()[0].classList.add('active');
   pnls().forEach(function(p, i) { p.classList.toggle('active', i === 0); });
@@ -906,7 +916,7 @@ function hardReset() {
   var nbl = document.getElementById('newsBriefingList'); if (nbl) nbl.innerHTML = '';
 
   /* 다음 버튼 모두 disable */
-  ['next0','next1','next2','next3','next4','next5','next6','next7','next8','next9','next10','next11']
+  ['next0','next1','next2','next3','next4','next6','next7','next8','next9','next10','next11']
     .forEach(function(id) { setBtn(id, true); });
 
   /* 재생성 버튼 숨기기 / 원래 버튼 복원 */
@@ -923,7 +933,7 @@ function hardReset() {
   }
 
   /* carry 박스 모두 비우기 */
-  ['t2carry','t3carry','t4carry','t5carry','t6carry','t7carry','t8carry','t10carry','t11carry','t12carry']
+  ['t2carry','t3carry','t4carry','t5carry','t7carry','t8carry','t10carry','t11carry','t12carry']
     .forEach(function(id) { var el = document.getElementById(id); if (el) el.innerHTML = ''; });
 
   /* 아카이브 다시 그리기 */
@@ -952,9 +962,9 @@ function softReset() {
   S.openingData=null; S.opening=null;   S.openingDraft=null;
   S.remindData=null;  S.remind=null;
   S.titleData=null;   S.title=null;
-  S.activeTab=0; S.unlockedTabs=[0,10,11]; S.doneTabs=[];
+  S.activeTab=0; S.unlockedTabs=[0,4,9,10]; S.doneTabs=[];
 
-  tbs().forEach(function(btn,idx){ btn.classList.remove('active','done','locked'); if(idx>0 && idx!==11 && idx!==10) btn.classList.add('locked'); });
+  tbs().forEach(function(btn,idx){ btn.classList.remove('active','done','locked'); if(idx>0 && idx!==4 && idx!==9 && idx!==10) btn.classList.add('locked'); });
   tbs()[0].classList.add('active');
   pnls().forEach(function(p,i){ p.classList.toggle('active', i===0); });
 
@@ -972,7 +982,7 @@ function softReset() {
   if (nbs) nbs.style.display = 'none';
   document.getElementById('t5newsInput').value='';
 
-  ['next1','next2','next3','next4','next5','next6','next7','next8','next9','next10','next11'].forEach(function(id){ setBtn(id,true); });
+  ['next1','next2','next3','next4','next6','next7','next8','next9','next10','next11'].forEach(function(id){ setBtn(id,true); });
 
   /* 재생성 버튼 숨기기 */
   ['subjects','stories','story-draft','tips','tip-draft','quiz','opening','opening-draft','remind','remind-draft','titles'].forEach(function(k) {
@@ -996,8 +1006,8 @@ function goTab(i) {
   pnls().forEach(function(p,idx){ p.classList.toggle('active', idx===i); });
   S.activeTab = i;
   updateCarry(i);
-  /* 12 아카이브 탭 진입 시 — 현재 회차 저장 버튼 상태 + 유사 회차/리스트 갱신 */
-  if (i === 11) renderArchive();
+  /* 11 아카이브 탭 진입 시 — 현재 회차 저장 버튼 상태 + 유사 회차/리스트 갱신 */
+  if (i === 10) renderArchive();
   saveState();
 }
 function unlockTab(i) {
@@ -1048,10 +1058,24 @@ document.querySelectorAll('.opt-btn').forEach(function(btn) {
    carry 업데이트
 ══════════════════════════════════════ */
 function updateCarry(tabIdx) {
-  /* DOM 탭 인덱스 → carry 박스 id (뉴스 브리핑이 11번으로 이동하면서 7~10 매핑 변경) */
-  var ids={1:'t2carry',2:'t3carry',3:'t4carry',4:'t5carry',5:'t6carry',
-           6:'t7carry',7:'t10carry',8:'t11carry',9:'t12carry',10:'t8carry'};
+  /* 꿀팁 탭(4): 주제 기반 후보는 주제가 있을 때만, 참고 자료 기반은 항상 가능.
+     앞 단계 정보가 없으면 carry/안내를 가볍게 처리한다. */
+  if (tabIdx === 4) {
+    var topicGuide = document.getElementById('t5topicGuide');
+    if (topicGuide) topicGuide.style.display = S.subject ? 'none' : 'block';
+  }
+
+  /* DOM 탭 인덱스 → carry 박스 id (꿀팁 후보·원고 통합으로 5~9 매핑 변경) */
+  var ids={1:'t2carry',2:'t3carry',3:'t4carry',4:'t5carry',
+           5:'t7carry',6:'t10carry',7:'t11carry',8:'t12carry',9:'t8carry'};
   var el = document.getElementById(ids[tabIdx]); if (!el) return;
+
+  /* 꿀팁 탭에서 앞 단계 정보가 전혀 없으면 — 가벼운 독립 사용 안내만 표시 */
+  if (tabIdx === 4 && !S.subject && !(S.analysis && S.analysis.topic) && !S.story) {
+    el.innerHTML = '<b>앞 탭 반영값 없음</b>선택된 주제 없이 참고 자료 기준으로 꿀팁을 만들 수 있습니다.';
+    return;
+  }
+
   var parts = ['CTR ' + (S.ctr||0).toFixed(1) + '%'];
   if (S.analysis && S.analysis.topic) parts.push('직전주제: ' + S.analysis.topic);
   if (S.subject)    parts.push('주제: ' + S.subject.title);
@@ -1399,6 +1423,16 @@ function toggleAuxInput() {
   var open = wrap.style.display === 'none';
   wrap.style.display = open ? 'block' : 'none';
   icon.textContent   = open ? '▼' : '▶';
+}
+
+/* 꿀팁 탭 — 참고 자료 '직접 입력하기' 아코디언 토글 */
+function toggleBenefitPaste() {
+  var wrap = document.getElementById('t5benefitPasteWrap');
+  var icon = document.getElementById('benefit-paste-icon');
+  if (!wrap) return;
+  var open = wrap.style.display === 'none';
+  wrap.style.display = open ? 'block' : 'none';
+  if (icon) icon.textContent = open ? '▼' : '▶';
 }
 
 /* 과거 회차 일괄 등록은 12번 아카이브 페이지에서 관리합니다.
@@ -2464,7 +2498,16 @@ function validateTipsClient(tips, ctx) {
 }
 
 async function callTips() {
-  if (!S.subject) { alert('탭 2에서 주제를 먼저 선택해주세요'); return; }
+  /* 주제 기반 추천은 주제가 있어야 가능 — 없으면 막지 말고 안내만 (참고 자료 기반은 아래에서 항상 가능) */
+  if (!S.subject) {
+    document.getElementById('t5area').innerHTML =
+      '<div style="padding:14px 16px;background:var(--bg2);border-radius:var(--radius);font-size:13px;line-height:1.7;color:var(--text2)">'
+      + '<b>주제 선정 후 사용 가능</b><br>'
+      + '주제 기반 추천 꿀팁 후보는 2번 탭에서 주제를 선택하면 생성됩니다.<br>'
+      + '주제 없이도 아래 <b>참고 자료로 꿀팁 만들기</b>(URL·PDF·직접 입력)는 바로 사용할 수 있습니다.'
+      + '</div>';
+    return;
+  }
   S.tip = null; S.tipDraft = null;
   S.tipUserNews = document.getElementById('t5newsInput').value.trim();
   document.getElementById('t5area').innerHTML = loading();
@@ -2591,7 +2634,7 @@ function renderTips() {
                 + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:' + (hasFetched ? '5' : '0') + 'px">'
                 + '<a href="' + escHtml(t.source_url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" '
                 + 'style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;'
-                + 'background:#fff;border:0.5px solid #9FC7F3;color:#2563A8;text-decoration:none">🔗 공고 확인</a>'
+                + 'background:#fff;border:0.5px solid #9FC7F3;color:#2563A8;text-decoration:none">🔗 원문 확인</a>'
                 + (t.source_name ? '<span style="font-size:11px;color:#2563A8;font-weight:600">' + escHtml(t.source_name) + '</span>' : '')
                 + (conf ? '<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;background:' + confBg + ';border:0.5px solid ' + confBd + ';color:' + confColor + '">' + escHtml(conf) + '</span>' : '')
                 + '</div>'
@@ -2605,7 +2648,7 @@ function renderTips() {
                 + '<div style="font-size:10px;color:' + (hasWarning ? '#C96A14' : '#2F8F68') + '">'
                 + (hasWarning
                   ? '⚠ ' + escHtml(t.source_warning)
-                  : hasFetched ? '✓ 내용 확인 완료 — Tab 6에서 원고를 생성할 수 있습니다' : '✓ 링크 적용 완료')
+                  : hasFetched ? '✓ 내용 확인 완료 — 아래에서 완성 원고를 생성할 수 있습니다' : '✓ 링크 적용 완료')
                 + '</div>'
                 + '</div>';
             })()
@@ -2694,7 +2737,8 @@ function selectTip(i) {
   document.querySelectorAll('#t5area .sc, #t5benefitArea .sc').forEach(function(c){ c.classList.remove('on'); });
   document.getElementById('tip'+i).classList.add('on');
   S.tip = S.tipData.tips[i];
-  setBtn('next4', false);
+  /* 선택만으로는 '다음' 비활성 — 완성 원고 생성 후 활성화 */
+  setBtn('next4', true);
   saveState();
 }
 
@@ -2756,7 +2800,7 @@ async function callExtractBenefit() {
   var pdfName = _benefitPdfName;
 
   if (!url && !paste && !pdf) {
-    alert('공식 URL, PDF 파일, 또는 공고 내용 붙여넣기 중 하나를 입력해주세요.');
+    alert('참고 URL, PDF 파일, 또는 직접 입력 내용 중 하나를 입력해주세요.');
     return;
   }
 
@@ -2786,14 +2830,17 @@ async function callExtractBenefit() {
     }
 
     S.benefitTip = data.tip;
-    /* 직접 입력 원문 보존 — 6번 탭 원고에서 공고형으로 뭉개지 않도록 전달 */
-    if (S.benefitTip) S.benefitTip.raw_user_input = paste || '';
+    /* 원문 보존 — 완성 원고에서 공고형으로 뭉개지 않도록 전달.
+       붙여넣기가 없으면 URL/PDF에서 읽은 본문(raw_user_input)을 사용해 입력 유형 분류가 동작하게 한다. */
+    if (S.benefitTip) {
+      S.benefitTip.raw_user_input = paste || S.benefitTip.raw_user_input || '';
+    }
     saveState();
     renderBenefitTip();
   } catch(e) {
     document.getElementById('t5benefitArea').innerHTML = errBox(e.message);
   } finally {
-    btn.disabled = false; btn.textContent = '꿀팁 만들기';
+    btn.disabled = false; btn.textContent = '참고 자료로 꿀팁 만들기';
   }
 }
 
@@ -2818,7 +2865,7 @@ function renderBenefitTip() {
     linkPanel = '<div style="margin-top:6px;padding:8px 10px;background:#EAF3FF;border:0.5px solid #9FC7F3;border-radius:var(--radius)">'
       + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:' + (hasFetched ? '5' : '0') + 'px">'
       + '<a href="' + escHtml(t.source_url) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()" '
-      + 'style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:#fff;border:0.5px solid #9FC7F3;color:#2563A8;text-decoration:none">🔗 공고 확인</a>'
+      + 'style="display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:#fff;border:0.5px solid #9FC7F3;color:#2563A8;text-decoration:none">🔗 원문 확인</a>'
       + (t.source_name ? '<span style="font-size:11px;color:#2563A8;font-weight:600">' + escHtml(t.source_name) + '</span>' : '')
       + (conf ? '<span style="display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;background:' + confBg + ';border:0.5px solid ' + confBd + ';color:' + confColor + '">' + escHtml(conf) + '</span>' : '')
       + '</div>'
@@ -2829,12 +2876,12 @@ function renderBenefitTip() {
           + '</div>'
         : '')
       + '<div style="font-size:10px;color:' + (hasWarning ? '#C96A14' : '#2F8F68') + '">'
-      + (hasWarning ? '⚠ ' + escHtml(t.source_warning) : '✓ 내용 확인 완료 — Tab 6에서 원고를 생성할 수 있습니다')
+      + (hasWarning ? '⚠ ' + escHtml(t.source_warning) : '✓ 내용 확인 완료 — 아래에서 완성 원고를 생성할 수 있습니다')
       + '</div>'
       + '</div>';
   } else {
     linkPanel = '<div style="margin-top:6px;padding:6px 9px;background:#EAF8F1;border:0.5px solid #7BC7A3;border-radius:var(--radius);font-size:11px;color:#2F8F68">'
-      + '✓ 붙여넣기/PDF 내용 기반 — Tab 6에서 원고를 생성할 수 있습니다</div>';
+      + '✓ 참고 자료 기반 — 아래에서 완성 원고를 생성할 수 있습니다</div>';
   }
 
   document.getElementById('t5benefitArea').innerHTML =
@@ -2862,7 +2909,8 @@ function selectBenefitTip() {
   var card = document.getElementById('benefitTipCard');
   if (card) card.classList.add('on');
   S.tip = S.benefitTip;
-  setBtn('next4', false);
+  /* 선택만으로는 '다음' 비활성 — 완성 원고 생성 후 활성화 */
+  setBtn('next4', true);
   saveState();
 }
 
@@ -2870,7 +2918,7 @@ function selectBenefitTip() {
    TAB 6 — 꿀팁 원고
 ══════════════════════════════════════ */
 async function callTipDraft() {
-  if (!S.tip) { alert('탭 5에서 꿀팁을 먼저 선택해주세요'); return; }
+  if (!S.tip) { alert('위에서 꿀팁을 먼저 선택하거나, 참고 자료로 꿀팁을 만들어주세요'); return; }
   /* ── 디버그: 선택된 꿀팁 확인 ── */
   console.log('[tip-draft] selectedTip:', JSON.parse(JSON.stringify(S.tip)));
 
@@ -2879,14 +2927,14 @@ async function callTipDraft() {
       && !S.tip.benefit_facts && !S.tip.source_url) {
     document.getElementById('t6area').innerHTML =
       '<div style="padding:18px 20px;background:#FFF8F0;border:1px solid #F3C49C;border-radius:var(--radius);font-size:13px;line-height:1.7;color:#7A4A00">'
-      + '<div style="font-weight:700;font-size:14px;margin-bottom:8px">📋 공고 내용이 필요합니다</div>'
-      + '<p style="margin:0 0 10px">Tab 5 아래쪽 혜택형 직접 입력 섹션에서 공식 공고 URL, PDF, 또는 내용을 붙여넣은 뒤 [혜택형 꿀팁 만들기]를 눌러주세요.</p>'
+      + '<div style="font-weight:700;font-size:14px;margin-bottom:8px">📋 참고 자료가 필요합니다</div>'
+      + '<p style="margin:0 0 10px">위쪽 <b>참고 자료로 꿀팁 만들기</b> 섹션에서 참고 URL, PDF, 또는 직접 입력 내용을 넣은 뒤 [참고 자료로 꿀팁 만들기]를 눌러주세요.</p>'
       + '</div>';
     return;
   }
 
   document.getElementById('t6area').innerHTML = loading();
-  setBtn('next5', true);
+  setBtn('next4', true);
   try {
     /* ── 디버그: 선택된 꿀팁 + 공식 공고 데이터 확인 ── */
     console.log('[tip-draft] selected tip with fetched data:', S.tip);
@@ -2914,6 +2962,8 @@ async function callTipDraft() {
       /* ★ 직접 입력 보존 — 공고형으로 뭉개지 않도록 원문 + 직접입력 플래그 전달 */
       tipIsUserProvided: !!(S.tip && S.tip.is_user_provided),
       tipRawInput:       (S.tip && S.tip.raw_user_input) || '',
+      /* ★ 입력 유형 — 참고 자료 분류 결과(정보성 가이드형 등). 있으면 원고 포맷 선택에 우선 사용 */
+      tipInputType:      (S.tip && S.tip.input_type) || '',
       /* ★ 참고용 컨텍스트 (원고 주제 변경 금지) */
       subjectTitle:  S.subject ? S.subject.title : '',
       storyText:     S.story ? S.story.text : '',
@@ -2921,7 +2971,7 @@ async function callTipDraft() {
     S.tipDraft = result;
     renderTipDraft(result);
     showRegenBtn('tip-draft');
-    setBtn('next5', false);
+    setBtn('next4', false);
     saveState();
   } catch(e) {
     document.getElementById('t6area').innerHTML = errBox(e.message);
@@ -3480,12 +3530,12 @@ function buildFinal() {
     {
       lbl: '① 카카오 플친 제목',
       body: S.title || null,
-      warn: '탭 11에서 제목을 선택해주세요'
+      warn: '탭 9에서 제목을 선택해주세요'
     },
     {
       lbl: '② 오프닝 멘트',
       body: S.openingDraft ? S.openingDraft.full_text : null,
-      warn: '탭 9에서 오프닝 완성 원고를 생성해주세요'
+      warn: '탭 7에서 오프닝 완성 원고를 생성해주세요'
     },
     {
       lbl: '③ 이번주 밀당레터는?',
@@ -3499,7 +3549,7 @@ function buildFinal() {
           return formatNewsBriefingText(card);
         }).join('\n\n━━━━━━\n\n');
       })(),
-      warn: '탭 8에서 뉴스 브리핑 원고를 생성해주세요'
+      warn: '탭 10에서 뉴스 브리핑 원고를 생성해주세요'
     },
     {
       lbl: '⑤ 사연모음 Zip',
@@ -3522,7 +3572,7 @@ function buildFinal() {
           + (r.intro||'') + '\n\n' + (r.body||'') + '\n\n'
           + (r.cta||'') + '\n\n' + '💡 ' + (r.summary||'');
       })(),
-      warn: '탭 6에서 꿀팁 원고를 생성해주세요'
+      warn: '탭 5에서 꿀팁을 만들어주세요'
     },
     {
       lbl: '⑦ 세무내공 +1 퀴즈',
@@ -3536,12 +3586,12 @@ function buildFinal() {
           + (isOX ? 'O 또는 X' : (Array.isArray(r.options)?r.options.map(function(o,i){return (i+1)+'. '+o;}).join('\n'):''))
           + '\n\n정답: ' + ansStr + '\n해설: ' + (r.explanation||'') + '\n💡 ' + (r.key_point||'');
       })(),
-      warn: '탭 7에서 세무퀴즈를 생성해주세요'
+      warn: '탭 6에서 세무퀴즈를 생성해주세요'
     },
     {
       lbl: '⑧ 미리보기 문구',
       body: S.remind ? S.remind.text : null,
-      warn: '탭 10에서 미리보기 문구를 선택해주세요'
+      warn: '탭 8에서 미리보기 문구를 선택해주세요'
     },
   ];
 

@@ -5,7 +5,7 @@
 //  Tip B. 지원사업형 → tip_input_type = 지원사업/공고형
 //  Quiz A. rejectedQuizHistory 유사(모두 확인) 퀴즈 차단
 //  Quiz B. 자동결제 quiz_axis 4개 이상 다양화
-//  News A. 뉴스 브리핑 탭 이동 (11번, 필수 플로우 아님)
+//  News A. 뉴스 브리핑 탭 이동 (10번, 필수 플로우 아님 — 꿀팁 통합으로 번호 -1)
 //  News B. 뉴스 브리핑 프롬프트 순수 요약 구조 (배경/정책변화/영향·우려/결론·전망, 조언 금지)
 //  Opening A. 오프닝 가이드 (가벼운 인삿말 / 핵심 episode 관통 / 3~5문장 / 공포·세법설명 시작 금지)
 //
@@ -140,28 +140,28 @@ assert('비-자동결제 주제는 빈 후보', suggestQuizAxes({ subjectTitle: 
    ═══════════════════════════════════════════════════════════════════ */
 console.log('');
 console.log('━━━ News Test A) 뉴스 브리핑 탭 이동 ━━━');
-/* 탭 버튼: 11 뉴스 브리핑 → goTab(10) */
-assert('뉴스 브리핑 탭이 11번(goTab(10))', /goTab\(10\)">11 뉴스 브리핑/.test(html),
-  'goTab(10)">11 뉴스 브리핑 패턴 없음');
-/* 핵심 1~7 플로우(세무퀴즈가 7번)는 뉴스 앞에 위치 */
-assert('세무퀴즈가 7번(goTab(6))', /goTab\(6\)">7 세무퀴즈/.test(html));
-assert('오프닝이 8번(goTab(7))', /goTab\(7\)">8 오프닝/.test(html));
-/* 세무퀴즈(6) 다음 버튼이 오프닝(7)으로 — 뉴스 거치지 않음 */
-assert('세무퀴즈 → 오프닝 직접 연결 (completeTab(6,7))', /completeTab\(6,7\)/.test(html));
-/* 뉴스 패널 다음 버튼은 아카이브로(completeTab(10,11)) */
-assert('뉴스 → 아카이브 연결 (completeTab(10,11))', /completeTab\(10,11\)/.test(html));
-/* 뉴스 탭은 항상 잠금 해제 (선택 탭) — unlockedTabs에 10 포함 */
-assert('초기 unlockedTabs에 10(뉴스) 포함', /unlockedTabs:\s*\[0,\s*10,\s*11\]/.test(html),
-  'unlockedTabs 초기값에 10 없음');
+/* 탭 버튼: 10 뉴스 브리핑 → goTab(9) (꿀팁 후보+원고 통합으로 -1) */
+assert('뉴스 브리핑 탭이 10번(goTab(9))', /goTab\(9\)">10 뉴스 브리핑/.test(html),
+  'goTab(9)">10 뉴스 브리핑 패턴 없음');
+/* 핵심 플로우(세무퀴즈가 6번)는 뉴스 앞에 위치 */
+assert('세무퀴즈가 6번(goTab(5))', /goTab\(5\)">6 세무퀴즈/.test(html));
+assert('오프닝이 7번(goTab(6))', /goTab\(6\)">7 오프닝/.test(html));
+/* 세무퀴즈(5) 다음 버튼이 오프닝(6)으로 — 뉴스 거치지 않음 */
+assert('세무퀴즈 → 오프닝 직접 연결 (completeTab(5,6))', /completeTab\(5,6\)/.test(html));
+/* 뉴스 패널 다음 버튼은 아카이브로(completeTab(9,10)) */
+assert('뉴스 → 아카이브 연결 (completeTab(9,10))', /completeTab\(9,10\)/.test(html));
+/* 뉴스 탭은 항상 잠금 해제 (선택 탭) — unlockedTabs에 9 포함, 꿀팁(4)도 항상 해제 */
+assert('초기 unlockedTabs에 4(꿀팁)·9(뉴스) 포함', /unlockedTabs:\s*\[0,\s*4,\s*9,\s*10\]/.test(html),
+  'unlockedTabs 초기값이 [0, 4, 9, 10]이 아님');
 /* 뉴스 패널 다음 버튼에 disabled 없음 (없어도 진행 가능) */
 const newsNextMatch = html.match(/<button class="btn-next" id="next7"[^>]*>/);
 assert('뉴스 다음 버튼 존재', !!newsNextMatch, 'next7 버튼 없음');
 assert('뉴스 다음 버튼이 disabled 아님 (뉴스 없이도 진행 가능)',
   !!newsNextMatch && !/disabled/.test(newsNextMatch[0]), newsNextMatch ? newsNextMatch[0] : '');
-/* 오프닝/미리보기/제목이 뉴스 없이 도달 가능 — 잠금 해제 체인이 6→7→8→9 */
-assert('오프닝 → 미리보기 (completeTab(7,8))', /completeTab\(7,8\)/.test(html));
-assert('미리보기 → 제목 (completeTab(8,9))', /completeTab\(8,9\)/.test(html));
-assert('제목 → 뉴스 (completeTab(9,10))', /completeTab\(9,10\)/.test(html));
+/* 오프닝/미리보기/제목이 뉴스 없이 도달 가능 — 잠금 해제 체인이 5→6→7→8 */
+assert('오프닝 → 미리보기 (completeTab(6,7))', /completeTab\(6,7\)/.test(html));
+assert('미리보기 → 제목 (completeTab(7,8))', /completeTab\(7,8\)/.test(html));
+assert('제목 → 뉴스 (completeTab(8,9))', /completeTab\(8,9\)/.test(html));
 
 /* ═══════════════════════════════════════════════════════════════════
    News Test B. 뉴스 브리핑 순수 요약 구조

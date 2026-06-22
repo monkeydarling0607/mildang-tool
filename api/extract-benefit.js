@@ -54,41 +54,50 @@ const KNOWN_GO = {
   moef: '기획재정부',  nts: '국세청',        hometax: '홈택스',
 };
 
-function getOfficialDomainInfo(urlStr) {
+/* ── URL 출처 이름 추론 (차단하지 않음) ──────────────────
+   공고뿐 아니라 정보성 가이드·도움말 URL도 모두 허용한다.
+   여기서는 "거부"하지 않고, 화면에 표시할 출처 이름과
+   참고용 신뢰도 힌트(isOfficial)만 추론한다. */
+const KNOWN_INFO_HOSTS = {
+  'pay.naver.com':       '네이버페이 사업자 가이드',
+  'mybiz.pay.naver.com': '네이버페이 사업자 가이드',
+  'biz.naver.com':       '네이버 비즈니스',
+  'ad.search.naver.com': '네이버',
+  'self.baemin.com':     '배민셀프서비스',
+  'ceo.baemin.com':      '배민외식업광장',
+  'bizmoney.kakao.com':  '카카오',
+  'for-biz.coupang.com': '쿠팡 판매자',
+};
+
+function getSourceInfo(urlStr) {
   let hostname;
   try { hostname = new URL(urlStr).hostname.toLowerCase(); }
-  catch { return { isOfficial: false, name: null, reason: 'URL 파싱 실패' }; }
+  catch { return { isOfficial: false, name: '참고 자료', lowQuality: false }; }
 
-  if (BLOCKED_HOSTS.has(hostname) || [...BLOCKED_HOSTS].some(b => hostname.endsWith('.' + b))) {
-    return { isOfficial: false, name: null, reason: '블로그·커뮤니티 사이트는 공식 공고가 아닙니다.' };
-  }
-  if (NEWS_PATTERNS.some(p => p.test(hostname))) {
-    return { isOfficial: false, name: null, reason: '뉴스 기사 링크는 공식 공고가 아닙니다.' };
-  }
-  if (hostname === 'bizinfo.go.kr' || hostname.endsWith('.bizinfo.go.kr')) {
-    return { isOfficial: true, name: '기업마당' };
-  }
-  if (hostname === 'sbiz.or.kr' || hostname.endsWith('.sbiz.or.kr')) {
-    return { isOfficial: true, name: '소상공인24' };
-  }
+  // 공식 지원사업 도메인 — 공고형 신뢰도 높음
+  if (hostname === 'bizinfo.go.kr' || hostname.endsWith('.bizinfo.go.kr')) return { isOfficial: true, name: '기업마당', lowQuality: false };
+  if (hostname === 'sbiz.or.kr'   || hostname.endsWith('.sbiz.or.kr'))   return { isOfficial: true, name: '소상공인24', lowQuality: false };
   for (const [domain, name] of Object.entries(KNOWN_OR_KR)) {
-    if (hostname === domain || hostname.endsWith('.' + domain)) {
-      return { isOfficial: true, name };
-    }
+    if (hostname === domain || hostname.endsWith('.' + domain)) return { isOfficial: true, name, lowQuality: false };
   }
   if (hostname.endsWith('.go.kr') || hostname === 'go.kr') {
     const parts = hostname.replace(/\.go\.kr$/, '').split('.');
-    for (const part of parts) {
-      if (KNOWN_GO[part]) return { isOfficial: true, name: KNOWN_GO[part] };
-    }
+    for (const part of parts) if (KNOWN_GO[part]) return { isOfficial: true, name: KNOWN_GO[part], lowQuality: false };
     const label = parts[parts.length - 1] || hostname;
-    return { isOfficial: true, name: label.toUpperCase() + ' (정부기관)' };
+    return { isOfficial: true, name: label.toUpperCase() + ' (정부기관)', lowQuality: false };
   }
-  return {
-    isOfficial: false,
-    name: null,
-    reason: '공식 공고 도메인이 아닙니다 (go.kr / bizinfo.go.kr / sbiz.or.kr 등 공식 URL을 사용해주세요).',
-  };
+
+  // 정보성 가이드 도메인 — 허용하고 출처 이름만 표시
+  for (const [domain, name] of Object.entries(KNOWN_INFO_HOSTS)) {
+    if (hostname === domain || hostname.endsWith('.' + domain)) return { isOfficial: false, name, lowQuality: false };
+  }
+
+  // 블로그·커뮤니티·뉴스 — 차단하지 않되, 본문을 못 읽을 가능성이 높다는 힌트만
+  const lowQuality = BLOCKED_HOSTS.has(hostname)
+    || [...BLOCKED_HOSTS].some(b => hostname.endsWith('.' + b))
+    || NEWS_PATTERNS.some(p => p.test(hostname));
+
+  return { isOfficial: false, name: hostname.replace(/^www\./, ''), lowQuality };
 }
 
 /* ── HTML → plain text ──────────────────────────────────── */
@@ -126,22 +135,36 @@ function extractAttachments(html) {
 
 /* ── OpenAI로 공고 내용 분석 + 혜택형 꿀팁 생성 ──────── */
 async function extractAndGenerateTip(inputText, source, apiKey) {
-  const prompt = `당신은 소상공인 지원사업 공고문 분석 전문가이자 밀당레터 꿀팁 기획자입니다.
+  const prompt = `당신은 소상공인을 돕는 밀당레터 꿀팁 기획자입니다.
 
-아래 공고 내용을 분석해서 혜택형 꿀팁 데이터를 생성하세요.
-공고 출처: ${source.name || '제공된 자료'}
-공고 URL: ${source.url || '없음'}
+아래 [참고 자료]를 분석해 꿀팁 데이터를 생성하세요.
+참고 자료는 지원사업 공고일 수도 있고, 정보성 가이드·체크리스트·대처방안·주의사항·절차 안내일 수도 있습니다.
+자료 출처: ${source.name || '제공된 자료'}
+자료 URL: ${source.url || '없음'}
 
-[공고 내용]
+[참고 자료]
 ${inputText.slice(0, 4000)}
 
-[지시]
-1. 공고 본문에 있는 내용만 사용하세요. 없는 내용은 임의로 생성하지 마세요.
-2. 여러 지원사업이 묶인 경우 가장 핵심 사업을 기준으로 작성하세요.
-3. 순수 JSON 객체만 출력하세요. 마크다운, 설명 텍스트 일절 금지.
+[1단계 — 자료 유형 분류 (input_type)]
+아래 중 정확히 하나로 분류하세요:
+- "지원사업/공고형": 지원대상·지원내용·신청기간·신청방법 등 공고 구조가 있는 모집/지원 자료
+- "정보성 가이드형": 제도·개념·이용방법을 설명하는 안내성 글 (네이버페이/배민/쿠팡/정부기관 도움말 등)
+- "대처방안/체크리스트형": 특정 상황에서 해야 할 일·점검 목록 중심
+- "세무·노무 주의사항형": 주의·불이익·리스크 경고 중심
+- "절차 안내형": 단계별 절차·순서 설명 중심
+- "기록/증빙 관리형": 기록·증빙·보관 방법 중심
+
+[2단계 — 분류에 맞는 데이터 생성]
+⛔ 공통: 자료에 없는 사실(금액·기간·대상·신청처·연락처)을 임의로 만들지 마세요.
+⛔ 정보성 자료를 지원사업 공고처럼 바꾸지 마세요. 지원대상/신청기간/신청방법이 없으면 만들지 말고 빈 문자열로 두세요.
+✅ "지원사업/공고형"이면 benefit_facts(지원대상·지원내용·신청기간·신청방법)를 채우세요.
+✅ "지원사업/공고형"이 아니면 benefit_facts의 target/benefit/period/method는 빈 문자열로 두고, 사장님이 따라 할 수 있는 실무 정보(tip_check_now 등)로 채우세요.
+✅ 여러 내용이 묶인 경우 가장 핵심 1개를 기준으로 작성하세요.
+✅ 순수 JSON 객체만 출력하세요. 마크다운, 설명 텍스트 일절 금지.
 
 {
-  "fetched_title": "공고 제목 (본문에서 추출, 없으면 빈 문자열)",
+  "input_type": "위 6가지 분류 중 정확히 하나",
+  "fetched_title": "자료 제목 (본문에서 추출, 없으면 빈 문자열)",
   "fetched_date": "작성일 또는 게시일 (YYYY.MM.DD 형식, 없으면 빈 문자열)",
   "organization": "기관명 또는 부서명 (본문에서 추출)",
   "benefit_facts": {
@@ -155,12 +178,12 @@ ${inputText.slice(0, 4000)}
     "confirmed_facts": "원고에 바로 사용 가능한 확정 사실 (본문 근거 있는 것만, 2~4줄)",
     "needs_verification": "추가 확인이 필요한 항목 (1~2줄, 없으면 빈 문자열)"
   },
-  "tip_title": "밀당레터 꿀팁 제목 — 사장님 상황이 먼저 보이는 자연스러운 문장 (25자 이내)\n  규칙:\n  × 공고 제목 그대로 복붙 절대 금지\n  × '참여기업 모집', '신청하세요' 등 공고문식 표현 금지\n  × 공고에 없는 금액·대상 임의 추가 금지\n  ✅ '누가/어떤 상황이면 → 확인해보세요/챙겨보세요' 흐름으로 작성\n  ✅ 지역 조건이 명확한 공고(예: '[강원]', '강원특별자치도 소재')라면 → 제목에 지역을 자연스럽게 반영\n     예: '강원 소재 기업이라면, 호주 유통망 입점 지원사업도 챙겨보세요'\n     예: '강원에서 해외 진출 준비 중이라면, 유통망 입점 지원도 확인해보세요'\n  좋은 예: '온라인 판매로 해외 진출 중이라면, 물류비 지원사업도 챙겨보세요'\n  좋은 예: '수출 물류비 부담된다면, 이 지원사업 확인해보세요'\n  좋은 예: '폐업을 고민 중이라면, 지원사업 먼저 확인해보세요'\n  나쁜 예: '2026년 온라인수출 중소기업 물류 지원 사업(추경포함) 참여기업 모집 공고'",
-  "tip_background": "왜 지금 이 혜택인가 — 시기·배경 1~2줄",
-  "tip_target": "이런 사장님 대상 — 업종·규모·상황 구체적으로 (공고에 있는 내용만)",
-  "tip_benefit": "직접 혜택 내용 (확인된 금액·기간·내용만 — 공고에 없는 내용 임의 생성 금지)",
-  "tip_check_now": "지금 당장 확인할 것 3~4가지 (번호 매기기, 공고에 근거한 것만)",
-  "tip_caution": "주의사항 (공고에서 추출 / 없으면 '신청 전 공고문과 접수처의 세부 조건을 반드시 확인해주세요.' 사용 / '없음' 작성 금지)",
+  "tip_title": "밀당레터 꿀팁 제목 — 사장님 상황이 먼저 보이는 자연스러운 문장 (25자 이내)\n  규칙:\n  × 자료 제목 그대로 복붙 절대 금지\n  × '참여기업 모집', '신청하세요' 등 공고문식 표현 금지(공고형이 아닐 때는 특히)\n  × 자료에 없는 금액·대상 임의 추가 금지\n  ✅ 공고형: '누가/어떤 상황이면 → 확인해보세요/챙겨보세요' 흐름\n     예: '수출 물류비 부담된다면, 이 지원사업 확인해보세요'\n  ✅ 정보성 가이드형: '이런 상황이면 → 이렇게 하세요/확인해보세요' 흐름\n     예: '사업자 회원 노출 순서, 이렇게 정하면 됩니다'\n  나쁜 예: '2026년 온라인수출 중소기업 물류 지원 사업(추경포함) 참여기업 모집 공고'",
+  "tip_background": "왜 지금 중요한지 — 시기·배경 1~2줄",
+  "tip_target": "이런 사장님 대상 — 업종·규모·상황 구체적으로 (자료에 있는 내용만)",
+  "tip_benefit": "공고형이면 확인된 혜택 내용(금액·기간) / 정보성이면 이 자료로 얻는 핵심 결론·이점 (자료에 없는 내용 임의 생성 금지)",
+  "tip_check_now": "지금 당장 확인하거나 실행할 것 3~4가지 (번호 매기기, 자료에 근거한 것만)",
+  "tip_caution": "주의사항 (자료에서 추출 / 없으면 '진행 전 원문과 담당처의 세부 조건을 반드시 확인해주세요.' 사용 / '없음' 작성 금지)",
   "confidence": "높음 (지원대상·금액·기간·방법 중 3개 이상 확인) | 보통 (1~2개 확인) | 낮음 (핵심 정보 부족)",
   "warning": "주의가 필요한 경우 메시지 | 빈 문자열"
 }`;
@@ -268,7 +291,7 @@ export default async function handler(req, res) {
   const hasUrl   = !!(officialUrl && officialUrl.trim());
 
   if (!hasPaste && !hasPdf && !hasUrl) {
-    return res.status(400).json({ ok: false, message: '공고 URL, PDF 파일, 또는 붙여넣기 내용 중 하나가 필요합니다.' });
+    return res.status(400).json({ ok: false, message: '참고 URL, PDF 파일, 또는 직접 입력 내용 중 하나가 필요합니다.' });
   }
 
   let inputText = '';
@@ -295,22 +318,14 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: false, message: 'PDF 내용을 읽지 못했습니다: ' + e.message });
     }
   }
-  /* ── 우선순위 3: 공식 URL ── */
+  /* ── 우선순위 3: 참고 URL (공고·정보성 가이드 모두 허용) ── */
   else if (hasUrl) {
     const cleanUrl = officialUrl.trim();
 
-    // 도메인 검증
-    const domainInfo = getOfficialDomainInfo(cleanUrl);
-    if (!domainInfo.isOfficial) {
-      console.log('[extract-benefit] 비공식 도메인:', cleanUrl.slice(0, 80), '|', domainInfo.reason);
-      return res.status(200).json({
-        ok: false,
-        error_type: 'not_official',
-        message: domainInfo.reason || '공식 공고 링크가 아닙니다.',
-      });
-    }
+    // 출처 이름 추론 — 공식 공고가 아니어도 차단하지 않는다.
+    const srcInfo = getSourceInfo(cleanUrl);
 
-    // HTML fetch
+    // HTML fetch — 읽을 수 있으면 공고/정보성 구분 없이 그 내용을 사용
     try {
       const fetchRes = await fetch(cleanUrl, {
         headers: {
@@ -327,20 +342,25 @@ export default async function handler(req, res) {
       if (attachments.length > 0) {
         inputText += '\n\n[첨부파일 목록]\n' + attachments.map((a, i) => '  [' + (i + 1) + '] ' + a).join('\n');
       }
-      source = { name: domainInfo.name || '공식 공고', url: cleanUrl };
-      console.log('[extract-benefit] mode: URL, domain:', domainInfo.name, ', textLen:', inputText.length);
+      source = { name: srcInfo.name || '참고 자료', url: cleanUrl };
+      console.log('[extract-benefit] mode: URL, source:', srcInfo.name, ', textLen:', inputText.length);
     } catch (e) {
       console.error('[extract-benefit] fetch 실패:', e.message);
       return res.status(200).json({
         ok: false,
         error_type: 'fetch_failed',
-        message: '공고 페이지를 읽지 못했습니다. (' + e.message + ')\n공고 내용을 복사해서 붙여넣기 방식을 이용해주세요.',
+        message: 'URL 내용을 자동으로 읽지 못했습니다. (' + e.message + ')\n핵심 내용을 복사해서 [직접 입력하기]에 붙여넣어 주세요.',
       });
     }
   }
 
-  if (!inputText.trim()) {
-    return res.status(200).json({ ok: false, message: '공고 내용을 읽지 못했습니다.' });
+  // 본문을 읽었지만 내용이 사실상 비어 있는 경우(로그인벽·JS 렌더링 등)도 직접 입력으로 유도
+  if (!inputText.trim() || inputText.trim().length < 40) {
+    return res.status(200).json({
+      ok: false,
+      error_type: 'too_short',
+      message: 'URL 내용을 자동으로 읽지 못했습니다.\n핵심 내용을 복사해서 [직접 입력하기]에 붙여넣어 주세요.',
+    });
   }
 
   /* ── AI 분석 + 꿀팁 생성 ── */
@@ -363,24 +383,31 @@ export default async function handler(req, res) {
     });
   }
 
-  /* ── 혜택형 tip 객체 구성 ── */
+  /* ── tip 객체 구성 (공고형 / 정보성 가이드형 공용) ── */
   const bf = extracted.benefit_facts || {};
+
+  /* 입력 유형 — 공고형인지 여부에 따라 tip.type 과 benefit_facts 사용을 분기 */
+  const inputType = extracted.input_type || (bf.support_name ? '지원사업/공고형' : '정보성 가이드형');
+  const isPolicy  = inputType === '지원사업/공고형';
 
   /* tipTitle: 밀당레터 톤 제목 (사장님 상황 중심) */
   const tipTitle = extracted.tip_title
-    || (bf.support_name ? bf.support_name.slice(0, 40) : '');
+    || (bf.support_name ? bf.support_name.slice(0, 40) : '')
+    || extracted.fetched_title || '';
 
   /* caution 정규화: 빈 값 / "없음" / "해당 없음" → 기본 안내 문구로 대체 */
   const tipCaution = normalizeCaution(extracted.tip_caution || bf.caution || '');
   if (bf.caution !== undefined) bf.caution = normalizeCaution(bf.caution);
 
   const tip = {
-    type:             '혜택형',
+    /* 공고형만 '혜택형' — 정보성 자료는 비-혜택 유형으로 두어 원고에서 공고형 템플릿으로 뭉개지 않게 한다 */
+    type:             isPolicy ? '혜택형' : '실무리스크형',
+    input_type:       inputType,
     /* title: 밀당레터 톤 제목 → 카드 + 원고 headline의 기준 */
     title:            tipTitle,
     background:       extracted.tip_background  || '',
-    target:           extracted.tip_target      || bf.target     || '',
-    benefit:          extracted.tip_benefit     || bf.benefit    || '',
+    target:           extracted.tip_target      || (isPolicy ? bf.target  : '') || '',
+    benefit:          extracted.tip_benefit     || (isPolicy ? bf.benefit : '') || '',
     check_now:        extracted.tip_check_now   || '',
     caution:          tipCaution,
     duplicate_check:  '신규',
@@ -388,19 +415,22 @@ export default async function handler(req, res) {
     source_name:      source.name               || '',
     source_url:       source.url                || '',
     source_verified:  true,
-    /* 공식 공고 fetch 데이터 */
+    /* 읽은 자료 데이터 */
     fetched_title:        extracted.fetched_title        || '',
     fetched_date:         extracted.fetched_date         || '',
     fetched_body_summary: '',
-    benefit_facts:        bf,
+    /* 공고형일 때만 benefit_facts 사용 — 정보성 자료는 null 로 두어 원고가 공고형 facts 모드로 들어가지 않게 함 */
+    benefit_facts:        isPolicy ? bf : null,
     source_confidence:    extracted.confidence  || '보통',
     source_warning:       extracted.warning     || '',
     source_locked:        true,
     source_locked_title:  extracted.fetched_title || '',
-    /* display_title: 카드 표시용 — 밀당레터 톤 제목 우선, 공고명은 fetched_title에 별도 보관 */
+    /* display_title: 카드 표시용 — 밀당레터 톤 제목 우선, 자료명은 fetched_title에 별도 보관 */
     display_title: tipTitle || extracted.fetched_title || bf.support_name || '',
-    /* 직접 입력 여부 플래그 */
+    /* 직접 입력 여부 플래그 — 원고에서 원문 보존 모드를 켠다 */
     is_user_provided: true,
+    /* 원문 — 완성 원고의 입력 유형 분류·원문 보존에 사용 (URL/PDF도 본문이 전달됨) */
+    raw_user_input: (inputText || '').slice(0, 6000),
   };
 
   return res.status(200).json({ ok: true, tip });
